@@ -1,0 +1,28 @@
+# J. Moustakas, 2006 Dec 7, NYU
+#
+#                       Output File Name and Format
+
+OUTPUT_FILENAME    byname.ned
+OUTPUT_OPTION      compact
+COMPRESS_OPTION    none
+
+INPUT_COORDINATE_SYSTEM      equatorial
+OUTPUT_COORDINATE_SYSTEM     equatorial
+
+INPUT_EQUINOX                J2000.0
+OUTPUT_EQUINOX               J2000.0
+
+EXTENDED_NAME_SEARCH  no
+OUTPUT_SORTED_BY      Distance_to_search_center
+# REDSHIFT_VELOCITY     -1000.0
+
+SEARCH_RADIUS                  5
+BEGIN_YEAR                    1900
+END_YEAR                      2007
+IAU_STYLE                    S
+
+FIND_OBJECTS_BY_NAME
+
+END_OF_DATA
+
+END_OF_REQUESTS

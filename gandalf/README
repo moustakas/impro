@@ -1,0 +1,532 @@
+		       ==== CONTENTS ====
+
+- General Description
+- Making GANDALF work
+- Getting used to GANDALF with SAURON spectra
+- Moving on to SDSS spectra
+- Version 1.3 Add On
+- Concluding Remarks
+- Known Bugs
+
+                  ==== GENERAL DESCRIPTION ====
+
+GANDALF is a direct fitting code designed to separate the relative
+contribution of the stellar continuum and of nebular emission in the
+spectra of nearby galaxies, while measuring the gas emission and
+kinematics.
+
+This is normally achieved by first fitting the stellar continuum while
+masking the spectral region potentially contaminated by nebular
+emission and by subsequently measuring the gas emission on the
+residual spectrum of such fit.
+
+Typically, the stellar continuum is matched by a superposition of
+stellar templates convolved by the stellar line-of-sight velocity
+distribution (LOSVD), whereas the gas emission and kinematics is
+derived assuming a Gaussian LOSVD.
+
+As shown in Sarzi et al. (2006, MNRAS, 366, 1151), masking the regions
+potentially affected by gas emission can introduce biases in the
+stellar fitting process, introducing spurious features in the
+residual spectra that can affect the gas measurements. This is
+particularly the case for weak emission-lines and for spectra with a
+limited wavelength range such as those obtained with the SAURON
+integral-field spectrograph.
+
+GANDALF overcomes these limitations, by extending the PPXF software
+of Cappellari & Emsellem (2004, PASP, 116, 138) to obtain a more
+refined procedure to measure the gas kinematics and fluxes without any
+spectral masking.
+
+The key ingredient in GANDALF is to treat the emission lines as
+additional Gaussian templates and, while iteratively searching for
+their best velocities and velocity dispersions, to solve linearly at
+each step for their amplitudes and the optimal combination of the
+stellar templates, which are convolved by the best stellar (LOSVD). In
+this way both the stellar continuum and the emission lines are fitted
+simultaneously. More details can be found in Sarzi et al. (2006), and
+in what follows.
+
+                  ==== MAKING GANDALF WORK ====
+
+Before running GANDALF, five important steps have to be taken.
+
+A) Make sure the following IDL library and programs are properly installed
+
+- IDL Astronomy User's Library: -> http://idlastro.gfsc.nasa.gov/
+- MPFIT: by C.B. Markwardt -> http://astrog.physics.wisc.edu/~craigm/idl/
+- ROBUST_SIGMA: by H. Freudenreich -> http://idlastro.gfsc.nasa.gov/
+
+B) A library of suitable templates has to be compiled in order to fit
+the stellar continuum. These should have the same spectral resolution
+and wavelength sampling.
+
+C) Both the object and templates spectra have to be sampled on the
+same natural or base-10 logarithm wavelength grid.
+
+D) An emission-line setup file, listing the emission-lines that could
+be present in observed wavelength range and the way we want to fit
+them, has to be properly edited (see below).
+
+E) The stellar kinematics has to be derived. 
+
+Steps B) and C) are key also to the measurement of the stellar
+kinematics E) using the PPXF software, which we recommend. Details on
+how this can be used are found at Michele Cappellari's webpage
+ 
+ http://www.strw.leidenuniv.nl/~mcappell/idl/
+
+The current distribution of PPXF also includes the log_rebin.pro
+program of Michele, which should be used to ln-rebin the object and
+template spectra in step C). Clearly, the spectral resolution of both
+object and templates has to be known for stellar kinematics to make
+sense.
+
+As regards step D), the emission-line setup file provides GANDALF with
+the list of emission lines to fit, specifying whether each line is
+part of a multiplet and whether its kinematics has to be derived
+independently, has to be tied to that of another line, or if it has to
+be held fixed at its input value. The emission-line setup file has to be
+read into an IDL structure before being passed to GANDALF, which also
+conveniently allows the user to change the way the lines are fitted
+between different calls of GANDALF.
+
+The emission-line setup structure can also be used to specify whether
+or not a given spectral region should be masked, for instance during
+the PPXF fit.
+
+The typical emission-line setup input file should look like this
+
+# i_line name	lambda	action	l-kind	A_i	V_g/i	sig_g/i	fit-kind
+#		\AA	f/i/m	l/d#	1/rel2#	km/s	km/s	f/h/t#
+  0	 Hb	4861.32	f	l	1.00	999	99	t2
+  1	 [OIII]	4958.83	f	d2	0.35	999	99	f
+  2	 [OIII]	5006.77	f	l	1.00	999	99	f
+  3      [NI]   5197.90 m	l	1.00	1000	10	h
+  4      [NI]   5200.39 m       d3	0.70	1000	10	h
+
+where the first three fields trivially specify an index, name, and
+rest-frame wavelength for each line.
+
+The "action" field sets whether each of the listed lines should be fit
+(f), ignored (i), or whether the spectral region around them should be
+masked (m). 
+
+Only when "action=f" will all other fields become relevant for
+GANDALF, and the corresponding line is included in the fit.
+
+The next field is the line-kind "l-kind" field, which allows GANDALF
+to identify whether or not a given line belong to a doublet or
+multiplet.
+
+Normal lines, or the strongest of doublets (or multiplets) are
+labelled with an "l" in this field, whereas the fainter members of
+doublets (or multiplets) are identified by a "d#" in the "l-kind"
+field, indicating with # the "i_line" index of the strongest element
+of their doublet (or multiplet). In this case the input amplitude
+field "A_i" is used to set the relative strength of the lines.
+
+The next two fields, "V_g/i" and "sig_g/i", simply list the input
+velocity and velocity dispersion guesses, which are held fix in case
+the next field "fit-kind" = h". Typically, these fields are modified
+immediately before fitting the spectra, for instance by setting V_g to
+the object receiding velocity.
+
+Finally, the "fit-kind" field sets whether the position and width of
+each line has to fit freely (f), if they should be tied to that of
+another line (t#, where # is the index "i_line" of the line to the
+line is tied), or if they should be held (h) fixed to the input values
+set by the "V_g/i" and "sig_g/i" fields.
+
+Of course, the "fit-kind" field is only relevant for lines with an
+"l-kind" = "l", i.e. it does not apply to weaker members of doublets
+(or multiplets).
+
+Thus, if the previous example of emission-line setup would be passed
+on to GANDALF, only the Hb and [OIII]4959,5007 lines would be fitted,
+while masking the [NI]5197,5200 region and tieing the Hb kinematics to
+that of the [OIII] lines.
+
+      ==== GETTING USED TO GANDALF WITH SAURON SPECTRA ====
+
+In order to help the user to get used to GANDALF, the SAURON_example/
+directory contains IDL codes showing how GANDALF works in the case of
+the SAURON spectra. More specifically, the user should simply compile
+and run the following IDL script
+
+  gandalf_SAURON_example.pro
+
+which will call 
+
+  gandalf_SAURON_std.pro
+  gandalf_SAURON_unc.pro
+
+and derive the stellar and gaseous kinematics for one spectrum in the
+SAURON datacube for the elliptical galaxy NGC4278 (NGC4278_bin306.fits), 
+according to the standard and unconstrained procedure described in
+Sarzi et al. (2006).
+
+The previous procedures will invoke 
+
+  ppxf.pro (to be retrieved by the user)
+  gandalf.pro
+
+as well as reading in the emission-line setup files
+
+emission_lines_setup_std
+emission_lines_setup_unc
+
+Also the following routines
+ 
+  bvls.pro (to be retrieved by the user)
+  range.pro
+  sauron_colormap.pro 
+
+will be used. The user should retrieve the latest versions of bvls.pro
+and ppxf.pro from Michele's webpage.
+
+Both PPXF and GANDALF will use the stellar spectra from Jones (1997,
+PhD thesis, Univ. North Carolina, Chapel Hill) and single-age models
+from Vazdekis (1999 ApJ, 513, 224), which are listed in the template
+library file PaperV_library.dat and are found in the subdirectory
+PaperV_library/.
+
+Both the object and template spectra have already been ln-rebinned,
+and saved in FITS files where standard CRVALS/CDELTS CRVAL1/CDELT1
+keywords provide informations on the wavelength grid on which the
+object and templates have been resampled.
+
+Although both gandalf_SAURON_std.pro and gandalf_SAURON_unc.pro are
+fairly commented and produce screen outputs detailing each major step,
+to further help understanding how the input emission-line structure
+should be used and manipulated, below follows some details on how
+gandalf_SAURON_std.pro carries out the standard SAURON emission-line
+measurements presented in Sarzi et al. (2006). 
+
+For E/S0 galaxies, the Hb, [OIII] and [NI] lines in the SAURON spectra
+could rarely be measured independently without incurring in biased
+results. Therefore the [OIII] lines, which are generally stronger,
+were measured first, and then the Hb and [NI] fluxes were derived
+while imposing on these lines the kinematics of the [OIII] lines.
+
+Here is how this is achieved in gandalf_SAURON_std.pro:
+
+Step 0 -- emission-line structure prior to using PPXF to derive the
+       stellar kinematics, while masking all spectral regions
+       potentially affected by nebular emission.
+# i_line name	lambda	action	l-kind	A_i	V_g/i	sig_g/i	fit-kind
+#		\AA	f/i/m	l/d#	1/rel2#	km/s	km/s	f/h/t
+  0	 Hb	4861.32	m	l	1.00	999	99	h
+  1	 [OIII]	4958.83	m	d2	0.35	999	99	f
+  2	 [OIII]	5006.77	m	l	1.00	999	99	f
+  3      [NI]   5197.90 m	l	1.00	999	99	h
+  4      [NI]   5200.39 m       d3	0.70	999	99	h
+
+This is the initial emission-line setup structure provided by the
+emission_lines_setup_std file, and is used by the function
+mask_emission_lines_SAURON in gandalf_SAURON_std.pro to mask the Hb,
+[OIII] and [NI] regions.
+
+Step 1 -- emission-line structure prior to the 1st call of GANDALF.
+       Fit the [OIII] lines while Hb and [NI] are still masked.
+# i_line name	lambda	action	l-kind	A_i	V_g/i	sig_g/i	fit-kind
+#		\AA	f/i/m	l/d#	1/rel2#	km/s	km/s	f/h/t
+  0	 Hb	4861.32	m	l	1.00	999	99	h
+  1	 [OIII]	4958.83	f	d2	0.35	999	99	f
+  2	 [OIII]	5006.77	f	l	1.00	999	99	f
+  3      [NI]   5197.90 m	l	1.00	999	99	h
+  4      [NI]   5200.39 m       d3	0.70	999	99	h
+
+
+Here the action fields for the [OIII] lines have been modified to "f",
+and after using again mask_emission_lines_SAURON function, this
+emission-line setup structure is ready to be passed to GANDALF
+
+Step 2 -- emission-line structure prior to the 2nd call of GANDALF. 
+	  Derive the amplitude of all lines, fixing their kinematics
+          to that of the [OIII] lines
+# i_line name	lambda	action	l-kind	A_i	V_g/i	sig_g/i	fit-kind
+#		\AA	f/i/m	l/d#	1/rel2#	km/s	km/s	f/h/t
+  0	 Hb	4861.32	f	l	1.00	1020.1	81.6	h
+  1	 [OIII]	4958.83	f	d2	0.35	1020.1	81.6	h
+  2	 [OIII]	5006.77	f	l	1.00	1020.1	81.6	h
+  3      [NI]   5197.90 m	d4	0.35	1020.1	81.6	h
+  4      [NI]   5200.39 m       l	1.00	1020.1	81.6	h
+
+Here the remaining masks are lifted by also setting the Hb and [NI]
+action fields to "f" and calling again mask_emission_lines_SAURON.
+The kinematics of all the lines will be then held fix to that of the
+[OIII] lines in the next, and last, GANDALF call, by further setting
+all V_g/i and sig_g/i field to the velocity and velocity dispersion of
+the [OIII] lines derived after step 1 (say 1020.1 and 81.g km/s), and
+by setting all fit-kind fields to "h"
+
+Concluding this section are some comments on the outputs of
+gandalf_SAURON_std.pro and gandalf_SAURON_unc.pro, the FITS files
+out_std.fits and out_unc.fits. These contain, stacked in 7 levels
+
+1) the input spectrum
+2) the best fitting model, including both stellar and emission-line components
+3) the best fitting emission-line spectrum
+4) the input spectrum cleaned by any detected nebular emission,
+   generally used to derive the strength of stellar absorption-line
+   features. This is constructed by means of the function
+   remouve_detected_emission_SAURON, which is quite SAURON specific.
+5) the best fitting parameters for the stellar kinematics (V, sigma,
+   h3, h4, h5, h6) and gaseous kinematics (Flux, Amplitude, V, sigma,
+   and amplitude over residual-noise ratio A/N, for Hb, [OIII] and [NI])
+6) the normalised weights assigned to each stellar template
+7) the corresponding optimal combination of templates
+
+These outputs can be read using the MRDFITS routine, like 
+std_model = mrdfits('out_std.fits',1)
+
+                  ==== MOVING ON TO SDSS SPECTRA ====
+
+Although initially designed to deal with SAURON data, GANDALF is by
+no mean restricted to a specific wavelength range. For instance, using
+GANDALF with SLOAN spectra would only need some editing of the
+previous SAURON-specific IDL wrappers, adopting a different template
+library such as Bruzual & Charlot, ln-rebinning the data and
+templates, and using an emission-line setup file like the following
+
+# i_line name	lambda	action	l-kind	A_i	V_g/i	sig_g/i	fit-kind
+#		\AA	f/i/m	l/d#	1/rel2#	km/s	km/s	f/h/t
+  0	 [OII]	3726.03	m	l 	1.000	1000	10	t18
+  1	 [OII]	3728.73	m	l 	1.000	1000	10	t18
+  2	[NeIII]	3868.69	m	l 	1.000	1000	10	t18
+  3	[NeIII]	3967.40	m	l 	1.000	1000	10	t18
+  4      He     3970.07 m       l       1.000   1000    10      t17
+  5      Hd     4104.73 m       l       1.000   1000    10      t17
+  6      Hg     4340.46 m       l       1.000   1000    10      t17
+  7      [OIII] 4363.15 m       l       1.000   1000    10      t18
+  8	 HeII	4685.74	m	l	1.000	1000	10	t17
+  9	 Hb	4861.32	m	l	1.000	1000	10	t17
+ 10	 [OIII]	4958.83	m	d11	0.350	1000	10	t18
+ 11	 [OIII]	5006.77	m	l	1.000	1000	10	t18
+ 12      [NI]   5197.90 m	l	1.000	1000	10	t18
+ 13      [NI]   5200.39 m       d12	0.700	1000	10	t18
+ 14      [OI]	6300.20 m	l	1.000	1000	10	t18
+ 15      [OI]	6363.67 m	d14	0.333	1000	10	t18
+ 16	 [NII]	6547.96	m	d18	0.340	1000	10	t18
+ 17	 Ha 	6562.80	m	l 	1.000	1000	10	f
+ 18	 [NII]	6583.34	m	l	1.000	1000	10	f
+ 19	 [SII]	6716.31 m	l	1.000	1000	10	t18
+ 20 	 [SII]	6730.68 m	l	1.000	1000	10	t18
+
+whereby all recombination and forbidden lines are assumed to share
+different kinematics (e.g. Tremonti et al 2004, ApJ, 613, 798). 
+
+In fact, in the directory SDSS_example/ we provide an IDL script that
+read in and fit a SLOAN spectrum, which is called
+
+  gandalf_SDSS_example.pro
+
+and which will invoke 
+
+  gandalf_SDSS.pro
+
+In this example, reddening by dust is used instead of multiplicative
+polinomials to adjust the stellar continuum and the emission-line
+fluxes, a feature that has been recently introduced in GANDALF
+(keyword REDDENING) and that should be used only when one is confident
+of the flux calibration of his/her spectra. The long wavelength range
+of the SLOAN allows GANDALF to constrain the amount of reddening using
+the observed decrement of the Balmer lines, which can be set to have
+an intrinsic decrement consistent with recombination theory by simply
+treating the lines as a multiplet. The corresponding emission-line
+setup therefore looks like this
+
+# i_line name	lambda	action	l-kind	A_i	V_g/i	sig_g/i	fit-kind
+#		\AA	f/i/m	l/d#	1/rel2#	km/s	km/s	f/h/t
+  0	 [OII]	3726.03	m	l 	1.000	1000	10	t18
+  1	 [OII]	3728.73	m	l 	1.000	1000	10	t18
+  2	[NeIII]	3868.69	m	l 	1.000	1000	10	t18
+  3	[NeIII]	3967.40	m	l 	1.000	1000	10	t18
+  4      He     3970.07 m       d15     0.066   1000    10      t17
+  5      Hd     4101.73 m       d15     0.091   1000    10      t17
+  6      Hg     4340.46 m       d15     0.164   1000    10      t17
+  7      [OIII] 4363.15 m       l       1.000   1000    10      t18
+  8	 HeII	4685.74	m	l	1.000	1000	10	t18
+  9	 Hb	4861.32	m	d15	0.348	1000	10	t17
+ 10	 [OIII]	4958.83	m	d10	0.350	1000	10	t18
+ 11	 [OIII]	5006.77	m	l	1.000	1000	10	t18
+ 12      [NI]   5197.90 m	l	1.000	1000	10	t18
+ 13      [NI]   5200.39 m       l	1.000	1000	10	t18
+ 14      [OI]	6300.20 m	l	1.000	1000	10	t18
+ 15      [OI]	6363.67 m	d14	0.333	1000	10	t18
+ 16	 [NII]	6547.96	m	d16	0.340	1000	10	t18
+ 17	 Ha 	6562.80	m	l 	1.000	1000	10	f
+ 18	 [NII]	6583.34	m	l	1.000	1000	10	f
+ 19	 [SII]	6716.31 m	l	1.000	1000	10	t18
+ 20 	 [SII]	6730.68 m	l	1.000	1000	10	t18
+
+The main workhorse that allows to use reddening in GANDALF is the
+function dust_calzetti, which adopts the dust model of Calzetti et
+al. (2000, ApJ, 533, 682) to return flux attenuation values at the
+desired wavelength for any given E(B-V) value. This same routine is
+also used in gandalf_SDSS.pro to account for foreground galactic
+extinction and de-reddened the SLOAN spectra prior to any kinematic
+and emission-line analysis.
+
+The new keyword REDDENING in GANDALF allows the user to adopt either a
+single dust component, affecting both the stellar continuum and the
+emission-line fluxes, or to include also a second dust component that
+affects only the emission-line templates. This is the option adopted
+in the present example.
+
+When reddening is used instead of multiplicative polynomials to adjust
+the overall shape of the spectra, GANDALF will return emission-line
+flux values already corrected for extinction, whereas the line
+amplitude will still be output as observed. Furthermore, since the
+Balmer lines have been treated as a multiplet only the Ha parameters
+will be returned, although the de-reddened flux values of the
+high-order Balmer lines can be obtained by simply rescaling the Ha
+fluxes using the theoretical decrement imposed through the input
+emission-line setup.
+
+The gandalf_SDSS.pro script also manages to exclude from the analysis
+those spectral regions where atmospheric emission lines may have not
+been perfectly removed, by identifying them as "sky" lines in the
+emission-line setup
+
+100      sky    5577.00 m       l       1.000   1000    10      f
+101      sky    6300.00 m       l       1.000   1000    10      f
+102      sky    6363.00 m       l       1.000   1000    10      f
+
+and using a more general version of the masking function, called
+simply mask_emission_lines.
+
+As in the previous, SAURON-specific example, both object and templates
+have already been log-rebinned, in this case in base 10 and straight
+from the SDSS database and the Bruzual & Charlot (2003) models release.
+The use of base-10 log-rebinned spectra is indicated to GANDALF by the
+LOG10 keyword.
+
+In the SDSS_example directory we provide two additional simple IDL
+programs.  The first, called show_GANDALF_fit.pro, allows to produce
+postscript figures illustrating the result of the GANDALF fit, whereas
+the second, get_all_lines_amplitudes_fluxes_and_ews.pro, re-extract
+the values for the amplitude and flux of all the lines that were
+fitted, not only for the principal elements of doublets or
+multiplets. Values are both as observed and de-reddened by dust
+extinction, and we also extract the equivalent width of the
+lines. Eventually, this should become part of the gandalf_SDSS
+wrapper.
+
+                  ==== VERSION 1.3 ADD ON ====
+
+The latest release of GANDALF sees the introduction of a new keyword,
+FOR_ERRORS, which tells the program to evaluate properly the
+uncertainties for all of the emission-line parameters. To this goal,
+GANDALF will perform a second fit to the spectra starting from the
+best-fitting solution, where in addition to the position and width of
+the lines now also the amplitude of the lines will be solved
+non-linearly using MPFIT. This latest possibility added a considerable
+layer of complication to the program itself, which is why the GANDALF
+script has now been considerably restructured and commented.
+
+An important aspect to keep in mind when considering the errors on the
+line amplitudes and fluxes that are output by GANDALF, is that these
+can become quite large (up to 30-40%) in the absence of clearly
+detected Balmer lines and when adopting in the fits a second dust
+component, which is specific only to the emission-line region. In
+fact, only the Balmer lines (in particular both Ha and Hb), by means
+of a prior on their intrinsic temperature-dependend line decrement,
+can actually constrain such a reddening component.
+
+A second, small new feature of this latest release of GANDALF, is that
+it is now possible to include negative Gaussian components in the fit,
+in order to account for instance for the presence of interstellar
+absorption features such as those from the sodium Na D absorption
+line. For this, one only needs to specify a negative amplitude guess
+in the emission-line setup.
+
+For the sake of clarity, in this release we switched on the new
+keyword FOR_ERRORS only when calling GANDALF in the SDSS-specific
+example. Note that the SDSS wrapper now also outputs an array
+specifying which parts of the spectrum where in fact used during the
+fit, which can then be shown by the new version of the ancillary
+plotting routine, SHOW_GANDALF_FIT.pro.
+
+This was used to produce the following figures
+
+     spSpec-51908-0277-120_fits.ps
+     spSpec-51671-0299-123_fits.ps
+     spSpec-51985-0295-530_fits.ps
+     spSpec-53149-1421-349_fits.ps
+
+which shows SDSS spectra with decreasing strength of the Balmer lines
+which were fitted with both "screen" and "internal" reddening
+components. For these objects the corresponding errors in the observed
+amplitude of the Ha line turned out to be 2, 8, 10 and 26%,
+respectively.
+
+                  ==== CONCLUDING REMARKS ====
+
+To conclude we note that GANDALF can also be used to match line
+profiles that are more complicated than simple Gaussians. By adding to
+the emission-line setup secondary Gaussian components it is possible
+to match reasonably well lines with red- or blue-shifted tails, lines
+with Voigt profiles, and to include also broad components. Key to this
+exercise is to prompt GANDALF with suitable guesses for the job it is
+required to do. To facilitate this task the position and the width of
+the several lines can now be separately tied through the use of the
+new "v#" and "s#" fit-kind fields. For instance, in fitting only the
+Hb and [OIII] lines
+
+# i_line name	lambda	action	l-kind	A_i	V_g/i	sig_g/i	fit-kind
+#		\AA	f/i/m	l/d#	1/rel2#	km/s	km/s	f/h/t
+  0	 Hb	4861.32	f	l	1.00	1000	100	f
+  1	 [OIII]	4958.83	f	d2	0.35	1000	100	f
+  2	 [OIII]	5006.77	f	l	1.00	1000	100	f
+
+to add an Broad Hb component we would simply add to the emission-line
+setup file the following line
+
+# to add an Broad Hb component
+  10	 HbBr 	4861.32	f	l 	1.000	1000	900	f
+
+which prompt GANDALF to start fitting the Hb line profile using also a
+second and much broader Gaussian. On the other hand, to mimic a Voigt
+profile for the [OIII] lines we would add a second Gaussian component
+that is also initially broader but that is held at the same position
+of the principal component, appending the following two lines
+
+# to mimic a Voigt profile 
+  21	[OIII]2 4958.83	i	d22	0.35	1000	400	v2
+  22	[OIII]2 5006.77	i	l	1.00	1000	400	v2
+
+Finally, to obtain a profile with a blue wing we would simply add to
+the emission-line setup a second Gaussian starting at a smaller
+receding velocity, as follow
+
+# to mimic a blue-shifted profile 
+  31	[OIII]b 4958.83	i	d32	0.35	700	100	f
+  32	[OIII]b 5006.77	i	l	1.00	700	100	f
+
+More examples on how to match complex line-profile with GANDALF will
+be added in future releases. 
+
+Last but not least, please notice that:
+
+- GANDALF is the intellectual property of M. Sarzi, J. Falcon-Barroso &
+R.F. Peletier (e-mail: m.sarzi@herts.ac.uk, jfalcon@rssd.esa.int,
+peletier@astro.rug.nl).
+
+- GANDALF is provided as is without any warranty whatsoever. Permission
+to use, for non-commercial purposes is granted.  Permission to modify
+for personal or internal use is granted, provided the copyright notice
+and disclaimer are included unchanged at the beginning of the
+file. All other rights are reserved. 
+
+- If you find GANDALF useful, please acknowledge the SAURON team as
+follows "GANDALF was developed by the SAURON team and is available
+from the SAURON website (www.strw.leidenuniv.nl/sauron). See also
+Sarzi et al. (2006, MNRAS, 366, 1151) for details."
+
+                      ==== KNOWN BUGS ====
+
+Apparently both pPXF and GANDALF can fail to work when using the
+latest version of MPFIT, whereas everything seems to works fine with
+earlier releases (I use a 2005 version). Any feedback is welcome.

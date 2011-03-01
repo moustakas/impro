@@ -1,0 +1,2 @@
+      integer kbin,ttyout,filout
+      data kbin/5/,ttyout/6/,filout/1/

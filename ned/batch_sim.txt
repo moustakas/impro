@@ -1,0 +1,235 @@
+########################################################################
+#
+#                  NASA/IPAC EXTRAGALACTIC DATABASE
+#               Minimal Batch Job Template Request Form
+#                   Version Date: 24 October 2006
+#
+#   Blank lines or those beginning with a pound sign (#) are ignored.
+#
+#    PLEASE BE SURE THAT YOUR FILE CONTAINS ONLY FLAT (7-BIT) ASCII 
+#      CHARACTERS, HAS NO MORE THAN 72 CHARACTERS PER LINE, HAS NO 
+#       EMAIL ATTACHMENTS, IS NOT AN HTML-FORMATTED FILE, AND HAS
+#                   NO MORE THAN 3000 INPUT REQUESTS.
+#
+#             When your request file is ready, mail it to
+#
+#         >>>>>>>>     nedbatch@ipac.caltech.edu     <<<<<<<<
+#
+########################################################################
+#                       Output File Name and Format
+
+OUTPUT_FILENAME    xxxxxx
+
+# Output format:  `standard' (default), `compact', `compact_2'
+
+OUTPUT_OPTION    standard
+
+# Compression method:  `compress', `gzip', `none' (default)
+
+COMPRESS_OPTION    none
+
+########################################################################
+#                      Global Environment Parameters
+#
+# Coordinate system:
+#    `equatorial', `galactic', `ecliptic', `super_galactic'
+
+INPUT_COORDINATE_SYSTEM      equatorial
+OUTPUT_COORDINATE_SYSTEM     equatorial
+
+# EQUINOX between the years 1500 and 2500, with `J' or `B' prefix.
+
+INPUT_EQUINOX                J2000.0
+OUTPUT_EQUINOX               J2000.0
+
+# Extended name search (yes/no):
+
+EXTENDED_NAME_SEARCH          yes
+
+# Output sorting:
+#    `Distance_to_search_center', `RA_or_Longitude', `DEC_or_Latitude'
+
+OUTPUT_SORTED_BY      Distance_to_search_center
+
+# Velocity (km/s) above which dimensionless z is displayed:
+
+REDSHIFT_VELOCITY     10000.0
+
+########################################################################
+#                         Default Values
+#
+# Search radius in arcmin (less than 300 arcmin):
+
+SEARCH_RADIUS                  2
+
+# Literature search year range, 1900 to present:
+
+BEGIN_YEAR                    1900
+END_YEAR                      2005
+
+# IAU_STYLE name interpretation: `S' for strict, `L' for liberal:
+
+IAU_STYLE                    S
+
+########################################################################
+#                      Search by Object Name
+# Object name; one request per line.
+
+FIND_OBJECTS_BY_NAME
+
+END_OF_DATA
+
+#-----------------------------------------------------------------------
+#                         Search Near Object Name
+#
+# Name and search radius; one request per line.
+# Semicolon `;' or a comma`,' as separator.
+
+FIND_OBJECTS_NEAR_NAME
+
+# Uncomment a redshift constraint
+#    REDSHIFT   Unconstrained
+#    REDSHIFT   Available
+#    REDSHIFT   Unavailable
+#    REDSHIFT   Larger_than  x
+#    REDSHIFT   Less_than    x
+#    REDSHIFT   Between      x, y
+#    REDSHIFT   Not_between  x, y
+# Uncomment a redshift unit
+#    UNIT    z
+#    UNIT    km/s
+
+INCLUDE
+# INCLUDE ALL
+ Galaxies _  GClusters _   Supernovae _  QSO _  AbsLineSys _  GravLens _
+ Radio _     Infrared _   EmissnLine _  UVExcess _   Xray _  GammaRay _
+ GPairs _  GTriples _  GGroups _   
+END_INCLUDE
+
+EXCLUDE
+ Galaxies _  GClusters _   Supernovae _  QSO _  AbsLineSys _  GravLens _
+ Radio _     Infrared _   EmissnLine _  UVExcess _   Xray _  GammaRay _
+ GPairs _  GTriples _  GGroups _   
+END_EXCLUDE
+
+END_OF_DATA
+
+#-----------------------------------------------------------------------
+#                         Search Near Position
+#
+# Position and a search radius; one request per line.
+# Semicolon `;' or a comma `,' as the separator.
+
+FIND_OBJECTS_NEAR_POSITION
+
+# Uncomment a redshift constraint
+#    REDSHIFT   Unconstrained
+#    REDSHIFT   Available
+#    REDSHIFT   Unavailable
+#    REDSHIFT   Larger_than  x
+#    REDSHIFT   Less_than    x
+#    REDSHIFT   Between      x, y
+#    REDSHIFT   Not_between  x, y
+# Uncomment a redshift unit
+#    UNIT    z
+#    UNIT    km/s
+
+INCLUDE
+# INCLUDE ALL
+ Galaxies _  GClusters _   Supernovae _  QSO _  AbsLineSys _  GravLens _
+ Radio _     Infrared _   EmissnLine _  UVExcess _   Xray _  GammaRay _
+ GPairs _  GTriples _  GGroups _   
+END_INCLUDE
+
+EXCLUDE
+ Galaxies _  GClusters _   Supernovae _  QSO _  AbsLineSys _  GravLens _
+ Radio _     Infrared _   EmissnLine _  UVExcess _   Xray _  GammaRay _
+ GPairs _  GTriples _  GGroups _   
+END_EXCLUDE
+
+END_OF_DATA
+
+#-----------------------------------------------------------------------
+#                       Search by IAU Designation
+# IAU name and style (S or L); one request per line.  
+# Semicolon `;' or a comma `,' as the separator.
+
+FIND_OBJECTS_BY_IAU_NAME
+
+# Uncomment a redshift constraint
+#    REDSHIFT   Unconstrained
+#    REDSHIFT   Available
+#    REDSHIFT   Unavailable
+#    REDSHIFT   Larger_than  x
+#    REDSHIFT   Less_than    x
+#    REDSHIFT   Between      x, y
+#    REDSHIFT   Not_between  x, y
+# Uncomment a redshift unit
+#    UNIT    z
+#    UNIT    km/s
+
+INCLUDE
+# INCLUDE ALL
+ Galaxies _  GClusters _   Supernovae _  QSO _  AbsLineSys _  GravLens _
+ Radio _     Infrared _   EmissnLine _  UVExcess _   Xray _  GammaRay _
+ GPairs _  GTriples _  GGroups _   
+END_INCLUDE
+
+EXCLUDE
+ Galaxies _  GClusters _   Supernovae _  QSO _  AbsLineSys _  GravLens _
+ Radio _     Infrared _   EmissnLine _  UVExcess _   Xray _  GammaRay _
+ GPairs _  GTriples _  GGroups _   
+END_EXCLUDE
+
+END_OF_DATA
+
+#-----------------------------------------------------------------------
+#                   Search by 19-digit Reference Code
+# One refcode per line.
+
+FIND_OBJECTS_BY_REFCODE
+
+END_OF_DATA
+
+#-----------------------------------------------------------------------
+#                    Decode 19-digit Reference Code
+# One refcode per line.
+
+FIND_REFCODE_DETAIL
+
+END_OF_DATA
+
+#-----------------------------------------------------------------------
+#            Reference Search by Object Name and Year Range
+# Object name and year range, one request per line.
+# Semicolon `;' or a comma `,' as separators.
+
+FIND_REFERENCES
+
+END_OF_DATA
+
+#-----------------------------------------------------------------------
+#                 Search for Photometry by Object Name
+# Object name; one request per line.
+
+FIND_PHOTOMETRIC_DATA
+
+END_OF_DATA
+
+#-----------------------------------------------------------------------
+#                Search for Position Data by Object Name
+# Object name; one request per line.
+
+FIND_POSITION_DATA
+
+END_OF_DATA
+
+#-----------------------------------------------------------------------
+#                Search for Redshift Data by Object Name
+# Object name; one request per line.
+
+FIND_REDSHIFT_DATA
+
+END_OF_DATA
+########################################################################
+END_OF_REQUESTS

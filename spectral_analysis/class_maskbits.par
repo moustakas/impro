@@ -1,0 +1,14 @@
+typedef struct {
+  char flag[20];  # Flag name
+  int bit;        # Bit number, 0-indexed (0 to 31)
+  char label[20]; # Bit label
+} maskbits;
+
+maskbits CLASS   0   NOCLASS       # no classification possible (necessary line-ratios not measured)
+maskbits CLASS   1   UNKNOWN       # unknown classification based on all four lines (e.g., weak emission lines)
+maskbits CLASS   2   KEWLEY_AGN    # AGN based on the Kewley et al. classification curve
+maskbits CLASS   3   KEWLEY_SF     # SF based on the Kewley et al. classification curve
+maskbits CLASS   4   KAUFFMANN_AGN # AGN based on the Kauffmann et al. classification curve
+maskbits CLASS   5   KAUFFMANN_SF  # SF based on the Kauffmann et al. classification curve
+maskbits CLASS   6   NII_AGN       # AGN based on the [NII]/Ha ratio
+maskbits CLASS   7   NII_SF        # SF based on the [NII]/Ha ratio

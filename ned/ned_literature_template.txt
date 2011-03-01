@@ -1,0 +1,37 @@
+# J. Moustakas, 2003 June 5, U of A
+#
+#                      Set Output File Name and Format
+
+# Supply an output file name of your choosing. 
+
+OUTPUT_FILENAME  literature.ned
+OUTPUT_OPTION    compact
+COMPRESS_OPTION  none
+
+INPUT_COORDINATE_SYSTEM      equatorial
+OUTPUT_COORDINATE_SYSTEM     equatorial
+INPUT_EQUINOX                J2000.0
+OUTPUT_EQUINOX               J2000.0
+
+EXTENDED_NAME_SEARCH         no
+OUTPUT_SORTED_BY             Distance_to_search_center
+REDSHIFT_VELOCITY            -1000.0
+
+SEARCH_RADIUS                5
+
+# Specify the default range in years (between 1900 and the present)
+#    for the Literature Search.
+
+BEGIN_YEAR                    1900
+END_YEAR                      2100
+IAU_STYLE                     S
+
+# Enter a NED 19-digit reference code to search for objects discussed
+#    in that paper; one complete request per line
+#    (e.g., 1994A&A...281..681S).
+
+FIND_OBJECTS_BY_REFCODE
+
+END_OF_DATA
+
+END_OF_REQUESTS

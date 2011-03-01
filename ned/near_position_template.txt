@@ -1,0 +1,42 @@
+# J. Moustakas, 2002 May 23, U of A
+#
+#                      Set Output File Name and Format
+
+OUTPUT_FILENAME    tully.ned
+OUTPUT_OPTION    compact
+COMPRESS_OPTION    none
+
+INPUT_COORDINATE_SYSTEM      equatorial
+OUTPUT_COORDINATE_SYSTEM     equatorial
+
+INPUT_EQUINOX                J2000.0
+OUTPUT_EQUINOX               J2000.0
+
+EXTENDED_NAME_SEARCH          no
+OUTPUT_SORTED_BY      Distance_to_search_center
+REDSHIFT_VELOCITY     -1000.0
+
+SEARCH_RADIUS                  1
+BEGIN_YEAR                    1900
+END_YEAR                      2002
+IAU_STYLE                    S
+
+FIND_OBJECTS_NEAR_POSITION
+
+REDSHIFT   Unconstrained
+UNIT    z
+
+INCLUDE
+# INCLUDE ALL
+  Galaxies X  Clusters _   Supernovae _  QSO _  AbsLineSys _  GravLens _
+  Radio _     Infrared _   EmissnLine _  UVExcess _   Xray _  GammaRay _
+END_INCLUDE
+
+EXCLUDE
+  Galaxies _  Clusters X   Supernovae X  QSO X  AbsLineSys X  GravLens X
+  Radio X     Infrared X   EmissnLine X  UVExcess X   Xray X  GammaRay X
+END_EXCLUDE
+
+END_OF_DATA
+
+END_OF_REQUESTS

@@ -1,0 +1,21 @@
+J. Moustakas, 2004 July 4, U of A
+
+The following routines have been modified from the original
+FORTRAN program FIVEL.F written by de Robertis, Dufour, & Hunt
+and obtained from Don Garnett on 4/2004.  Major changes include
+(1) removal of common blocks; (2) implicit none adopted; 
+(3) double precision and long integers used throughout; 
+(4) complete documentation; (5) input/output generalized.
+
+	im_fivel
+	im_input
+	im_output
+	im_pari
+	im_parii
+	im_solve
+	im_temden
+
+The following routines are modified versions of the im_* routines
+listed above.  They have been altered (primarily in terms of I/O)
+to be used with the call_external function in IM_FIVEL.PRO.
+

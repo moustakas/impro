@@ -1,0 +1,14 @@
+SNR		20.0		# desired S/N
+LAMBDA		4200.0		# wavelength of observation [Angstrom]
+LUNARAGE	0		# lunar age of observation [days]
+DIAMETER	650.0		# mirror diameter [cm]
+EPSILON		0.3		# efficiency (including telescope+instrument+slit losses)
+ETA		0.9		# detector quantum efficiency [electron/photon]
+DLAMBDA		0.75		# unbinned spectral dispersion [Angstrom/pixel]
+RDNOISE		2.6		# detector read noise [e]
+DARKRATE	0.004		# detector dark current rate [electron/s/pixel]
+PIXSIZE		0.3		# unbinned spatial pixel scale [arcsec/pixel]
+NBINY		2		# spatial binning factor
+NBINX		1		# spectral binning factor
+SLIT		1.0		# slit width [arcsec]
+APERTURE	3.0		# extraction aperture [arcsec]

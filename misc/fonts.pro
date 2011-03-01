@@ -1,0 +1,7 @@
+HELB24 ='*helvetica-bold-r*240*'
+HELB24I='-adobe-helvetica-bold-i-normal--24-240-75-75-p-104-iso8859-1'
+HELB18 ='*helvetica-bold-r*180*'
+HELB18I='-adobe-helvetica-bold-o-normal--18-180-75-75-p-104-iso8859-1'
+HELB14 ='*helvetica-bold-r*140*'
+HELB14I='-adobe-helvetica-bold-i-normal--14-140-75-75-p-104-iso8859-1'
+HEL14 ='*helvetica-medium-r*140*'

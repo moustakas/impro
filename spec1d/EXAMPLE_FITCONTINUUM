@@ -1,0 +1,15 @@
+jm03feb21uofa
+
+Example to fit a stellar continuum:
+-----------------------------------
+
+
+infile = 'g191b2b_drift_030.ms.fits'
+data = rd1dspec(infile,/silent)
+wave = data.wave
+flux = inormalize(data.spec,wave,/max)
+
+continuum = ifitcontinuum(wave,flux,/mask,/doplot,method=1,bsorder=15)
+continuum = ifitcontinuum(wave,flux,/mask,/doplot,method=2,nsmooth=2)
+continuum = ifitcontinuum(wave,flux,/mask,/doplot,method=3,npoly=5)
+continuum = ifitcontinuum(wave,flux,/mask,/doplot,method=4,ncoeff=4)

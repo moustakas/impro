@@ -1,0 +1,119 @@
+README_ISEDFIT
+
+John Moustakas
+New York University
+john.moustakas@nyu.edu
+
+2006-Mar - original code distributed
+2006-Jul - new version
+2007-Mar - new version
+2007-Jun - new version
+
+You will need the goddard, idlutils, idlspec2d, mpfit, red, and
+kcorrect libraries, in addition to my own IDL library, impro, which
+you should grab using subversion.  Decide where you want to put impro
+(e.g., ${HOME}/idl), and then do:
+
+  cd ${HOME}/idl
+  svn co http://howdy.physics.nyu.edu/svn/ioannis/trunk/idl/impro
+
+Add an IMPRO_DIR environment variable to your .cshrc.  For example,
+
+  setenv IMPRO_DIR ${HOME}/idl/impro
+
+Next you will need the star-formation history grid I have generated
+using the Bruzual & Charlot (2003) models (BC03).  (Note that the grid
+is more than 5GB!)  You can generate your own grid using
+WRITE_SFH_BASE_MODELS in the unlikely event that there are tau-values
+and/or stellar metallicities not covered by my grid.  Contact me with
+questions.  First create a directory called "bc03_sfhgrid" somewhere and
+add the appropriate environment variable to your .cshrc:
+
+  setenv BC03_SFHGRID_DIR ${HOME}/bc03_sfhgrid
+
+Move into that directory, run the following commands, and unpack all
+the tarballs into ${BC03_SFHGRID_DIR}
+
+  wget http://sdss.physics.nyu.edu/ioannis/research/isedfit/sfhgrid_infofiles.tar.gz
+  wget http://sdss.physics.nyu.edu/ioannis/research/isedfit/tau_salp.tar.gz
+  wget http://sdss.physics.nyu.edu/ioannis/research/isedfit/tau_chab.tar.gz
+  wget http://sdss.physics.nyu.edu/ioannis/research/isedfit/burst_salp.tar.gz
+  wget http://sdss.physics.nyu.edu/ioannis/research/isedfit/burst_chab.tar.gz
+
+Be sure the filters you are interested in are properly loaded into
+your kcorrect installation (otherwise, DOOM!).  Next, run
+ISEDFIT_MODELS on the grid of redshift, star-formation history, age,
+and stellar metallicity values that you are interested in.  I
+recommend tau-values that are spaced quasi-logarithmically, and using
+all the available AGES provided by BC03, bounded by a reasonable lower
+age, and the age of the universe.  Also select a prefix and path where
+you want to work.  For example,
+
+  IDL> datapath = '/home/ioannis/mass/'
+  IDL> modelsprefix = 'mymodels_BRIJKs'
+  IDL> filterlist = ['bessell_B.par','bessell_R.par','bessell_I.par','twomass_J.par','twomass_Ks.par']
+  IDL> tau = [0.0,0.5,1.0,1.5,2.0,2.5,3.0,4.0,5.0,8.0,10.0,13.0,16.0,20.0]
+  IDL> isedfit_models, filterlist, datapath=datapath, modelsprefix=modelsprefix, $
+  IDL>   minredshift=0.1D, maxredshift=4.0D, dredshift=0.1D, Zstellar=[2L,4L], $
+  IDL>   tau=tau, minage=0.05D, maxage=13.5D, /allages, debug=debug, /write
+
+Everything specified above has reasonable defaults, so your call to
+ISEDFIT_MODELS doesn't have to be that long.  Note that
+ZSTELLAR=[2L,4L] corresponds to Z=0.004 (SMC) and Z=0.02 (solar)
+metallicity.  See the ISEDFIT_MODELS documentation for details on what
+all the parameters mean.  Also, note that it helps to specify the list
+of filters used to generate the model photometry in "modelsprefix",
+for easy future reference.
+
+Next, convert your observed photometry to "maggies" (for details see
+http://cosmo.nyu.edu/~mb144/kcorrect).  Don't forget to convert your
+Vega magnitudes to AB (see IM_FILTERSPECS)!  You will also need
+inverse variances for each object, and a redshift, for example,
+"zobj".  You can do the fitting with a subset of the filters used in
+ISEDFIT_MODELS, in which case "isedfitprefix" will be different from
+"modelsprefix" (see the example below).  Also, you can optionally pass
+a galaxy name to ISEDFIT, to be stored in the output data structure.
+Thus,
+
+  IDL> maggies = read_my_maggies(maggies_invvar=maggies_invvar)
+  IDL> zobj = read_my_redshifts(galaxy=galaxy)
+  IDL> thesefilters = filterlist[0L:2L]
+  IDL> isedfitprefix = 'mymodels_BRI'
+
+Now you're ready to do the fitting, which can optionally include a
+maximally old component (see ISEDFIT for details).  Choosing the
+Calzetti (2000) attenuation curve (see ISEDFIT for more options), we
+have
+
+  IDL> isedfit, maggies, maggies_invvar, zobj, result, result_info, $
+  IDL>   filterlist=thesefilters, datapath=datapath, modelsprefix=modelsprefix, $
+  IDL>   isedfitprefix=isedfitprefix, galaxy=galaxy, nmonte=nmonte, nminphot=nminphot, $
+  IDL>   maxold=maxold, /calzetti, /write
+
+Once the fitting is done you can generate a postscript
+quality-assurace plot thus
+
+  IDL> isedfit_qaplot, datapath=datapath, isedfitprefix=isedfitprefix, $
+  IDL>   maxold=maxold, /postscript
+
+(Or to just thumb through the fit to each object set POSTSCRIPT=0).
+
+Finally, a routine has been written that takes the best-fitting model
+and measures a large number of useful quantities, including
+k-corrections, rest-frame magnitudes, spectral indices, etc.
+Optionally, you can specify the rest-frame magnitudes of interest by
+creating a simple ASCII file that specifies the filter, the bandpass
+name, and a Boolean flag indicating whether the output magnitudes
+should be converted to Vega or not.  For example, the file
+"restfilterfile.dat" might look like this:
+
+   bessell_B.par B       1
+   bessell_V.par V       1
+   sdss_g0.par   sdss_g  0
+   twomass_J.par J       1
+
+And then (STILL IN PROGRESS!!)
+
+  IDL> isedfit_measure, measure, datapath=datapath, restfilterfile=restfilterfile, $
+  IDL>   isedfitprefix=isedfitprefix, maxold=maxold, /write
+

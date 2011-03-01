@@ -1,0 +1,46 @@
+J. Moustakas
+2005 Nov 18, U of A
+
+Construct a Pegase grid according to a range of star-formation
+histories and metallicities.  Assume a Salpeter IMF throughout. 
+
+Note: removed "0" from ages.dat.
+
+##########################
+Construct the SSPs
+##########################
+
+First construct the SSPs for the Salpeter IMF (0.1-100) and the
+default stellar evolutionary parameters.
+
+##########################
+Infall models
+##########################
+
+The following describes the file called "infall_salp_scenarios.input".
+For simplicity I only describe the first metallicity.
+
+infall_salp_scenarios.output             # scenarios.f output file name
+infall_salp_SSPs.dat                     # SSPs pre-computed by SSPs.f
+0.05                                     # default binary fraction
+infall_salp_eta1.0_tinfall1.0_tau4.0.dat # spectra.f output file name
+0.0                                      # metallicity of the ISM at t=0
+y                                        # infall - yes
+1000.0                                   # infall time scale [Myr]
+0.0                                      # metallicity of the infalling gas
+10                                       # star formation scenario [defined in spectra.f]
+2                                        # number of free parameters in the SFR law
+4000.0                                   # characteristic time for star formation [tau or p1]
+1.0                                      # star formation efficiency factor [p2]
+y                                        # consistent evolution of the stellar metallicity
+0.0                                      # mass fraction of substellar objects formed
+n                                        # no galactic winds
+y                                        # include nebular emission
+2                                        # inclination-averaged extinction for a disk geometry
+.
+.
+.
+end
+
+% /bin/rm infall_salp_scenarios.output ; ./scenarios < infall_salp_scenarios.input
+% /bin/rm infall_salp_eta?.?_tinfall?.?_tau?.?.dat ; echo "infall_salp_scenarios.output" | ./spectra

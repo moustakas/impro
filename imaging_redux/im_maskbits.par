@@ -1,0 +1,14 @@
+typedef struct {
+  char flag[20];  # Flag name
+  int bit;        # Bit number, 0-indexed (0 to 31)
+  char label[20]; # Bit label
+} maskbits;
+
+maskbits PIXMASK      0   NODATA          # no data (e.g., vignetted region)
+maskbits PIXMASK      1   BAD_COLUMN      # bad column
+maskbits PIXMASK      2   BAD_PIXEL       # miscellaneous bad pixel
+maskbits PIXMASK      3   FLATFIELD_0.75  # pixel has flatfield value <= 0.75
+maskbits PIXMASK      4   SATURATED       # saturated pixel value
+maskbits PIXMASK      5   CR_REJECT       # rejected as a cosmic ray
+maskbits PIXMASK      6   SATTRAIL        # masked satellite trail
+maskbits PIXMASK      7   BRIGHT_HALO     # halo from a bright star
