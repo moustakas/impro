@@ -98,7 +98,8 @@ function im_convolve_sfh, ssp, sfh=sfh, time=time, mstar=mstar, $
     for ii = 1L, nsfh-1 do begin
 ;      age = range(min(time),time[ii],nthistime[ii],/log)
 ;      thistime = reverse(time[ii]-(age-min(age)))
-       age = [0D,range(min(time),time[ii],nthistime[ii]-1,/log)]
+       age = [0D,range(min(time),time[ii],nthistime[ii]-1)] ; linear!
+;      age = [0D,range(min(time),time[ii],nthistime[ii]-1,/log)]
        thistime = abs(reverse(time[ii]-(age-min(age)))) ; avoid negative roundoff
 
        iindx = findex(time,thistime)

@@ -33,19 +33,19 @@ pro test_im_convolve_sfh
     
 ; --------------------------------------------------
 ; test - compare against BC03 and make a QAplot
-    infosfh = {tau: 5.0, nburst: 0}
+    infosfh = {tau: 0.5, nburst: 0}
     time = ssp.age/1D9
     sfh = isedfit_reconstruct_sfh(infosfh,age=time)
     outflux = im_convolve_sfh(ssp,sfh=sfh,time=time,$
       mstar=essp.m_,cspmstar=cspmstar)
 
-    tau = im_read_bc03(isedpath='~/',isedfile='tau5test.ised',$
+    tau = im_read_bc03(isedpath='~/',isedfile='tau05.ised',$
       minwave=minwave,maxwave=maxwave,bc03_extras=etau)
     tauflux = interpolate(tau.flux,findex(tau.age,time*1D9),/grid)
 
     niceprint, cspmstar, interpolate(etau.m_,findex(tau.age,time*1D9))
 
-    psfile = '~/test_convolve_sfh.ps'
+    psfile = '~/test_convolve_sfh2.ps'
     im_plotconfig, 6, pos, psfile=psfile
     for ii = 0, n_elements(time)-1 do begin
        djs_plot, ssp.wave, tauflux[*,ii], xsty=3, ysty=3, position=pos[*,0], $
