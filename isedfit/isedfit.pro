@@ -236,7 +236,8 @@ pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfi
 
 ; loop on each galaxy chunk    
     t1 = systime(1)
-    for gchunk = 0L, ngalchunk-1L do begin
+    for gchunk = 49, ngalchunk-1L do begin
+;   for gchunk = 0L, ngalchunk-1L do begin
        g1 = gchunk*galchunksize
        g2 = ((gchunk*galchunksize+galchunksize)<ngal)-1L
        gnthese = g2-g1+1L

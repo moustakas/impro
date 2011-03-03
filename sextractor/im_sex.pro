@@ -67,8 +67,8 @@ pro im_sex, imagelist, config, detect_imagelist=detect_imagelist1, $
        return
     endif
 
-    if (n_elements(detect_imagelist1) ne 0L) then begin ; double-image mode
-       if (n_elements(detect_imagelist1) eq 1L) then $
+    if (n_elements(detect_imagelist1) ne 0) then begin ; double-image mode
+       if (n_elements(detect_imagelist1) eq 1) then $
          detect_imagelist = replicate(detect_imagelist1,nimage) else begin
           if (n_elements(detect_imagelist1) ne nimage) then begin
              splog, 'Dimensions of IMAGELIST and DETECT_IMAGELIST do not match'
