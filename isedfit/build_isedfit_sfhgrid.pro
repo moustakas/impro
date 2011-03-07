@@ -189,6 +189,8 @@ pro build_grid, montegrid, chunkinfo, ssppath=ssppath, $
        ubracket_sspfile = bracket_sspfile[*,uindx]
        nssp = n_elements(uindx)
 
+       if (n_elements(tbc) eq 0) then tbc = 0.01D9 ; dust dispersal timescale [10 Myr]
+
        for issp = 0, nssp-1 do begin ; loop on SSP metallicity
           indx1 = where(ubracket_sspfile[0,issp] eq bracket_sspfile[0,*],nindx1)
           outinfo[indx1].modelindx = indx1
@@ -200,9 +202,9 @@ pro build_grid, montegrid, chunkinfo, ssppath=ssppath, $
           if (issp eq 0L) then outinfo = struct_addtags(temporary(outinfo),$
             replicate({mstar: fltarr(params.nage), wave: float(sspfits[0].wave), $
             flux: fltarr(npix,params.nage)},nthese))
-;         kl = k_lambda(outinfo[0].wave,charlot=charlot,odonnell=odonnell,$
-;           calzetti=calzetti,smc=smc,/silent) ; attenuation curve
-;         klam = rebin(reform(kl,npix,1),npix,params.nage) ; [npix,nage]
+          kl = k_lambda(outinfo[0].wave,charlot=charlot,odonnell=odonnell,$
+            calzetti=calzetti,smc=smc,/silent) ; attenuation curve
+          klam = rebin(reform(kl,npix,1),npix,n_elements(sspfits[0].age)) ; [npix,nage]
           
 ; convolve each model with the specified SFH; tau=0 and no bursts is a
 ; special case
@@ -211,29 +213,32 @@ pro build_grid, montegrid, chunkinfo, ssppath=ssppath, $
                'Model=",I4.4,"/",I4.4,"   ",A5,$)', ichunk+1, nchunk, issp+1, $
                nssp, jj+1, nindx1, string(13b)
 
-scale nsamp with tau like in the fsps code             
-             
-             
-             if (outinfo[indx1[jj]].tau eq 0.0) and (outinfo[indx1[jj]].nburst eq 0) then begin
-                outage = outinfo[indx1[jj]].age
-                outflux = interpolate(sspfits[jj].flux,lindgen(npix),findex(sspfits[jj].age,outage*1D9),/grid)
-                outmstar = interpolate(sspfits[jj].mstar,findex(sspfits[jj].age,outage*1D9))
+; attenuate with dust
+             if (outinfo[indx1[jj]].ebv gt 0.0) then begin
+                ebv = klam*0.0+outinfo[indx1[jj]].ebv
+                if keyword_set(charlot) then begin
+                   old = where(sspfits[jj].age gt tbc,nold)
+                   if (nold ne 0) then ebv[*,old] = outinfo[indx1[jj]].mu*ebv[*,old]
+                endif
+                sspfits[jj].flux = sspfits[jj].flux*10.0^(-0.4*klam*ebv) ; attenuate
+             endif 
+
+; do the convolution             
+             outage = build_isedfit_agegrid(outinfo[indx1[jj]],inage=outinfo[indx1[jj]].age)
+             outsfr = isedfit_reconstruct_sfh(outinfo[indx1[jj]],age=outage,$
+               mgalaxy=outmgal,aburst=aburst,mburst=mburst)
+             if (outinfo[indx1[jj]].tau eq 0.0) and (outinfo[indx1[jj]].nburst eq 0) then begin ; special case
+                ageindx = findex(sspfits[jj].age,outage*1D9)
+                outflux = interpolate(sspfits[jj].flux,lindgen(npix),ageindx,/grid)
+                outmstar = interpolate(sspfits[jj].mstar,ageindx)
                 outmgal = outmstar*0+1
              endif else begin
-                outage = build_isedfit_agegrid(outinfo[indx1[jj]],inage=outinfo[indx1[jj]].age)
-                if keyword_set(debug) then begin
-                   outsfr = isedfit_reconstruct_sfh(outinfo[indx1[jj]],age=outage,$
-                     mgalaxy=outmgal,aburst=aburst,mburst=mburst)
-                endif else outsfr = isedfit_reconstruct_sfh(outinfo[indx1[jj]],age=outage)
-                outflux = isedfit_convolve_sfh(sspfits[jj],info=outinfo[indx1[jj]],$
-                  sfh=outsfr,time=outage,mstar=sspfits[jj].mstar,cspmstar=outmstar,$
-                  tbc=tbc,charlot=charlot,odonnell=odonnell,calzetti=calzetti,smc=smc)
+                outflux = isedfit_convolve_sfh(sspfits[jj],info=outinfo[indx1[jj]],time=outage,$
+                  mstar=sspfits[jj].mstar,cspmstar=outmstar,nsamp=1.0)
              endelse
 
 ; divide by the stellar mass
              outflux = outflux/rebin(reform(outmstar,1,params.nage),npix,params.nage)
-;            if (outinfo[indx1[jj]].ebv gt 0.0) then $
-;              outflux = outflux*10.0^(-0.4*klam*outinfo[indx1[jj]].ebv)
              inf = where(finite(outflux) eq 0)
              if (inf[0] ne -1) then message, 'Bad'
              
