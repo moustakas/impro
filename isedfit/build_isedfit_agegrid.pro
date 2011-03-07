@@ -51,13 +51,16 @@
 ;-
 
 function build_isedfit_agegrid, info, inage=inage, nage=nage, $
-  minage=minage, maxage=maxage, lookback=lookback, debug=debug
+  minage=minage, maxage=maxage, lookback=lookback, linear=linear, $
+  debug=debug
 
+    if keyword_set(linear) then log = 0 else log = 1
+    
     if (n_elements(inage) eq 0L) then begin
        if (n_elements(minage) eq 0) then minage = 0.05D
        if (n_elements(maxage) eq 0) then maxage = 13.0D
        if (n_elements(nage) eq 0) then nage = 100
-       inage = range(minage,maxage,nage,/log)
+       inage = range(minage,maxage,nage,log=log)
        if keyword_set(lookback) then inage = $
          reverse(maxage-(inage-min(inage)))
     endif
@@ -140,104 +143,3 @@ function build_isedfit_agegrid, info, inage=inage, nage=nage, $
     
 return, outage
 end
-
-;   if ((max(tb+dtb)-maxage) gt 1D-4) then begin
-;      maxage = max(tb+dtb)+pad
-;      splog, 'Warning: TB+DTB exceeds MAXAGE! ', maxage
-;      inage = range(minage,maxage,nage,/log)
-;      if keyword_set(lookback) then inage = $
-;        reverse(maxage-(inage-min(inage)))
-;   endif
-;
-;; compute the number of pixels to assign between bursts based on the
-;; fractional time; require at least *five* pixels between bursts
-;    tb1 = fltarr(2*nb+1)-1
-;    tb2 = tb1
-;    tb1[0] = minage
-;    tb2[0] = tb[0]-pad
-;    cc = 0
-;    for ii = 1, 2*nb do begin
-;       if odd(ii) then begin
-;          tb1[ii] = tb[cc]
-;          tb2[ii] = tb[cc]+dtb[cc]
-;       endif else begin
-;; check for overlapping bursts
-;          if ((tb[cc]+dtb[cc]) lt tb[cc+1]) then $
-;            tb1[ii] = tb[cc]+dtb[cc]+pad
-;          if (ii eq 2*nb) then tb2[ii] = maxage else tb2[ii] = tb[cc+1]-pad
-;          cc++
-;       endelse
-;    endfor
-;
-;    tb1 = [minage,tb,tb+dtb+pad]
-;    tb2 = [tb-pad,tb+dtb,maxage]
-;;   tb1 = tb1[sort(tb1)]
-;;   tb2 = tb2[sort(tb2)]
-;    npix = round(nage*(tb2-tb1)/(maxage-minage))>3
-;    
-;; deal with "extra" (or too few) pixel(s)
-;    diff = long(nage-total(npix,/double))
-;    if (abs(diff) gt 0) then junk = max(npix,this) else $
-;      junk = min(npix,this)
-;    npix[this] = npix[this] + diff
-;    pix = [0L,long(total(npix,/cumu))] ; bin boundaries
-;;   niceprint, tb1, tb2, npix
-;
-;    neg = where(npix le 0)
-;    if (neg[0] ne -1) then message, 'This is bad'
-;    
-;; build the output time grid; note that we ensure integer pixels
-;; corresponding to the beginning and end of each burst
-;    outage = inage*0D
-;    for jj = 0, 2*nb do begin
-;       thisage = range(tb1[jj],tb2[jj],npix[jj],/log) ; log-spacing
-;       if keyword_set(lookback) then outage[pix[jj]:pix[jj+1]-1] = $
-;         reverse(max(thisage)-(thisage-min(thisage))) else $
-;           outage[pix[jj]:pix[jj+1]-1] = thisage    
-;    endfor
-;    outage = outage[sort(outage)] ; resort the output
-;;   niceprint, findex(outage,tb), findex(outage,tb+dtb)
-
-
-;;
-;;
-;;       burstage = dblarr(nsamp*nb)
-;;       for ii = 0, nb-1 do burstage[ii*nsamp:nsamp*(ii+1)-1] = $
-;;         [reverse(tb[ii]-dtb[ii]*fact),tb[ii],tb[ii]+dtb[ii]*fact]
-;;       exclude = where((burstage lt minage) or (burstage ge maxage),$
-;;         nexclude,comp=good,ncomp=ngood)
-;;
-;;       if (ngood eq 0) then return, inage ; NGOOD=0 means the burst has not happened yet
-;;       burstage = burstage[good]
-;;
-;;; throw out ages from the old (input) age vector, unless we throw out
-;;; more than we're adding (usually true for a very early burst) 
-;;       keep = where((inage lt min(burstage)) or (inage gt max(burstage)),nkeep)
-;;       if (nkeep gt 0) and (nkeep lt ngood) then outage = [inage[keep],burstage] else $
-;;         outage = [inage,burstage]
-;;       outage = outage[uniq(outage,sort(outage))]
-;;;      outage = outage[sort(outage)]
-;;       isburst = fix(outage*0)
-;;       for bb = 0, n_elements(outage)-1 do isburst[bb] = total(outage[bb] eq burstage) ge 1
-;;    
-;;; at this point our age vector contains (NSAMP*NB)<NGOOD too many
-;;; ages, so remove the "extra" ages from periods when the "galaxy"
-;;; isn't bursting, but do not touch MINAGE and MAXAGE; override
-;;; truncated bursts, if any 
-;;       junk = isedfit_reconstruct_sfh(info,age=outage,$
-;;         sfhburst=sfhburst,/notruncate)
-;;       sfhburst = sfhburst/max(sfhburst)
-;;       donottouch = (outage eq minage) or (outage eq maxage) or (isburst eq 1)
-;;       calm = where((sfhburst lt 0.01) and (donottouch eq 0),ncalm,$
-;;         comp=bursty,ncomp=nbursty)
-;;       if (ngood gt ncalm) then message, 'Your star formation history is too bursty!'
-;;
-;;      djs_plot, outage, sfhburst, psym=-6, /xlog, ysty=3, xsty=3, xr=tb[0]+[-2,2]
-;;      djs_oplot, outage[calm], sfhburst[calm], psym=6, color='cyan'
-;;
-;;       keep = random_indices(ncalm,ncalm-ngood)
-;;       outage = [outage[calm[keep]],outage[bursty]]
-;;       outage = outage[sort(outage)]
-;;    endif else outage = inage
-;;    if (n_elements(outage) ne nage) then message, 'Bad bad bad!'
-;;    

@@ -68,7 +68,7 @@
 function isedfit_convolve_sfh, ssp, infosfh=infosfh, time=time, $
   sfh=sfh, nsfh=nsfh, mintime=mintime, maxtime=maxtime, mstar=mstar, $
   cspmstar=cspmstar, nsamp=nsamp, tbc=tbc, charlot=charlot, $
-  odonnell=odonnell, calzetti=calzetti, smc=smc, nodust=nodust
+  odonnell=odonnell, calzetti=calzetti, smc=smc
 
     if (n_elements(ssp) eq 0L) then begin
        doc_library, 'isedfit_convolve_sfh'
@@ -141,9 +141,9 @@ function isedfit_convolve_sfh, ssp, infosfh=infosfh, time=time, $
 ;   t0 = systime(1)
     for ii = 1L, nsfh-1 do begin
        age = [0D,build_isedfit_agegrid(infosfh,minage=min(time),$
-         maxage=time[ii],nage=nthistime[ii]-1)]
+         maxage=time[ii],nage=nthistime[ii]-1,/linear)] ; linear!
        thistime = abs(reverse(time[ii]-(age-min(age)))) ; avoid negative roundoff
-       
+if ii eq 132 then stop       
        iindx = findex(time,thistime)
        thissfh = interpolate(sfh,iindx) ; [Msun/yr]
 

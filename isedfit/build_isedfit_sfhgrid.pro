@@ -211,6 +211,9 @@ pro build_grid, montegrid, chunkinfo, ssppath=ssppath, $
                'Model=",I4.4,"/",I4.4,"   ",A5,$)', ichunk+1, nchunk, issp+1, $
                nssp, jj+1, nindx1, string(13b)
 
+scale nsamp with tau like in the fsps code             
+             
+             
              if (outinfo[indx1[jj]].tau eq 0.0) and (outinfo[indx1[jj]].nburst eq 0) then begin
                 outage = outinfo[indx1[jj]].age
                 outflux = interpolate(sspfits[jj].flux,lindgen(npix),findex(sspfits[jj].age,outage*1D9),/grid)
@@ -224,8 +227,7 @@ pro build_grid, montegrid, chunkinfo, ssppath=ssppath, $
                 endif else outsfr = isedfit_reconstruct_sfh(outinfo[indx1[jj]],age=outage)
                 outflux = isedfit_convolve_sfh(sspfits[jj],info=outinfo[indx1[jj]],$
                   sfh=outsfr,time=outage,mstar=sspfits[jj].mstar,cspmstar=outmstar,$
-                  tbc=tbc,charlot=charlot,odonnell=odonnell,calzetti=calzetti,smc=smc,$
-                  nodust=nodust)
+                  tbc=tbc,charlot=charlot,odonnell=odonnell,calzetti=calzetti,smc=smc)
              endelse
 
 ; divide by the stellar mass
