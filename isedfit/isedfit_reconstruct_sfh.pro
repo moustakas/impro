@@ -41,11 +41,15 @@ function isedfit_reconstruct_sfh, info, age=age, mtau=mtau, $
        mburst = dblarr(nb)
        for ib = 0, nb-1 do begin
           if (info.tau eq 0.0) then $
-            aburst[ib] = fburst[ib]*mtau/(sqrt(2.0*!pi)*dtburst[ib]*1D9) else $
-              aburst[ib] = fburst[ib]*mtau*(1.0-exp(-tburst[ib]/info.tau))/$
-            (sqrt(2.0*!pi)*dtburst[ib]*1D9)
+            aburst[ib] = fburst[ib]*mtau/(dtburst[ib]*1D9) else $
+              aburst[ib] = fburst[ib]*mtau*(1.0-exp(-tburst[ib]/info.tau))/(dtburst[ib]*1D9)
+;         if (info.tau eq 0.0) then $
+;           aburst[ib] = fburst[ib]*mtau/(sqrt(2.0*!pi)*dtburst[ib]*1D9) else $
+;             aburst[ib] = fburst[ib]*mtau*(1.0-exp(-tburst[ib]/info.tau))/$
+;           (sqrt(2.0*!pi)*dtburst[ib]*1D9)
 
-          sfhburst1[*,ib] = aburst[ib]*exp(-0.5*((age-tburst[ib])/dtburst[ib])^2) ; [Msun/yr]
+          sfhburst1[*,ib] = aburst[ib]*exp(-0.5*((age-tburst[ib])/dtburst[ib])^2)/sqrt(2.0*!pi) ; [Msun/yr]
+;         sfhburst1[*,ib] = aburst[ib]*exp(-0.5*((age-tburst[ib])/dtburst[ib])^2) ; [Msun/yr]
           if arg_present(mburst) then mburst[ib] = im_integral(age*1D9,sfhburst1[*,ib]) ; [Msun]
 ;         mburst[ib] = aburst[ib]*sqrt(2.0*!pi)*dtburst[ib]*1D9 ; [Msun]
        endfor 

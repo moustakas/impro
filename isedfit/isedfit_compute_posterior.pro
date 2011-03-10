@@ -105,76 +105,78 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
 
 ; get Monte Carlo draws from the posterior distributions of each
 ; parameter
-       post = prior*exp(-0.5D*(galgrid.chi2-min(galgrid.chi2)))
-       if (total(post,/double) eq 0.0) then begin
-          splog, 'Chi^2 value too large for object '+strtrim(igal,2)
-          continue
-       endif
-       post = post/total(post,/double)
-       allow = where(post gt 0.0,nallow)
+       if (min(galgrid.chi2) lt 0.9D6) then begin
+          post = prior*exp(-0.5D*(galgrid.chi2-min(galgrid.chi2)))
+          if (total(post,/double) eq 0.0) then begin
+             splog, 'Chi^2 value too large for object '+strtrim(igal,2)
+             continue
+          endif
+          post = post/total(post,/double)
+          allow = where(post gt 0.0,nallow)
 
 ; need to pad with zero probability because we're using LONG()
-       these = long(interpolate(lindgen(nallow+1),findex([0D,$
-         total(post[allow],/cumu,/double)],randomu(seed,ndraw))))
-       isedfit_post[igal].draws = allow[these]
-       isedfit_post[igal].mass = galgrid[allow[these]].mass+randomn(seed,ndraw)*$
-         galgrid[allow[these]].mass_err
+          these = long(interpolate(lindgen(nallow+1),findex([0D,$
+            total(post[allow],/cumu,/double)],randomu(seed,ndraw))))
+          isedfit_post[igal].draws = allow[these]
+          isedfit_post[igal].mass = galgrid[allow[these]].mass+randomn(seed,ndraw)*$
+            galgrid[allow[these]].mass_err
 
 ;; no need to store these distributions as we can easily reconstruct
 ;; them from the parent MONTEGRIDS       
-;       isedfit_post[igal].Z      = bigZ[allow[these]]
-;       isedfit_post[igal].tau    = bigtau[allow[these]]
-;       isedfit_post[igal].age    = bigage[allow[these]]
-;       isedfit_post[igal].ebv    = bigebv[allow[these]]
-;       isedfit_post[igal].mu     = bigmu[allow[these]]
-;       isedfit_post[igal].b100   = bigb100[allow[these]]
-;       isedfit_post[igal].sfr    = 10.0^isedfit_post[igal].mass*bigsfr[allow[these]]
-;       isedfit_post[igal].sfr100 = 10.0^isedfit_post[igal].mass*bigsfr100[allow[these]]
+;         isedfit_post[igal].Z      = bigZ[allow[these]]
+;         isedfit_post[igal].tau    = bigtau[allow[these]]
+;         isedfit_post[igal].age    = bigage[allow[these]]
+;         isedfit_post[igal].ebv    = bigebv[allow[these]]
+;         isedfit_post[igal].mu     = bigmu[allow[these]]
+;         isedfit_post[igal].b100   = bigb100[allow[these]]
+;         isedfit_post[igal].sfr    = 10.0^isedfit_post[igal].mass*bigsfr[allow[these]]
+;         isedfit_post[igal].sfr100 = 10.0^isedfit_post[igal].mass*bigsfr100[allow[these]]
 
-       isedfit[igal] = isedfit_packit(isedfit[igal],isedfit_post[igal].mass,type='mass')
-       isedfit[igal] = isedfit_packit(isedfit[igal],bigage[allow[these]],type='age')
-       isedfit[igal] = isedfit_packit(isedfit[igal],bigtau[allow[these]],type='tau')
-       isedfit[igal] = isedfit_packit(isedfit[igal],bigZ[allow[these]],type='Z')
-       isedfit[igal] = isedfit_packit(isedfit[igal],bigebv[allow[these]],type='ebv')
-       isedfit[igal] = isedfit_packit(isedfit[igal],bigmu[allow[these]],type='mu')
-       isedfit[igal] = isedfit_packit(isedfit[igal],bigb100[allow[these]],type='b100')
-       isedfit[igal] = isedfit_packit(isedfit[igal],10.0^isedfit_post[igal].mass*$
-         bigsfr[allow[these]],type='sfr')
-       isedfit[igal] = isedfit_packit(isedfit[igal],10.0^isedfit_post[igal].mass*$
-         bigsfr100[allow[these]],type='sfr100')
-
-       neg = where(isedfit_post[igal].mass le 0)
-       if (neg[0] ne -1) then message, 'This is bad'
+          isedfit[igal] = isedfit_packit(isedfit[igal],isedfit_post[igal].mass,type='mass')
+          isedfit[igal] = isedfit_packit(isedfit[igal],bigage[allow[these]],type='age')
+          isedfit[igal] = isedfit_packit(isedfit[igal],bigtau[allow[these]],type='tau')
+          isedfit[igal] = isedfit_packit(isedfit[igal],bigZ[allow[these]],type='Z')
+          isedfit[igal] = isedfit_packit(isedfit[igal],bigebv[allow[these]],type='ebv')
+          isedfit[igal] = isedfit_packit(isedfit[igal],bigmu[allow[these]],type='mu')
+          isedfit[igal] = isedfit_packit(isedfit[igal],bigb100[allow[these]],type='b100')
+          isedfit[igal] = isedfit_packit(isedfit[igal],10.0^isedfit_post[igal].mass*$
+            bigsfr[allow[these]],type='sfr')
+          isedfit[igal] = isedfit_packit(isedfit[igal],10.0^isedfit_post[igal].mass*$
+            bigsfr100[allow[these]],type='sfr100')
+          
+          neg = where(isedfit_post[igal].mass le 0)
+          if (neg[0] ne -1) then message, 'Negative mass!'
        
 ; now compute the maximum likelihood (best-fit) estimates of the
 ; various parameters
-       ml = max(post,mindx)
-       isedfit[igal].chi2 = galgrid[mindx].chi2
-
-       allmindx = array_indices([nage,nmodel],mindx,/dim) ; parse the index
-       isedfit[igal].ageindx = allmindx[0]
-       isedfit[igal].imf = modelgrid[allmindx[1]].imf
-       isedfit[igal].modelindx = modelgrid[allmindx[1]].modelindx
-       isedfit[igal].chunkindx = modelgrid[allmindx[1]].chunkindx
-
-       isedfit[igal].nburst = modelgrid[allmindx[1]].nburst
-       isedfit[igal].tauburst = modelgrid[allmindx[1]].tauburst
-       isedfit[igal].tburst = modelgrid[allmindx[1]].tburst
-       isedfit[igal].dtburst = modelgrid[allmindx[1]].dtburst
-       isedfit[igal].fburst = modelgrid[allmindx[1]].fburst
-
-       isedfit[igal].tau = bigtau[mindx]
-       isedfit[igal].Z = bigZ[mindx]
-       isedfit[igal].ebv = bigebv[mindx]
-       isedfit[igal].mu = bigmu[mindx]
-       isedfit[igal].age = bigage[mindx]
-       isedfit[igal].b100 = bigb100[mindx]
-
-       isedfit[igal].mass = galgrid[mindx].mass
-       isedfit[igal].bestmaggies = galgrid[mindx].bestmaggies
-
-       isedfit[igal].sfr = 10.0^isedfit[igal].mass*bigsfr[mindx]
-       isedfit[igal].sfr100 = 10.0^isedfit[igal].mass*bigsfr100[mindx]
+          ml = max(post,mindx)
+          isedfit[igal].chi2 = galgrid[mindx].chi2
+          
+          allmindx = array_indices([nage,nmodel],mindx,/dim) ; parse the index
+          isedfit[igal].ageindx = allmindx[0]
+          isedfit[igal].imf = modelgrid[allmindx[1]].imf
+          isedfit[igal].modelindx = modelgrid[allmindx[1]].modelindx
+          isedfit[igal].chunkindx = modelgrid[allmindx[1]].chunkindx
+          
+          isedfit[igal].nburst = modelgrid[allmindx[1]].nburst
+          isedfit[igal].tauburst = modelgrid[allmindx[1]].tauburst
+          isedfit[igal].tburst = modelgrid[allmindx[1]].tburst
+          isedfit[igal].dtburst = modelgrid[allmindx[1]].dtburst
+          isedfit[igal].fburst = modelgrid[allmindx[1]].fburst
+          
+          isedfit[igal].tau = bigtau[mindx]
+          isedfit[igal].Z = bigZ[mindx]
+          isedfit[igal].ebv = bigebv[mindx]
+          isedfit[igal].mu = bigmu[mindx]
+          isedfit[igal].age = bigage[mindx]
+          isedfit[igal].b100 = bigb100[mindx]
+          
+          isedfit[igal].mass = galgrid[mindx].mass
+          isedfit[igal].bestmaggies = galgrid[mindx].bestmaggies
+          
+          isedfit[igal].sfr = 10.0^isedfit[igal].mass*bigsfr[mindx]
+          isedfit[igal].sfr100 = 10.0^isedfit[igal].mass*bigsfr100[mindx]
+       endif
     endfor 
 
 return, isedfit

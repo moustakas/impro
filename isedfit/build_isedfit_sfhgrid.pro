@@ -369,17 +369,29 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
 ; formation then replace a random subset of the regular grid with the
 ; appropriate values; TAUMAX gives a star formation history that is
 ; equivalent to continuous star formaion to within 1% at MAXAGE;
-       taumax = -1.0*long(params.maxage/alog(0.99))
-       montegrid.tau = randomu(seed,params.nmonte)*(params.tau[1]-params.tau[0])+params.tau[0]
+;      montegrid.tau = randomu(seed,params.nmonte)*(params.tau[1]-params.tau[0])+params.tau[0]
+;      montegrid.tau = 10^(randomu(seed,params.nmonte)*(alog10(params.tau[1])-$
+;        alog10(params.tau[0]))+alog10(params.tau[0]))
 
-       nreplace = long(median(histogram(montegrid.tau,bin=params.tau[0])))
-       if params.addssp then montegrid[random_indices(params.nmonte,nreplace)].tau = 0.0 
-       if params.addconst then montegrid[random_indices(params.nmonte,nreplace)].tau = taumax
+       if params.flattau then $
+         montegrid.tau = randomu(seed,params.nmonte)*(params.tau[1]-params.tau[0])+params.tau[0] else $
+           montegrid.tau = randomu(seed,params.nmonte,gamma=1.0)*params.tau[1]+params.tau[0]
+;      im_plothist, montegrid.tau, bin=0.02
+
+;      nreplace = long(median(histogram(montegrid.tau,bin=params.tau[0])))
+;      if params.addssp then montegrid[random_indices(params.nmonte,nreplace)].tau = 0.0 
+;      if params.addconst then begin
+;         taumax = -1.0*long(params.maxage/alog(0.99))
+;         montegrid[random_indices(params.nmonte,nreplace)].tau = taumax
+;      endif
 ;      im_plothist, tau<(params.tau[1]*2), bin=params.tau[0]
        
 ; metallicity and age; unfortunately I think we have to loop to sort
        montegrid.Z = randomu(seed,params.nmonte)*(params.Z[1]-params.Z[0])+params.Z[0]
+;      montegrid.age = asinh_random(params.minage,params.maxage,[params.nage,params.nmonte],soft=
 
+       here!!
+       
        montegrid.age = 10^(randomu(seed,params.nage,params.nmonte)*(alog10(params.maxage)-$
          alog10(params.minage))+alog10(params.minage))
        for ii = 0L, params.nmonte-1 do montegrid[ii].age = montegrid[ii].age[sort(montegrid[ii].age)]

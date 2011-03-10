@@ -1,11 +1,15 @@
 # iSEDfit SFH grid parameters
 # 
 
+# See BUILD_ISEDFIT_SFHGRID for how the exponential TAU and EBV
+# distributions are handled.
+
+# int addssp;           # add an SSP (tau=0) model?
+
 typedef struct {
  int sfhgrid;          # grid number
- float tau[2];         # characteristic time for star formation [Gyr]
- int addssp;           # add an SSP (tau=0) model?
- int addconst;         # add a continuous star formation rate model?
+ float tau[2];         # tau interval or exponential distribution parameters [Gyr]
+ int flattau;          # flat TAU prior (default is exponential)?
  float Z[2];           # metallicity interval
  float ebv[2];         # reddening interval or exponential distribution parameters
  int flatebv;          # flat E(B-V) prior (default is exponential)?
@@ -21,10 +25,11 @@ typedef struct {
  double maxage;        # maximum model age [Gyr]
  int nmonte;           # number of Monte Carlo models
 } PARAMS;
-PARAMS  1 {0.5,15.0} 1 0 {0.004 0.05} {0.0 0.15} 0 {0.3 0.2}  -1  -1 {  -1 -1} {  -1  -1}  -1   -1 60 0.05 13.0  800
-PARAMS  2 {0.5,15.0} 1 0 {0.02  0.02} {0.0 0.15} 0 {0.3 0.2}  -1  -1 {  -1 -1} {  -1  -1}  -1   -1 60 0.05 13.0  800
-PARAMS  3 {0.5,15.0} 1 0 {0.004 0.05} { -1   -1} 0 {0.3 0.2}  -1  -1 {  -1 -1} {  -1  -1}  -1   -1 60 0.05 13.0  800
-PARAMS  4 {0.5,15.0} 1 0 {0.004 0.05} {0.0 0.15} 0 {0.3 0.2} 0.5 2.0 {0.01  4} {0.05 0.5}  -1   -1 60 0.05 13.0 1700
-PARAMS  5 {0.5,15.0} 1 0 {0.004 0.05} {0.0 0.15} 0 {0.3 0.2} 0.5 2.0 {0.01  4} {0.03 0.3}  -1   -1 60 0.05 13.0 1700
-PARAMS  6 {0.5,15.0} 1 0 {0.004 0.05} {0.0 0.15} 0 {0.3 0.2} 0.5 2.0 {0.01  4} {0.03 0.3} 1.0 0.05 60 0.05 13.0 1700
-PARAMS  7 {0.5,15.0} 1 0 {0.004 0.05} {0.0  1.0} 1 {0.3 0.2}  -1  -1 {  -1 -1} {  -1  -1}  -1   -1 60 0.05 13.0  800
+PARAMS  1 {0.0,3.0} 0 {0.004 0.05} {0.0 0.15} 0 {0.3 0.2}  -1  -1 {  -1 -1} {  -1  -1}  -1   -1 60 0.01 13.0  800
+PARAMS  2 {0.0,3.0} 0 {0.02  0.02} {0.0 0.15} 0 {0.3 0.2}  -1  -1 {  -1 -1} {  -1  -1}  -1   -1 60 0.01 13.0  800
+PARAMS  3 {0.0,3.0} 0 {0.004 0.05} { -1   -1} 0 {0.3 0.2}  -1  -1 {  -1 -1} {  -1  -1}  -1   -1 60 0.01 13.0  800
+PARAMS  4 {0.0,3.0} 0 {0.004 0.05} {0.0 0.15} 0 {0.3 0.2} 0.5 2.0 {0.01  4} {0.03 0.3}  -1   -1 60 0.01 13.0  400
+
+#PARAMS  5 {0.0,3.0} 0 {0.004 0.05} {0.0 0.15} 0 {0.3 0.2} 0.5 2.0 {0.01  4} {0.05 0.5}  -1   -1 60 0.05 13.0 1700
+#PARAMS  6 {0.0,3.0} 0 {0.004 0.05} {0.0 0.15} 0 {0.3 0.2} 0.5 2.0 {0.01  4} {0.03 0.3} 1.0 0.05 60 0.05 13.0 1700
+#PARAMS  7 {0.0,3.0} 0 {0.004 0.05} {0.0  1.0} 1 {0.3 0.2}  -1  -1 {  -1 -1} {  -1  -1}  -1   -1 60 0.05 13.0  800
