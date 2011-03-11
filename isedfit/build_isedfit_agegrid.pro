@@ -57,8 +57,8 @@ function build_isedfit_agegrid, info, inage=inage, nage=nage, $
     if keyword_set(linear) then log = 0 else log = 1
     
     if (n_elements(inage) eq 0L) then begin
-       if (n_elements(minage) eq 0) then minage = 0.05D
-       if (n_elements(maxage) eq 0) then maxage = 13.0D
+       if (n_elements(minage) eq 0) then minage = 0.01D
+       if (n_elements(maxage) eq 0) then maxage = 13.5D
        if (n_elements(nage) eq 0) then nage = 100
        inage = range(minage,maxage,nage,log=log)
        if keyword_set(lookback) then inage = $

@@ -279,9 +279,10 @@ pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfi
 ; minimize chi2
        if (keyword_set(silent) eq 0) then splog, 'Minimizing chi2...'
        t0 = systime(1)
+       temp_isedfit_post = isedfit_post[gthese]
        isedfit[gthese] = isedfit_compute_posterior(isedfit[gthese],$
-         modelgrid,fullgrid,isedfit_post=isedfit_post[gthese],debug=debug)
-;      isedfit_post[gthese] = temp_isedfit_post
+         modelgrid,fullgrid,isedfit_post=temp_isedfit_post,debug=debug)
+       isedfit_post[gthese] = temporary(temp_isedfit_post) ; pass-by-value
        if (keyword_set(silent) eq 0) then splog, format='("Time = '+$
          '",G0," minutes")', (systime(1)-t0)/60.0
     endfor ; close GalaxyChunk

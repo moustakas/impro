@@ -1,7 +1,7 @@
-function isedfit_reconstruct_sfh, info, age=age, mtau=mtau, $
-  aburst=aburst, mburst=mburst, mgalaxy=mgalaxy, sfr100=sfr100, $
-  b100=b100, notruncate=notruncate, sfhtau=sfhtau, sfhburst=sfhburst, $
-  debug=debug, _extra=extra
+function isedfit_reconstruct_sfh, info, outage=outage, mtau=mtau, $
+  aburst=aburst, mburst=mburst, mgalaxy=outmgalaxy, sfr100=outsfr100, $
+  b100=outb100, notruncate=notruncate, sfhtau=outsfhtau, sfhburst=outsfhburst, $
+  nooversample=nooversample, debug=debug
 ; jm10dec22ucsd - given an iSEDfit structure, reconstruct the star
 ; formation history, allowing for multiple bursts
 
@@ -20,22 +20,47 @@ function isedfit_reconstruct_sfh, info, age=age, mtau=mtau, $
        doc_library, 'isedfit_reconstruct_sfh'
        return, -1
     endif
+
+; burst preliminaries (need this info up here)
+    nb = info.nburst 
+    if (nb gt 0) then begin
+       fburst = 1D*info.fburst[0:nb-1]
+       tburst = 1D*info.tburst[0:nb-1]
+       dtburst = 1D*info.dtburst[0:nb-1]
+    endif
     
-    if (n_elements(age) eq 0) then age = build_isedfit_agegrid(info,$
-      debug=0,_extra=extra)
+; need a highly sampled age grid to get the integrations right
+;   if (n_elements(age) eq 0) then age = build_isedfit_agegrid(info,$
+;     debug=0,_extra=extra)
+    if (n_elements(outage) ne 0) then begin
+       if (nb gt 0) then begin
+          minage = min(outage)<min(tburst) ; burst can technically start before MINAGE
+          maxage = max(outage)>max(tburst)
+       endif else begin
+          minage = min(outage)
+          maxage = max(outage)
+       endelse
+       nage = 500>n_elements(outage)
+    endif else nage = 500
+
+    if keyword_set(nooversample) then begin
+       if (n_elements(outage) eq 0) then message, 'NOOVERSAMPLE '+$
+         'keyword requires OUTAGE!'
+       age = outage
+    endif else begin
+       age = build_isedfit_agegrid(info,debug=0,nage=500,$
+         minage=minage,maxage=maxage,linear=linear)
+    endelse
+    if (n_elements(outage) eq 0) then outage = age
     nage = n_elements(age)
     
 ; deal with the simple tau model and with bursty SFHs    
     if (n_elements(mtau) eq 0) then mtau = 1D ; normalization
     if (info.tau eq 0.0) then sfhtau = dblarr(nage) else $
       sfhtau = mtau*exp(-age/info.tau)/(info.tau*1D9) 
-    
-    nb = info.nburst
+
     if (nb gt 0) then begin
        sfhburst1 = reform(dblarr(nage,nb),nage,nb)
-       fburst = 1D*info.fburst[0:nb-1]
-       tburst = 1D*info.tburst[0:nb-1]
-       dtburst = 1D*info.dtburst[0:nb-1]
 ; compute the amplitude, and then build each burst as a Gaussian
        aburst = dblarr(nb)
        mburst = dblarr(nb)
@@ -50,7 +75,7 @@ function isedfit_reconstruct_sfh, info, age=age, mtau=mtau, $
 
           sfhburst1[*,ib] = aburst[ib]*exp(-0.5*((age-tburst[ib])/dtburst[ib])^2)/sqrt(2.0*!pi) ; [Msun/yr]
 ;         sfhburst1[*,ib] = aburst[ib]*exp(-0.5*((age-tburst[ib])/dtburst[ib])^2) ; [Msun/yr]
-          if arg_present(mburst) then mburst[ib] = im_integral(age*1D9,sfhburst1[*,ib]) ; [Msun]
+          mburst[ib] = im_integral(age*1D9,sfhburst1[*,ib]) ; [Msun]
 ;         mburst[ib] = aburst[ib]*sqrt(2.0*!pi)*dtburst[ib]*1D9 ; [Msun]
        endfor 
        sfhburst = total(sfhburst1,2,/double)
@@ -75,7 +100,7 @@ function isedfit_reconstruct_sfh, info, age=age, mtau=mtau, $
 ; now adjust SFHBURST and SFHTAU                
                 sfrpostburst1 = interpol(sfhburst1[*,nb-1],age,tburst[nb-1])
                 sfhburst1[post,nb-1] = sfrpostburst1*exp(-(age[post]-tburst[nb-1])/info.tauburst)
-                if arg_present(mburst) then mburst[nb-1] = im_integral(age*1D9,sfhburst1[*,nb-1]) ; [Msun]
+                mburst[nb-1] = im_integral(age*1D9,sfhburst1[*,nb-1]) ; [Msun]
 ;               mburst[nb-1] = 0.5D*mburst[nb-1] + sfrpostburst*info.tauburst[nb-1]*1D9*$
 ;                 exp(-tburst[nb-1]/info.tauburst[nb-1]) ; [Msun]                
                 sfhtau[post] = 0
@@ -84,10 +109,11 @@ function isedfit_reconstruct_sfh, info, age=age, mtau=mtau, $
           endif
        endif
     endif
-    
+
 ; if requested, compute the <SFR> over the previous 100 Myr and the
 ; birthrate parameter
-    if arg_present(mgalaxy) or arg_present(sfr100) or arg_present(b100) then begin
+    if arg_present(outmgalaxy) or arg_present(outsfr100) or $
+      arg_present(outb100) then begin
        dt = 0.1D ; [100 Myr]
        mgalaxy = sfh*0D
        sfr100 = sfh*0D
@@ -119,17 +145,27 @@ function isedfit_reconstruct_sfh, info, age=age, mtau=mtau, $
           b100[iage] = sfr100[iage]/(mgalaxy[iage]/(1D9*age[iage]))
        endfor
     endif
-    
+
+; interpolate onto OUTAGE
+    findx = findex(age,outage)
+    outsfh = interpolate(sfh,findx)
+    outsfhtau = interpolate(sfhtau,findx)
+    outsfhburst = interpolate(sfhburst,findx)
+    if arg_present(outmgalaxy) then outmgalaxy = interpolate(mgalaxy,findx)
+    if arg_present(outsfr100) then outsfr100 = interpolate(sfr100,findx)
+    if arg_present(outb100) then outb100 = interpolate(b100,findx)
+
 ; QAplot    
     if keyword_set(debug) then begin
-       djs_plot, age, sfh, /xlog, xsty=3, ysty=3, psym=-6;, xr=[4.0,9]
-       djs_oplot, age, sfhtau, color='blue', psym=-6, sym=0.5
-       djs_oplot, age, sfhburst, color='red', psym=-6, sym=0.5
+       djs_plot, age, sfh, /xlog, xsty=3, ysty=3, psym=-6, xr=[min(age)>0.01,max(age)]
+       djs_oplot, outage, outsfh, psym=6, color='orange'
+;      djs_oplot, outage, outsfhtau, color='blue', psym=-6, sym=0.5
+;      djs_oplot, outage, outsfhburst, color='red', psym=-6, sym=0.5
        if dotruncate then djs_oplot, tburst[nb-1]+info.tauburst*[1,1], !y.crange, color='yellow'
 ;      for ib = 0, nb-1 do djs_oplot, tburst[ib]*[1,1], !y.crange, color='yellow'
     endif
 
-return, sfh
+return, outsfh
 end
 
 ;; renormalize such that the integrated SFH (from 0-->infinity is 1_Msun)

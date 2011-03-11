@@ -85,7 +85,7 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
 ;   bigmgal = bigage*0D   ; galaxy mass ignoring mass loss 
     for imod = 0L, nmodel-1 do begin
        these = lindgen(nage)+imod*nage
-       sfr = isedfit_reconstruct_sfh(modelgrid[imod],age=bigage[these],$
+       sfr = isedfit_reconstruct_sfh(modelgrid[imod],outage=bigage[these],$
          sfr100=sfr100,b100=b100);,mgalaxy=mgal)
        bigsfr[these] = sfr
        bigsfr100[these] = sfr100
@@ -97,7 +97,10 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
 ; (note that disallowing models that are too old is built into
 ; ISEDFIT_COMPUTE_CHI2) 
     prior = bigb100*0+1
-;   prior = ((bigb100 lt 1D-2) and (bigebv gt 0.0)) eq 0
+;   prior = ((bigb100 lt 1D-3) and (bigebv gt 0.0)) eq 0
+;   ww = where(bigebv gt 0 and bigb100 lt 1D-2)
+;   djs_plot, bigebv, alog10(bigb100), ps=6, sym=0.1, /xlog
+;   djs_oplot, bigebv[ww], alog10(bigb100[ww]), ps=6, sym=0.1, color='orange'
 
 ; gotta loop...    
     for igal = 0L, ngal-1 do begin

@@ -75,7 +75,7 @@ function isedfit_convolve_sfh, ssp, infosfh=infosfh, time=time, $
     if (n_elements(nsamp) eq 0) then nsamp = 2
 
 ; check for the SFH
-    sfh = isedfit_reconstruct_sfh(infosfh,age=time)
+    sfh = isedfit_reconstruct_sfh(infosfh,outage=time)
     nsfh = n_elements(sfh)
 
 ; check for other quantities to convolve
@@ -100,14 +100,14 @@ function isedfit_convolve_sfh, ssp, infosfh=infosfh, time=time, $
        otime = [0D,bigtime<age,(age-bigtime)>0,age]
        otime = otime[uniq(otime,sort(otime))]
        thistime = interpolate(otime,dindgen(nsamp*n_elements(otime)-(nsamp-1))/(nsamp*1D))
-       thistime = build_isedfit_agegrid(infosfh,inage=thistime)
+       thistime = build_isedfit_agegrid(infosfh,inage=thistime/1D9)*1D9
        nthistime = n_elements(thistime)
        
 ; interpolate       
        sspindx = findex(ssp.age,reverse(thistime))
        isspflux = interpolate(ssp.flux,sspindx,/grid)
 
-       thissfh = isedfit_reconstruct_sfh(infosfh,age=thistime/1D9)
+       thissfh = isedfit_reconstruct_sfh(infosfh,outage=thistime/1D9,/nooversample)
 ;      djs_plot, time, sfh, psym=6, xsty=3, ysty=3, /xlog
 ;      djs_oplot, thistime/1D9, thissfh, psym=6, sym=0.2, color='orange'
 ;      print, ii, nthistime & cc = get_kbrd(1)

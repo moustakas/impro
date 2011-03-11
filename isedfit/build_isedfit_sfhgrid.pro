@@ -206,8 +206,7 @@ pro build_grid, montegrid, chunkinfo, ssppath=ssppath, $
             calzetti=calzetti,smc=smc,/silent) ; attenuation curve
           klam = rebin(reform(kl,npix,1),npix,n_elements(sspfits[0].age)) ; [npix,nage]
           
-; convolve each model with the specified SFH; tau=0 and no bursts is a
-; special case
+; convolve each model with the specified SFH
           for jj = 0L, nindx1-1L do begin
              print, format='("Chunk=",I4.4,"/",I4.4,", SSP=",I4.4,"/",I4.4,", '+$
                'Model=",I4.4,"/",I4.4,"   ",A5,$)', ichunk+1, nchunk, issp+1, $
@@ -223,9 +222,10 @@ pro build_grid, montegrid, chunkinfo, ssppath=ssppath, $
                 sspfits[jj].flux = sspfits[jj].flux*10.0^(-0.4*klam*ebv) ; attenuate
              endif 
 
-; do the convolution             
-             outage = build_isedfit_agegrid(outinfo[indx1[jj]],inage=outinfo[indx1[jj]].age)
-             outsfr = isedfit_reconstruct_sfh(outinfo[indx1[jj]],age=outage,$
+; do the convolution; tau=0 and no bursts is a special case
+             outage = outinfo[indx1[jj]].age
+;            outage = build_isedfit_agegrid(outinfo[indx1[jj]],inage=outinfo[indx1[jj]].age)
+             outsfr = isedfit_reconstruct_sfh(outinfo[indx1[jj]],outage=outage,$
                mgalaxy=outmgal,aburst=aburst,mburst=mburst)
              if (outinfo[indx1[jj]].tau eq 0.0) and (outinfo[indx1[jj]].nburst eq 0) then begin ; special case
                 ageindx = findex(sspfits[jj].age,outage*1D9)
@@ -236,8 +236,8 @@ pro build_grid, montegrid, chunkinfo, ssppath=ssppath, $
                 outflux = isedfit_convolve_sfh(sspfits[jj],info=outinfo[indx1[jj]],time=outage,$
                   mstar=sspfits[jj].mstar,cspmstar=outmstar,nsamp=1.0)
              endelse
-
-; divide by the stellar mass
+             
+; divide by the mass in stars + remnants, since that's what we measure
              outflux = outflux/rebin(reform(outmstar,1,params.nage),npix,params.nage)
              inf = where(finite(outflux) eq 0)
              if (inf[0] ne -1) then message, 'Bad'
@@ -388,12 +388,11 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
        
 ; metallicity and age; unfortunately I think we have to loop to sort
        montegrid.Z = randomu(seed,params.nmonte)*(params.Z[1]-params.Z[0])+params.Z[0]
-;      montegrid.age = asinh_random(params.minage,params.maxage,[params.nage,params.nmonte],soft=
 
-       here!!
-       
-       montegrid.age = 10^(randomu(seed,params.nage,params.nmonte)*(alog10(params.maxage)-$
-         alog10(params.minage))+alog10(params.minage))
+;      montegrid.age = asinh_random(params.minage,params.maxage,[params.nage,params.nmonte],soft=
+;      montegrid.age = 10^(randomu(seed,params.nage,params.nmonte)*(alog10(params.maxage)-$
+;        alog10(params.minage))+alog10(params.minage))
+       montegrid.age = randomu(seed,params.nage,params.nmonte)*(params.maxage-params.minage)+params.minage
        for ii = 0L, params.nmonte-1 do montegrid[ii].age = montegrid[ii].age[sort(montegrid[ii].age)]
 
 ; reddening, if desired; exponential prior is the default 
@@ -406,8 +405,8 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
 ; "mu" is the Charlot & Fall (2000) factor for evolved stellar
 ; populations; log-normal distribution
        if (redcurvestring eq 'charlot') then begin
-          if (params.mu[1] gt 0) then montegrid.mu = 10.0^(randomn(seed,params.nmonte)*$
-            params.mu[1]+alog10(params.mu[0]))
+          if (params.mu[1] gt 0) then montegrid.mu = ((10.0^(randomn(seed,params.nmonte)*$
+            params.mu[1]+alog10(params.mu[0])))<1.0)>0.0
        endif
 
 ; now assign bursts; divide each age vector into NMAXBURST intervals
@@ -419,31 +418,45 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
 ;         tmax = (lindgen(nmaxburst)+1)*params.pburstinterval+params.minage
           tburst = dblarr(nmaxburst,params.nmonte)-1.0
           for imod = 0L, params.nmonte-1 do begin
-             dage = (shift(montegrid[imod].age,-1)-shift(montegrid[imod].age,+1))/2.0
-             dage[0] = (montegrid[imod].age[1]-montegrid[imod].age[0])/2.0
-             dage[params.nage-1] = (montegrid[imod].age[params.nage-1]-$
-               montegrid[imod].age[params.nage-2])/2.0
+;            dage = (shift(montegrid[imod].age,-1)-shift(montegrid[imod].age,+1))/2.0
+;            dage[0] = (montegrid[imod].age[1]-montegrid[imod].age[0])/2.0
+;            dage[params.nage-1] = (montegrid[imod].age[params.nage-1]-$
+;              montegrid[imod].age[params.nage-2])/2.0
              for ib = 0, nmaxburst-1 do begin
-                tmin = montegrid[imod].age[0]+ib*params.pburstinterval
-                tmax = (montegrid[imod].age[0]+(ib+1)*params.pburstinterval)<montegrid[imod].age[params.nage-1]
-                these = where((montegrid[imod].age ge tmin) and (montegrid[imod].age le tmax),nthese)
-;               these = where((montegrid[imod].age gt tmin[ib]) and (montegrid[imod].age le tmax[ib]),nthese)
+                tmin = params.minage+ib*params.pburstinterval
+                tmax = (params.minage+(ib+1)*params.pburstinterval)<params.maxage
+                if (tmax le tmin) then message, 'This violates causality!'
+                age1 = randomu(seed,params.nage)*(tmax-tmin)+tmin
+                age1 = age1[sort(age1)]
 
 ; compute the cumulative probability, dealing with edge effects correctly
-                if (nthese ne 0) then begin
-                   age1 = montegrid[imod].age[these]
-                   dageleft = (age1-shift(age1,1))/2.0
-                   dageleft[0] = age1[0]-tmin
-                   dageright = (shift(age1,-1)-age1)/2.0
-                   dageright[nthese-1] = tmax-age1[nthese-1]
-                   prob = params.pburst*total([[dageleft],[dageright]],2)/params.pburstinterval
-                   if (prob[0] le 0) then message, 'This should not happen!'
+                dageleft = (age1-shift(age1,1))/2.0
+                dageleft[0] = age1[0]-tmin
+                dageright = (shift(age1,-1)-age1)/2.0
+                dageright[params.nage-1] = tmax-age1[params.nage-1]
+                prob = params.pburst*total([[dageleft],[dageright]],2)/params.pburstinterval
+                if (prob[0] le 0) then message, 'This should not happen!'
 
-                   this = where(total(prob,/cum) gt randomu(seed))
-                   if (this[0] ne -1) then tburst[ib,imod] = montegrid[imod].age[these[this[0]]]
-;                  this = interpolate(lindgen(nthese+1),findex([0D,total(prob,/cumu)],rand[ib,imod]),missing=-1)
-;                  if (this[0] ne -1) then tburst[ib,imod] = interpolate(montegrid[imod].age[these],this)
-                endif
+                this = where(total(prob,/cum) gt randomu(seed))
+                if (this[0] ne -1) then tburst[ib,imod] = age1[this[0]]
+
+;; (good) old code that chooses tburst from the *actual* age vector below here
+;                tmin = montegrid[imod].age[0]+ib*params.pburstinterval
+;                tmax = (montegrid[imod].age[0]+(ib+1)*params.pburstinterval)<montegrid[imod].age[params.nage-1]
+;                these = where((montegrid[imod].age ge tmin) and (montegrid[imod].age le tmax),nthese)
+;
+;                if (nthese ne 0) then begin
+;                   age1 = montegrid[imod].age[these]
+;                   dageleft = (age1-shift(age1,1))/2.0
+;                   dageleft[0] = age1[0]-tmin
+;                   dageright = (shift(age1,-1)-age1)/2.0
+;                   dageright[nthese-1] = tmax-age1[nthese-1]
+;                   prob = params.pburst*total([[dageleft],[dageright]],2)/params.pburstinterval
+;                   if (prob[0] le 0) then message, 'This should not happen!'
+;
+;                   this = where(total(prob,/cum) gt randomu(seed))
+;                   if (this[0] ne -1) then tburst[ib,imod] = montegrid[imod].age[these[this[0]]]
+;                endif
              endfor
           endfor 
           montegrid.nburst = total(tburst gt -1.0,1) ; total number of bursts
