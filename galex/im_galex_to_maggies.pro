@@ -170,7 +170,6 @@ pro im_galex_to_maggies, galex, maggies, ivarmaggies, filterlist=filterlist
 ; minimum photometric error from Morrissey+07, plus a little
     minerr = sqrt([0.052,0.026]^2 + [0.05,0.05]^2)
     k_minerror, maggies, ivarmaggies, minerr
-    if (nzero ne 0L) then maggies[zero] = 0.0
 
 return    
 end
