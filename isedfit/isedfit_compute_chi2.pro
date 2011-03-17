@@ -81,9 +81,7 @@ function isedfit_compute_chi2, maggies, ivarmaggies, chunkmodels, maxage, $
 ; bandpass, to set the overall normalization of the SED
        if (total(ivarmaggies[*,igal] gt 0.0) lt nminphot) or $
          (total((maggies[*,igal] gt 0.0) and (ivarmaggies[*,igal] gt 0.0)) eq 0.0) then continue
-;      if (total((maggies[*,igal] gt 0.0) and $
-;        (ivarmaggies[*,igal] gt 0.0)) lt nminphot) then continue
-       nmaggies = maggies[*,igal]*1.0D
+       nmaggies = abs(maggies[*,igal]*1.0D) ; need absolute value to deal with negative fluxes correctly
        nivarmaggies = ivarmaggies[*,igal]*1.0D
 ;      t1 = systime(1)
        for imodel = 0L, nmodel-1L do begin
@@ -116,30 +114,30 @@ function isedfit_compute_chi2, maggies, ivarmaggies, chunkmodels, maxage, $
           vchi2 = total(vivarmaggies*(vmaggies-rebin(reform(vmass,1,nthese),$
             nfilt,nthese)*vmodelmaggies)^2,1,/double)
 ;         print, total(nivarmaggies*(nmaggies-(vmass[30]+vmass_err[30])*vmodelmaggies[*,30])^2)-vchi2[30]
-; for some galaxy samples maggies can be formally negative, and
-; therefore the normalization (i.e., the mass) can be negative too; if
-; this happens then issue a warning message and take the absolute
-; value
-          neg = where(vmass lt 0.0,nneg)
-          if (nneg ne 0L) then begin
-             if (imodel eq 0L) then splog, 'Formally negative '+$
-               'stellar mass for galaxy index '+strtrim(igal,2)
-             vmass = abs(vmass)
-          endif
+
+;; for some galaxy samples maggies can be formally negative, and
+;; therefore the normalization (i.e., the mass) can be negative too; if
+;; this happens then issue a warning message and take the absolute
+;; value
+;          neg = where(vmass lt 0.0,nneg)
+;          if (nneg ne 0L) then begin
+;             if (imodel eq 0L) then splog, 'Formally negative '+$
+;               'stellar mass for galaxy index '+strtrim(igal,2)
+;             vmass = abs(vmass)
+;          endif
 ; store the results
           bestmaggies = rebin(reform(vmass,1,nthese),nfilt,nthese)*vmodelmaggies
           gridchunk[these,imodel,igal].chi2 = vchi2
           inf = where(finite(vmass) eq 0)
           if inf[0] ne -1 then message, 'Problem here'
-;if imodel eq 11 then stop
-;         zero = where(vmass eq 0)
-;         if zero[0] ne -1 then message, 'Zero mass?!?'
+          check = where((vmass le 0) or (finite(vmass) eq 0))
+          if (check[0] ne -1) then message, 'Zero mass?!?'
           gridchunk[these,imodel,igal].mass = alog10(vmass)
           gridchunk[these,imodel,igal].mass_err = vmass_err/vmass/alog(10)
           gridchunk[these,imodel,igal].bestmaggies = bestmaggies
-       endfor
+       endfor                   ; model loop
 ;      splog, format='("All models = ",G0," minutes")', (systime(1)-t1)/60.0       
-    endfor                       ; galaxy                   
+    endfor                      ; galaxy loop
 ;   splog, format='("All galaxies = ",G0," minutes")', (systime(1)-t0)/60.0
 
 return, gridchunk

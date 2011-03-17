@@ -15,7 +15,8 @@
 ;
 ; KEYWORD PARAMETERS:
 ;   basti - read the BaSTI isochrones (default is to use Padova) 
-;   miles - read the Miles stellar library (default is to use BaSeL) 
+;   lowres - read the low-resolution BaSeL stellar library (default is
+;     to use MILES+BaSeL, which is high-resolution in the optical)
 ;   kroupa - read the Kroupa+01 IMF files (default is to read the 
 ;     Salpeter ones)
 ;   chabrier - read the Chabrier+03 IMF files
@@ -31,6 +32,7 @@
 ;
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2011 Jan 30, UCSD
+;   jm11mar14ucsd - updated to the latest SSPs
 ;
 ; Copyright (C) 2011, John Moustakas
 ; 
@@ -46,12 +48,12 @@
 ;-
 
 function im_read_fsps, metallicity=metallicity, basti=basti, $
-  kroupa=kroupa, chabrier=chabrier 
+  lowres=lowres, kroupa=kroupa, chabrier=chabrier 
 
-    ssppath = getenv('IM_DATA_DIR')+'/synthesis/fsps_ssp/'
+    ssppath = getenv('IM_DATA_DIR')+'/synthesis/fsps/SSP/'
 
 ; defaults
-    lib = 'Miles+BaSeL' ; stellar library
+    if keyword_set(lowres) then lib = 'BaSeL' else lib = 'MILES+BaSeL' ; stellar library
     if keyword_set(basti) then iso = 'BaSTI' else iso = 'Padova' ; isochrones
 
     imf = 'Salpeter'
@@ -62,11 +64,17 @@ function im_read_fsps, metallicity=metallicity, basti=basti, $
     case strlowcase(iso) of
        'padova': begin
           if (n_elements(metallicity) eq 0) then metallicity = 'Z0.0190'
-          allZ = ['Z0.0008','Z0.0031','Z0.0096','Z0.0190','Z0.0300']
+          allZ = ['Z0.0002','Z0.0003','Z0.0004','Z0.0005','Z0.0006',$
+            'Z0.0008','Z0.0010','Z0.0012','Z0.0016','Z0.0020','Z0.0025',$
+            'Z0.0031','Z0.0039','Z0.0049','Z0.0061','Z0.0077','Z0.0096',$
+            'Z0.0120','Z0.0150','Z0.0190','Z0.0240','Z0.0300']
+;         allZ = ['Z0.0008','Z0.0031','Z0.0096','Z0.0190','Z0.0300']
        end
        'basti': begin
           if (n_elements(metallicity) eq 0) then metallicity = 'Z0.0200'
-          allZ = ['Z0.0006','Z0.0040','Z0.0100','Z0.0200','Z0.0300']
+          allZ = ['Z0.0003','Z0.0006','Z0.0010','Z0.0020','Z0.0040',$
+            'Z0.0080','Z0.0100','Z0.0200','Z0.0300','Z0.0400']
+;         allZ = ['Z0.0006','Z0.0040','Z0.0100','Z0.0200','Z0.0300']
        end
     endcase
     match, allZ, metallicity, m1, m2
@@ -114,7 +122,7 @@ function im_read_fsps, metallicity=metallicity, basti=basti, $
        fsps.age[ii]  = 10.0^t  ; [yr]
        fsps.mstar[ii] = 10.0^m ; [Msun]
        fsps.lbol[ii] = l
-       fsps.flux[*,ii] = tspec*im_light(/ang)/wave^2 ; [erg/s/A]
+       fsps.flux[*,ii] = tspec*im_light(/ang)/wave^2 ; [Lsun/Hz]-->[erg/s/A]
     endfor
     free_lun,lun
 

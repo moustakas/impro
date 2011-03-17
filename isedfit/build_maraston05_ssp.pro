@@ -48,7 +48,8 @@ pro build_maraston05_ssp, kroupa=kroupa
     dist = 10.0*3.085678D18 ; fiducial distance [10 pc in cm]
     
 ; read each SSP in turn, convert to a FITS structure, do some magic,
-; and then write out; do not use the two most extreme metallicities 
+; and then write out; do not use the two most extreme metallicities
+; because they lack full age coverage
     Zstr = reverse(['z004','z002','z001','z0001'])
 ;   Zstr = reverse(['z007','z004','z002','z001','z0001','z10m4'])
     nZ = n_elements(Zstr)

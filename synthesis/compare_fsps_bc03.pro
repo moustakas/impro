@@ -1,7 +1,7 @@
 pro compare_fsps_bc03
 ; jm10jan31ucsd - compare the FSPS and BC03 SSPs
     
-    ff = im_read_fsps(/chab)
+    ff = im_read_fsps(/chab,/lowres)
     bc = im_read_bc03()
     bcflux = interpolate(bc.flux,findex(bc.wave,ff.wave),$
       findex(bc.age,ff.age),/grid)

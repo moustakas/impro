@@ -386,9 +386,19 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
 ;      endif
 ;      im_plothist, tau<(params.tau[1]*2), bin=params.tau[0]
        
-; metallicity and age; unfortunately I think we have to loop to sort
+; metallicity; check to make sure that the prior boundaries do not
+; exceed the metallicity range available from the chosen SYNTHMODELS
+       if (params.Z[0] lt min(sspinfo.Z)) then begin
+          splog, 'Adjusting minimum prior metallicity!'
+          params.Z[0] = min(sspinfo.Z)
+       endif
+       if (params.Z[1] gt max(sspinfo.Z)) then begin
+          splog, 'Adjusting maximum prior metallicity!'
+          params.Z[1] = max(sspinfo.Z)
+       endif
        montegrid.Z = randomu(seed,params.nmonte)*(params.Z[1]-params.Z[0])+params.Z[0]
 
+; age; unfortunately I think we have to loop to sort
 ;      montegrid.age = asinh_random(params.minage,params.maxage,[params.nage,params.nmonte],soft=
 ;      montegrid.age = 10^(randomu(seed,params.nage,params.nmonte)*(alog10(params.maxage)-$
 ;        alog10(params.minage))+alog10(params.minage))
