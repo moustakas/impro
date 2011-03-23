@@ -11,7 +11,9 @@
 ; OPTIONAL INPUTS:
 ;   metallicity - stellar metallicity to read; the choices depends on
 ;     the stellar library and isochrones desired; to see the full list
-;     just call this routine without a METALLICITY input
+;     just call this routine with
+;
+;     IDL> ssp = im_read_fsps(metallicity='Z')
 ;
 ; KEYWORD PARAMETERS:
 ;   basti - read the BaSTI isochrones (default is to use Padova) 
@@ -64,29 +66,35 @@ function im_read_fsps, metallicity=metallicity, basti=basti, $
     case strlowcase(iso) of
        'padova': begin
           if (n_elements(metallicity) eq 0) then metallicity = 'Z0.0190'
-          allZ = ['Z0.0002','Z0.0003','Z0.0004','Z0.0005','Z0.0006',$
-            'Z0.0008','Z0.0010','Z0.0012','Z0.0016','Z0.0020','Z0.0025',$
-            'Z0.0031','Z0.0039','Z0.0049','Z0.0061','Z0.0077','Z0.0096',$
-            'Z0.0120','Z0.0150','Z0.0190','Z0.0240','Z0.0300']
-;         allZ = ['Z0.0008','Z0.0031','Z0.0096','Z0.0190','Z0.0300']
+          if keyword_set(lowres) then begin ; BaSeL
+             allZ = ['Z0.0002','Z0.0003','Z0.0004','Z0.0005','Z0.0006',$
+               'Z0.0008','Z0.0010','Z0.0012','Z0.0016','Z0.0020','Z0.0025',$
+               'Z0.0031','Z0.0039','Z0.0049','Z0.0061','Z0.0077','Z0.0096',$
+               'Z0.0120','Z0.0150','Z0.0190','Z0.0240','Z0.0300']
+          endif else begin ; BaSeL+MILES
+             allZ = ['Z0.0008','Z0.0031','Z0.0096','Z0.0190','Z0.0300']
+          endelse
        end
        'basti': begin
           if (n_elements(metallicity) eq 0) then metallicity = 'Z0.0200'
-          allZ = ['Z0.0003','Z0.0006','Z0.0010','Z0.0020','Z0.0040',$
-            'Z0.0080','Z0.0100','Z0.0200','Z0.0300','Z0.0400']
-;         allZ = ['Z0.0006','Z0.0040','Z0.0100','Z0.0200','Z0.0300']
+          if keyword_set(lowres) then begin ; BaSeL
+             allZ = ['Z0.0003','Z0.0006','Z0.0010','Z0.0020','Z0.0040',$
+               'Z0.0080','Z0.0100','Z0.0200','Z0.0300','Z0.0400']
+          endif else begin ; BaSeL+MILES
+             allZ = ['Z0.0006','Z0.0040','Z0.0100','Z0.0200','Z0.0300']
+          endelse
        end
     endcase
     match, allZ, metallicity, m1, m2
     if (m1[0] eq -1) then begin
        splog, 'Supported values of METALLICITY for the '+$
          lib+' stellar library and the '+iso+' isochrones:'
-       niceprint, allZ
+       for ii = 0, n_elements(allZ)-1 do print, '  '+allZ[ii]
        return, -1
     endif
     zz = float(strmid(metallicity,1))
 
-    sspfile = ssppath+'SSP_'+iso+'_'+lib+'_'+imf+'_'+metallicity+'.spec'
+    sspfile = ssppath+'SSP_'+iso+'_'+lib+'_'+imf+'_'+metallicity+'.out.spec'
     if (file_test(sspfile) eq 0) then begin
        splog, 'SSP '+sspfile+' not found!'
        return, -1

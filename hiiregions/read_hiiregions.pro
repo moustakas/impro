@@ -73,7 +73,7 @@ function read_hiiregions, hiined=hiined, linefit=linefit, bptplots=bptplots, $
     hii = mrdfits(inpath+infile,1,/silent)
     if arg_present(linefit) then linefit = mrdfits(inpath+infile,2,/silent)
 
-    if arg_present(hiined) then hiined = mrdfits(inpath+'hiiregions_ned_basic_'+version+'.fits.gz',1,/silent)
+    if arg_present(hiined) then hiined = mrdfits(inpath+'hii_region_ned_basic_'+version+'.fits.gz',1,/silent)
 
     if keyword_set(hiiregion) then begin
        keep = where(hii.hiiregion,nkeep)

@@ -38,8 +38,9 @@
 ;
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2010 Sep 09, UCSD
+;   jm11mar15ucsd - optionally return the polyid
 ;
-; Copyright (C) 2010, John Moustakas
+; Copyright (C) 2010-2011, John Moustakas
 ; 
 ; This program is free software; you can redistribute it and/or modify 
 ; it under the terms of the GNU General Public License as published by 
@@ -53,7 +54,8 @@
 ;-
 
 function im_is_in_window, polyfile, ra=ra, dec=dec, pixelize=pixelize, $
-  scheme=scheme, tmpdir=tmpdir, tolerance=tolerance, silent=silent
+  scheme=scheme, tmpdir=tmpdir, tolerance=tolerance, polyid=polyid, $
+  silent=silent
 
     if (n_elements(polyfile) eq 0) then begin
        doc_library,'im_is_in_window'
@@ -128,7 +130,13 @@ function im_is_in_window, polyfile, ra=ra, dec=dec, pixelize=pixelize, $
     readf, lun, strflag
     free_lun, lun
 
-    outflag = fix(strcompress(strflag,/remove) ne '') ; 1=in, 0=out
+    polyid = strcompress(strflag,/remove)
+    none = where(polyid eq '')
+    if (none[0] ne -1L) then polyid[none] = -1
+    polyid = long(polyid)
+
+    outflag = polyid ne -1 ; 1=in, 0=out
+;   outflag = fix(strcompress(strflag,/remove) ne '') 
 
     if (keyword_set(silent) eq 0) then splog, 'Total time ', $
       (systime(1)-t0)/60.0

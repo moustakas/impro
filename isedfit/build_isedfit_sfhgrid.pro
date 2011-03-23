@@ -364,7 +364,7 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
        if (params.pburst le 0.0) then nmaxburst = 0 else $
          nmaxburst = ceil(long(100D*(params.maxage-params.minage)/params.pburstinterval)/100D)
        montegrid = init_montegrid(params.nmonte,params.nage,imf=imf,nmaxburst=nmaxburst)
-       
+
 ; tau vector; if the user wants an SSP and/or continuous star
 ; formation then replace a random subset of the regular grid with the
 ; appropriate values; TAUMAX gives a star formation history that is
@@ -427,6 +427,7 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
 ;         tmin = lindgen(nmaxburst)*params.pburstinterval+params.minage
 ;         tmax = (lindgen(nmaxburst)+1)*params.pburstinterval+params.minage
           tburst = dblarr(nmaxburst,params.nmonte)-1.0
+          ran = randomu(seed,nmaxburst,params.nmonte)
           for imod = 0L, params.nmonte-1 do begin
 ;            dage = (shift(montegrid[imod].age,-1)-shift(montegrid[imod].age,+1))/2.0
 ;            dage[0] = (montegrid[imod].age[1]-montegrid[imod].age[0])/2.0
@@ -447,8 +448,10 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
                 prob = params.pburst*total([[dageleft],[dageright]],2)/params.pburstinterval
                 if (prob[0] le 0) then message, 'This should not happen!'
 
-                this = where(total(prob,/cum) gt randomu(seed))
+;               ran = randomu(seed)
+                this = where(total(prob,/cum) gt ran[ib,imod])
                 if (this[0] ne -1) then tburst[ib,imod] = age1[this[0]]
+;               splog, tmin, tmax, ran[ib,imod], tburst[ib,imod] & if ib eq 0 then print
 
 ;; (good) old code that chooses tburst from the *actual* age vector below here
 ;                tmin = montegrid[imod].age[0]+ib*params.pburstinterval
