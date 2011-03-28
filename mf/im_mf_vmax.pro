@@ -36,7 +36,7 @@
 
 function im_mf_vmax, mass, oneovervmax, minmass=minmass, $
   binsize=binsize, histmin=histmin, histmax=histmax, $
-  debug=debug
+  nolog=nolog, debug=debug
 
     ngal = n_elements(mass)
     if (ngal eq 0L) then begin
@@ -84,10 +84,14 @@ function im_mf_vmax, mass, oneovervmax, minmass=minmass, $
     mf_data.fullbin[0:nbins-1] = fullbin
     mf_data.number[0:nbins-1] = number
     mf_data.mass[0:nbins-1] = binmass
-    mf_data.phi[0:nbins-1] = alog10(phi+(fullbin eq 0))*(fullbin ne 0)
-    mf_data.phierr[0:nbins-1] = phierr/(phi+(fullbin eq 0))/alog(10)*(fullbin ne 0)
-;   mf_data.phi[0:nbins-1] = phi
-;   mf_data.phierr[0:nbins-1] = phierr
+
+    if keyword_set(nolog) then begin
+       mf_data.phi[0:nbins-1] = phi
+       mf_data.phierr[0:nbins-1] = phierr
+    endif else begin
+       mf_data.phi[0:nbins-1] = alog10(phi+(fullbin eq 0))*(fullbin ne 0)
+       mf_data.phierr[0:nbins-1] = phierr/(phi+(fullbin eq 0))/alog(10)*(fullbin ne 0)
+    endelse
 ;   if total(phi le 0) gt 0 then stop
     
 ; QAplot    

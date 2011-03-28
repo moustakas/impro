@@ -21,7 +21,6 @@
 ;-
 ;------------------------------------------------------------------------------
 function mf_schechter, logmass, phistar, logmstar, alpha
-    
 ; note that MASS and MSTAR and should be logarithms!  (otherwise MPFIT
 ; in MF_FIT_SCHECHTER has trouble returning the errors)
     
