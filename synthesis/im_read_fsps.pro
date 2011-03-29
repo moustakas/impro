@@ -134,7 +134,7 @@ function im_read_fsps, metallicity=metallicity, basti=basti, $
        fsps.age[ii]  = 10.0^t  ; [yr]
        fsps.mstar[ii] = 10.0^m ; [Msun]
        fsps.lbol[ii] = l
-       fsps.flux[*,ii] = tspec*im_light(/ang)/wave^2 ; [Lsun/Hz]-->[erg/s/A]
+       fsps.flux[*,ii] = 3.826D33*tspec*im_light(/ang)/wave^2 ; [Lsun/Hz]-->[erg/s/A]
     endfor
     free_lun,lun
 

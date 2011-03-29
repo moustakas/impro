@@ -24,6 +24,7 @@
 ;   sfhgrid - SFH grid number to build (default '1')
 ;
 ;   redcurve - reddening curve; current options are: 
+;    -1 = none
 ;     0 = Calzetti 2000 (default)
 ;     1 = Charlot & Fall 2000
 ;     2 = O'Donnell 1994 (i.e., standard Milky Way)
@@ -161,6 +162,7 @@ pro build_grid, montegrid, chunkinfo, ssppath=ssppath, $
 ; reddening curves
     if (n_elements(redcurve) gt 0) then begin
        case redcurve of
+         -1: 
           0: calzetti = 1
           1: charlot = 1
           2: odonnell = 1
@@ -323,7 +325,7 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
 ; read the parameter file describing each of the grids and get the
 ; reddening curve
     params = read_sfhgrid_paramfile(sfhgrid,sfhgrid_paramfile=sfhgrid_paramfile)
-    redcurvestring = redcurve2string(redcurve,params=params)
+    redcurvestring = redcurve2string(redcurve)
 
 ; read the SSP information structure    
     ssppath = getenv('ISEDFIT_SFHGRID_DIR')+'/ssp/'+synthmodels+'/'

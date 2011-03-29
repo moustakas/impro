@@ -22,8 +22,8 @@ function get_sfhgrid_colors, sfhgrid, synthmodels=synthmodels, imf=imf, $
 
 ; read the parameter file describing each of the grids and get the
 ; reddening curve
-    params = read_sfhgrid_paramfile(sfhgrid,sfhgrid_paramfile=sfhgrid_paramfile)
-    redcurvestring = redcurve2string(redcurve,params=params)
+;   params = read_sfhgrid_paramfile(sfhgrid,sfhgrid_paramfile=sfhgrid_paramfile)
+    redcurvestring = redcurve2string(redcurve)
 
     if (n_elements(sfhgrid_basedir) eq 0) then sfhgrid_basedir = $
       '${ISEDFIT_SFHGRID_DIR}/'
