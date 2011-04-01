@@ -9,7 +9,7 @@
 ; INPUTS:
 ;
 ; KEYWORD PARAMETERS:
-;   kroupa - use the Kroupa+01 IMF (default is the Salpeter+05 IMF) 
+;   kroupa - use the Kroupa+01 IMF (default is the Salpeter IMF) 
 ;   chabrier - use the Chabrier+03 IMF
 ;
 ; OUTPUTS:

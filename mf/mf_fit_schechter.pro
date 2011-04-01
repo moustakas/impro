@@ -30,7 +30,7 @@ end
 
 pro mf_fit_schechter, logmass, phi, phierr, schechter, $
   alpha_err=alpha_err, parinfo=parinfo, quiet=quiet, $
-  norhoerr=norhoerr
+  norhoerr=norhoerr, nmonte=nmonte
 
 ; remember that MSTAR is logarithmic!
 
@@ -41,11 +41,13 @@ pro mf_fit_schechter, logmass, phi, phierr, schechter, $
 ; which can be accomplished using this parameter (in practice, I
 ; simply overwrite the output error from MPFIT, which is zero is the
 ; parameter is fixed)
+
+    if (n_elements(nmonte) eq 0) then nmonte = 500
     
     if (n_tags(schechter) eq 0) then begin
        schechter = {phistar: 1.d-2, mstar: 10.5D, alpha:-1.0d, $
          phistar_err: 0.0d, mstar_err: 0.0d, alpha_err: 0.0d, $
-         chi2_dof: 1E6, rho: 0.0D, rho_err: 0.0D, $
+         chi2_dof: 1E6, covar: dblarr(3,3), rho: 0.0D, rho_err: 0.0D, $
          rho_tot: 0.0D, rho_tot_err: 0.0D}
     endif
 
@@ -63,6 +65,7 @@ pro mf_fit_schechter, logmass, phi, phierr, schechter, $
     if (dof gt 0.0) then schechter.chi2_dof = chi2/float(dof)
 ;   splog, perror, mpstatus
 
+    schechter.covar = covar
     schechter.phistar = params[0]
     schechter.mstar = params[1]
     schechter.alpha = params[2]
@@ -70,12 +73,17 @@ pro mf_fit_schechter, logmass, phi, phierr, schechter, $
     schechter.mstar_err = perror[1]
     schechter.alpha_err = perror[2]
 
-; get the total mass density by integrating the observed MF and also
-; by integrating the full model from 0-->infty
+; get the total stellar mass density two ways: by integrating the
+; observed MF and also by integrating the *model* from 0-->infty  
     schechter.rho = im_integral(10^logmass,phi)
-    schechter.rho_err = sqrt(im_integral(10^logmass,phierr^2)) ; not right!
-;   schechter.rho = im_integral(10^logmass,mf_schechter(logmass,schechter))
+    rho_monte = dblarr(nmonte)
+    for ii = 0, nmonte-1L do begin
+       phi_monte = phi + randomn(seed,n_elements(phi))*phierr
+       rho_monte[ii] = im_integral(10^logmass,phi_monte)
+    endfor
+    schechter.rho_err = djsig(rho_monte)
 
+; integrate the model    
     massaxis = range(0.0,15.0,500)
     schechter.rho_tot = im_integral(10^massaxis,$
       mf_schechter(massaxis,schechter))
@@ -88,9 +96,9 @@ pro mf_fit_schechter, logmass, phi, phierr, schechter, $
           use_alpha_err = 0.0
        endif else use_alpha_err = alpha_err
        use_covar = covar[0:1,0:1]
+;      use_covar = covar
        if (schechter.phistar_err gt 0.0) and (schechter.mstar_err gt 0.0) then begin
-          nrand = 1000
-          rand = mrandomn(seed,use_covar,nrand)
+          rand = mrandomn(seed,use_covar,nmonte)
           rand[*,0] = rand[*,0]+schechter.phistar
           rand[*,1] = rand[*,1]+schechter.mstar
           ell = covar2ellipse(use_covar,nsigma=1.0) ; get 1-sigma Schechter models
@@ -99,6 +107,7 @@ pro mf_fit_schechter, logmass, phi, phierr, schechter, $
             major=ell.major,minor=ell.minor,angle=ell.angle,$
             xcenter=schechter.phistar,ycenter=schechter.mstar)
           if (indx[0] eq -1) then message, 'Problem here!'
+
 ; Monte Carlo
           mc_rho_tot = dblarr(n_elements(indx))
           for ij = 0L, n_elements(indx)-1 do mc_rho_tot[ij] = $
@@ -112,7 +121,7 @@ pro mf_fit_schechter, logmass, phi, phierr, schechter, $
 ;           schechter.mstar, ell.angle, color=djs_icolor('blue')
        endif else splog, 'Errors are zero!!'
     endif else begin
-;      use_alpha_err = schechter.alpha_err
+       use_alpha_err = schechter.alpha_err
        splog, 'Deal with me!'
     endelse
     

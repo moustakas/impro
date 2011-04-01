@@ -31,8 +31,10 @@
 ;   J. Moustakas, 2008 Oct 17, NYU - written based on a Perl script
 ;     kindly provided by G. Rudnick 
 ;   jm09mar18nyu - use a default value (0.8413) for CONF
+;   jm11mar31ucsd - updated to use the more accurate eq (9) for
+;     computing upper limits
 ;
-; Copyright (C) 2008-2009, John Moustakas
+; Copyright (C) 2008-2010, John Moustakas
 ; 
 ; This program is free software; you can redistribute it and/or modify 
 ; it under the terms of the GNU General Public License as published by 
@@ -52,7 +54,7 @@ function im_poisson_limits, n_i, conf
        return, -1.0
     endif
 
-    if (n_elements(conf) eq 0L) then conf = 0.8413 else $
+    if (n_elements(conf) eq 0L) then conf = 0.8413D else $
       if (n_elements(conf) ne 1L) then begin
        splog, 'CONF must be a scalar'
        return, -1.0
@@ -82,13 +84,15 @@ function im_poisson_limits, n_i, conf
     gamma = [0.0D, -4.0D, -2.50D, -2.22D, -2.19D, -2.07D, $
       -2.0D, -1.88D, -1.85D, -1.80D]
 
-; eqs. (10) and (14) from Geherls (1986)    
-    limit_up_grid = n_i + SS*sqrt(n_i+1.0D) + (SS^2.0+2.0D)/3.0D
+; equations (9) and (14); note that eq (9) becomes slightly less
+; inaccurate than eq (7) for large CONF (>0.99) and small n
+;   limit_up_grid = n_i + SS*sqrt(n_i+1.0D) + (SS^2.0+2.0D)/3.0D ; eq (10) is inaccurate!!
+    limit_up_grid = (n_i+1)*(1-1D/(9*(n_i+1))+SS/(3*sqrt(n_i+1)))^3
     if (n_i lt 1.0) then limit_dn_grid = 0.0D else begin
        limit_dn_grid = n_i*(1.0D - 1.0D/(9.0D*n_i) - SS/(3.0D*sqrt(n_i)) + $
          beta*n_i^gamma)^3.0D
     endelse
-
+    
     limit_up = interpol(limit_up_grid,conf_grid,conf)
     if (limit_dn_grid[0] eq 0.0) then limit_dn = limit_dn_grid else $
       limit_dn = interpol(limit_dn_grid,conf_grid,conf)

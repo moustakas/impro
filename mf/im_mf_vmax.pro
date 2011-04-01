@@ -58,40 +58,71 @@ function im_mf_vmax, mass, oneovervmax, minmass=minmass, $
 
 ; generate weighted histogram    
     phi = im_hist1d(mass,oneovervmax,binsize=binsize,obin=binmass,$
-      binedge=0,omin=omin,omax=omax,h_err=phierr,histmin=histmin,$
+      binedge=0,omin=omin,omax=omax,h_err=phierr_poisson,histmin=histmin,$
       histmax=histmax,reverse_indices=rev)
+;   phierr_poisson = phierr_poisson>(im_poisson_limits(0.0,0.8413))[1]
 
-; compute FULLBIN and NUMBER
+; compute FULLBIN, NUMBER, and the statistical error in each bin,
+; taking into account small-number statistics (see Zhu+09 and
+; Gehrels+86) 
     nbins = n_elements(phi)
     fullbin = intarr(nbins)+1 ; start with all full
     number = intarr(nbins)
+    weff = fltarr(nbins)
+    neff = fltarr(nbins)
+    phierr_gehrels = fltarr(2,nbins)
     for ii = 0L, nbins-1 do begin
        number[ii] = rev[ii+1]-rev[ii] ; number of objects per bin
-       if (rev[ii] eq rev[ii+1]) then fullbin[ii] = 0 else $
-         fullbin[ii] = total(mass[rev[rev[ii]:rev[ii+1]-1]] lt minmass) eq 0.0
+       if (rev[ii] eq rev[ii+1]) then begin
+          fullbin[ii] = 0 
+       endif else begin
+          fullbin[ii] = total(mass[rev[rev[ii]:rev[ii+1]-1]] lt minmass) eq 0.0
+          weff[ii] = total(oneovervmax[rev[rev[ii]:rev[ii+1]-1]]^2,/double)/$ ; effective weight
+            total(oneovervmax[rev[rev[ii]:rev[ii+1]-1]],/double)
+          if (weff[ii] le 0) then message, 'This should not happen!'
+          neff[ii] = total(oneovervmax[rev[rev[ii]:rev[ii+1]-1]],/double)/weff[ii] ; effective number of objects
+          phierr_gehrels[*,ii] = weff[ii]*sqrt(im_poisson_limits(neff[ii],0.8413)) ; 1-sigma
+       endelse
     endfor
 
 ; pack into a structure
     null = fltarr(50>n_elements(phi))-999.0
     mf_data = {$
-      ngal:         ngal,$
-      nbins:       nbins,$
-      fullbin: fix(null),$
-      number:  fix(null),$
-      mass:         null,$
-      phi:          null,$
-      phierr:       null}
-    mf_data.fullbin[0:nbins-1] = fullbin
-    mf_data.number[0:nbins-1] = number
-    mf_data.mass[0:nbins-1] = binmass
+      ngal:           ngal,$
+      nbins:         nbins,$
+      fullbin:   fix(null),$
+      number:    fix(null),$
+      neff:           null,$
+      weff:           null,$
+      mass:           null,$
+      phi:            null,$
+      phierr_poisson: null,$
+      phierr_lower:   null,$
+      phierr_upper:   null,$
+      phierr:         null}
 
-    if keyword_set(nolog) then begin
-       mf_data.phi[0:nbins-1] = phi
-       mf_data.phierr[0:nbins-1] = phierr
-    endif else begin
-       mf_data.phi[0:nbins-1] = alog10(phi+(fullbin eq 0))*(fullbin ne 0)
-       mf_data.phierr[0:nbins-1] = phierr/(phi+(fullbin eq 0))/alog(10)*(fullbin ne 0)
-    endelse
+    mf_data.fullbin[0:nbins-1] = fullbin
+    mf_data.mass[0:nbins-1] = binmass
+    mf_data.number[0:nbins-1] = number
+    mf_data.neff[0:nbins-1] = neff
+    mf_data.weff[0:nbins-1] = weff
+    
+    mf_data.phi[0:nbins-1] = phi
+    mf_data.phierr_poisson[0:nbins-1] = phierr_poisson
+    mf_data.phierr_lower[0:nbins-1] = reform(phierr_gehrels[0,*])
+    mf_data.phierr_upper[0:nbins-1] = reform(phierr_gehrels[1,*])
+    mf_data.phierr[0:nbins-1] = total(phierr_gehrels,1)/2.0 ; average error
+       
+;   if (keyword_set(nolog) eq 0) then begin
+;      good = where(mf_data.fullbin gt 0,ngood)
+;      if (ngood ne 0) then begin
+;         mf_data.phierr_poisson[good] = mf_data.phierr_poisson[good]/mf_data.phi[good]/alog(10)
+;         mf_data.phierr_lower[good] = mf_data.phierr_lower[good]/mf_data.phi[good]/alog(10)
+;         mf_data.phierr_upper[good] = mf_data.phierr_upper[good]/mf_data.phi[good]/alog(10)
+;         mf_data.phierr[good] = mf_data.phierr[good]/mf_data.phi[good]/alog(10)
+;         mf_data.phi[good] = alog10(mf_data.phi)
+;      endif
+;   endif
 ;   if total(phi le 0) gt 0 then stop
     
 ; QAplot    

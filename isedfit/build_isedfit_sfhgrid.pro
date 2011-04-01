@@ -292,23 +292,6 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
     if (n_elements(sfhgrid) eq 0) then sfhgrid = 1
     if (n_elements(redcurve) eq 0) then redcurve = 0
 
-    case synthmodels of
-       'bc03': 
-       'pegase':
-       'basti':
-       'basti_ae':
-       'maraston05':
-       'fsps':
-       else: message, 'Stellar pops models '+synthmodels+' not supported!'
-    endcase
-
-    case imf of
-       'chab':
-       'salp':
-       'kroupa01':
-       else: message, 'IMF '+imf+' not supported!'
-    endcase
-    
 ; call this routine iteratively    
     if (n_elements(sfhgrid) gt 1) or (n_elements(redcurve) gt 1) then begin
        for ii = 0, n_elements(sfhgrid)-1 do begin
@@ -332,7 +315,7 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
     sspinfofile = getenv('ISEDFIT_SFHGRID_DIR')+$
       '/ssp/info_'+synthmodels+'_'+imf+'.fits.gz'
     if (file_test(sspinfofile) eq 0) then begin
-       splog, 'SSP info file '+sspinfofile+' not found'
+       splog, 'SSP info file '+sspinfofile+' not found!'
        return
     endif
     sspinfo = mrdfits(sspinfofile,1,/silent)
