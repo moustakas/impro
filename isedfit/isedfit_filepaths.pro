@@ -86,7 +86,7 @@ function isedfit_filepaths, params, outprefix=outprefix1, iopath=iopath, $
     
     if (n_elements(outprefix1) eq 0) then thisprefix = prefix else $
       thisprefix = outprefix1
-    if (sfhgrid eq 3) then $
+    if (redcurvestring eq '') then $
       outfile = thisprefix+'_'+synthmodels+'_'+imf+'_'+sfhgridstring+suffix else $
       outfile = thisprefix+'_'+synthmodels+'_'+imf+'_'+redcurvestring+'_'+sfhgridstring+suffix
     postfile = outfile+'_post'
