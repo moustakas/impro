@@ -45,7 +45,8 @@ pro mf_fit_schechter_plus, logmass, phi, phistddev, $
        schechter_plus = {phistar:1.0D-2, mstar: 10.5D, alpha:-1.0D, phiplus:1.0D-3, $
          alphaplus:-1.0D, phistar_err: 0.0D, mstar_err: 0.0D, $
          alpha_err: 0.0D, phiplus_err: 0.0D, alphaplus_err: 0.0D, $
-         chi2_dof: 1E6, rho: 0.0D, rho_err: 0.0D}
+         chi2_dof: 1E6, covar: dblarr(5,5), rho: 0.0D, rho_err: 0.0D, $
+         rho_tot: 0.0D, rho_tot_err: 0.0D}
     endif
 
     if (n_elements(parinfo) eq 0) then begin
@@ -66,9 +67,10 @@ pro mf_fit_schechter_plus, logmass, phi, phistddev, $
 
     params = mpfitfun('mf_fit_schechter_plus_func',logmass,phi,$
       phistddev,parinfo=parinfo,perror=perror,status=mpstatus,$
-      quiet=quiet,bestnorm=chi2,dof=dof)
+      quiet=quiet,bestnorm=chi2,dof=dof,covar=covar)
     if (dof gt 0.0) then schechter_plus.chi2_dof = chi2/float(dof)
 
+    schechter_plus.covar = covar
     schechter_plus.phistar = params[0]
     schechter_plus.mstar = params[1]
     schechter_plus.alpha = params[2]
