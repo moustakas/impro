@@ -3,7 +3,8 @@ function mf_schechter_plus_random, minmass, maxmass, nrand, $
 ; jm11apr01ucsd - return a random number drawn from an double
 ; Schechter function
 
-    phi = make_array(nrand,type=size(minmass,/type))
+    phi = lonarr(nrand)
+;   phi = make_array(nrand,type=size(minmass,/type))
     mass = phi
     count = 0
     while (count lt nrand) do begin

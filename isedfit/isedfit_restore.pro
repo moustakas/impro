@@ -94,13 +94,10 @@ function isedfit_restore, paramfile, isedfit, params=params, $
 ;      if (ncrap ne 0) then allchunks[crap] = 0 ; HACK!!
        chunks = allchunks[uniq(allchunks,sort(allchunks))]
        nchunk = n_elements(chunks)
-
-; initialize the model structure    
-       case strtrim(params.synthmodels,2) of
-          'bc03': npix = 6900
-          'pegase': npix = 1221
-          else: message, 'Stop what you are doing and code me!'
-       endcase
+       
+; initialize the model structure (need to get the number of pixels)
+       junk = mrdfits(fp.sfhgrid_chunkfiles[0],1,row=0,/silent)
+       npix = n_elements(junk.wave)
 
        model = {wave: fltarr(npix), flux: fltarr(npix)}
        model = replicate(temporary(model),ngal)

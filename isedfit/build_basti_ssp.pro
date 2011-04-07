@@ -42,12 +42,11 @@ pro build_basti_ssp, enhanced=enhanced
 
     splog, 'Building the BASTI SSPs'
 
-    ssppath = getenv('ISEDFIT_SFHGRID_DIR')+'/ssp/'
-    outpath = ssppath+'basti/'
-
     imfstr = 'kroupa01'
-    if keyword_set(enhanced) then enh = 'ae_' else $
-      enh = ''
+    if keyword_set(enhanced) then enh = 'ae' else enh = 'ss'
+
+    ssppath = getenv('ISEDFIT_SFHGRID_DIR')+'/ssp/'
+    outpath = ssppath+'basti_'+enh+'/'
 
     dist = 10.0*3.085678D18 ; fiducial distance [10 pc in cm]
     
@@ -76,7 +75,7 @@ pro build_basti_ssp, enhanced=enhanced
 ;      ssp.flux = ssp.flux/rebin(reform(ssp.mstar,1,nage),npix,nage)
        ssp.flux = ssp.flux/(4.0*!dpi*dist^2.0) ; [erg/s/cm2/A/Msun]
 
-       sspfile1 = 'basti_'+enh+imfstr+'_'+Z2string(ssp.Z)+'.fits'
+       sspfile1 = 'basti_'+enh+'_'+imfstr+'_'+Z2string(ssp.Z)+'.fits'
        im_mwrfits, ssp, outpath+sspfile1, /clobber
 
        Z[iZ] = ssp.Z
@@ -89,7 +88,7 @@ pro build_basti_ssp, enhanced=enhanced
       Z:                      Z,$
       sspfile:          sspfile+'.gz'}
 
-    infofile = ssppath+'info_basti_'+enh+imfstr+'.fits'
+    infofile = ssppath+'info_basti_'+enh+'_'+imfstr+'.fits'
     im_mwrfits, info, infofile, /clobber
     
 return

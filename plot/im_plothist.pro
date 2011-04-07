@@ -43,12 +43,25 @@ pro im_plothist, arr, xhist, yhist, bin=bin, edge=edge, weight=weight, $
   fpattern=fpattern, forientation=forientation, fraction=fraction, _extra=extra
 
     ndata = n_elements(arr)
+    if (ndata eq 0L) then begin
+       doc_library, 'im_plothist'
+       return
+    endif
+    
+    dtype = size(arr,/type)
     if (n_elements(weight) eq 0L) then weight = dblarr(ndata)+1.0
 
-    if (n_elements(bin) eq 0L) then $
-      bin = (max(arr)-min(arr))/double(ceil(0.3D*sqrt(ndata))) else $
-        bin = float(abs(bin))
+    if (n_elements(bin) eq 0) then begin
+       bin = (max(arr)-min(arr))/double(ceil(0.3D*sqrt(ndata)))
+       if (dtype eq 4) then bin = float(bin)
+    endif else begin
+       bin = float(abs(bin))
+    endelse
 
+    if (size(bin,/type) ne size(arr,/type)) then begin
+       message, 'BIN and ARR datatypes must match!'
+    endif
+    
     yhist = im_hist1d(arr,weight,binsize=bin,obin=xhist,binedge=edge,_extra=extra)
     n_hist = n_elements(yhist)
 
@@ -58,22 +71,27 @@ pro im_plothist, arr, xhist, yhist, bin=bin, edge=edge, weight=weight, $
 
     if keyword_set(noplot) then return
 
+    if (n_elements(extra) ne 0) then begin
+       if tag_exist(extra,'xtitle') then extra.xtitle = textoidl(extra.xtitle)
+       if tag_exist(extra,'ytitle') then extra.ytitle = textoidl(extra.ytitle)
+       if tag_exist(extra,'color') then extra.color = djs_icolor(extra.color)
+    endif
     if (n_elements(psym) eq 0L) then psym = 10
 
     if keyword_set(overplot) then begin
        if keyword_set(cumulative) then begin
           yhist = total(yhist,/cumulative)/total(yhist)
-          djs_oplot, xhist, yhist, _extra=extra 
+          oplot, xhist, yhist, _extra=extra 
        endif else begin
-          djs_oplot, [xhist[0]-bin,xhist,xhist[n_hist-1]+bin], [0,yhist,0], $ 
+          oplot, [xhist[0]-bin,xhist,xhist[n_hist-1]+bin], [0,yhist,0], $ 
             psym=psym, _extra=extra
        endelse
     endif else begin
        if keyword_set(cumulative) then begin
           yhist = total(yhist,/cumulative)/total(yhist)
-          djs_plot, xhist, yhist, _extra=extra 
+          plot, xhist, yhist, _extra=extra 
        endif else begin
-          djs_plot, [xhist[0]-bin,xhist,xhist[n_hist-1]+bin], [0,yhist,0],  $ 
+          plot, [xhist[0]-bin,xhist,xhist[n_hist-1]+bin], [0,yhist,0],  $ 
             psym=psym, _extra=extra
        endelse
     endelse
@@ -89,7 +107,7 @@ pro im_plothist, arr, xhist, yhist, bin=bin, edge=edge, weight=weight, $
        xfill = xfill > !X.CRANGE[0] < !X.CRANGE[1] ;Make sure within plot range
        yfill = yfill > !Y.CRANGE[0] < !Y.CRANGE[1]
 
-       if keyword_set(Fcolor) then Fc = Fcolor else Fc = !P.Color
+       if keyword_set(Fcolor) then Fc = djs_icolor(Fcolor) else Fc = !P.Color
        if keyword_set(Fline) then begin
           if keyword_set(Fspacing) then Fs = Fspacing else Fs = 0
           if keyword_set(Forientation) then Fo = Forientation else Fo = 0
@@ -105,8 +123,8 @@ pro im_plothist, arr, xhist, yhist, bin=bin, edge=edge, weight=weight, $
 ; because the POLYFILL can erase/overwrite parts of the originally plotted
 ; histogram, we need to replot it here.
        if keyword_set(cumulative) then $
-         djs_plot, xhist, yhist, _extra=extra  else $
-           djs_oplot, [xhist[0]-bin,xhist,xhist[n_hist-1]+bin], [0,yhist,0], $
+         plot, xhist, yhist, _extra=extra  else $
+           oplot, [xhist[0]-bin,xhist,xhist[n_hist-1]+bin], [0,yhist,0], $
          psym=psym, _extra=extra
     endif
 
