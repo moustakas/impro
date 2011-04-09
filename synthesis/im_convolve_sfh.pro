@@ -64,7 +64,7 @@
 ;-
 
 function im_convolve_sfh, ssp, tau=tau, sfh=sfh, time=time, $
-  mstar=mstar, cspmstar=cspmstar, nsamp=nsamp
+  mstar=mstar, cspmstar=cspmstar, nsamp=nsamp, debug=debug
 
     if (n_elements(ssp) eq 0L) then begin
        doc_library, 'im_convolve_sfh'
@@ -148,8 +148,11 @@ function im_convolve_sfh, ssp, tau=tau, sfh=sfh, time=time, $
 
        if (ntau gt 0) then thissfh = exp(-thistime/(tau*1D9))/(tau*1D9) else $ ; [Msun/yr]
          thissfh = interpolate(sfh,findex(time*1D9,thistime))                  ; [Msun/yr]
-;      djs_plot, time, sfh, psym=6, xsty=3, ysty=3
-;      djs_oplot, thistime, thissfh, psym=6, sym=0.2, color='orange'
+       if keyword_set(debug) then begin
+          if (ii eq 0) then djs_plot, time, sfh, psym=6, xsty=3, ysty=3, /xlog
+          djs_oplot, thistime, thissfh, psym=6, sym=0.2, color='orange'
+;         cc = get_kbrd(1)
+       endif
 
 ; do the convolution integral       
        dt = (shift(thistime,-1)-shift(thistime,+1))/2.0
@@ -158,11 +161,11 @@ function im_convolve_sfh, ssp, tau=tau, sfh=sfh, time=time, $
 
        weight = thissfh*dt ; [Msun]
        vweight = rebin(reform(weight,1,nthistime),npix,nthistime) 
-       cspflux[*,ii] = total(isspflux*vweight,2)
+       cspflux[*,ii] = total(isspflux*vweight,2,/double)
 
 ; compute the output stellar mass
        if (nmstar gt 0) then cspmstar[ii] = $
-         total(interpolate(mstar,sspindx)*weight)
+         total(interpolate(mstar,sspindx)*weight,/double)
     endfor
 ;   splog, 'Time = ', systime(1)-t0
 

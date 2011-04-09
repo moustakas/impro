@@ -157,7 +157,7 @@ function read_extras, extrafile, extrapath=extrapath, array_extras=array_extras,
        return, -1L
     endif
        
-    if not keyword_set(silent) then print, 'Reading extras file '+extrapath+extrafile+'.'
+    if not keyword_set(silent) then print, 'Reading extras file '+extrapath+extrafile
 
 ; read the first 50 lines of the file to figure out the column names
 ; and also to determine on which row the data begin 
@@ -329,7 +329,7 @@ function im_read_bc03, isedfile=isedfile, isedpath=isedpath, metallicity=metalli
 
     if file_test(isedpath+isedfile) then begin
        if not keyword_set(silent) then begin
-          print, 'Reading SSP file '+isedpath+isedfile+':'
+          print, 'Reading SSP file '+isedpath+isedfile
           print, imfinfo+', '+resinfo+', '+Zinfo
        endif
        tempbin = read_binary(isedpath+isedfile,data_type=4,endian=endian)

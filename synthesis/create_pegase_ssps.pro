@@ -18,7 +18,22 @@
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
+;   To increase the number of ages:
 ;
+;      agesfile = hrpath+'ages.dat'
+;      if (file_test(agesfile) eq 0) then begin
+;         splog, 'File ages.dat not found!'
+;         return
+;      endif
+;      readcol, agesfile, ages, format='A', comment='!', /silent
+;      nage = n_elements(ages)
+;      
+;      ages = round(range(1,20000,150,/log))
+;      ages = ages[uniq(ages,sort(ages))]
+;      junk = replicate({ages: 0L},n_elements(ages))
+;      junk.ages = ages
+;      struct_print, junk, file='ages.dat', /no_hea
+;    
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2011 Mar 29, UCSD
 ;
