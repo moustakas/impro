@@ -649,7 +649,7 @@ sol = BVLSN_Solve_pxf(a[goodpixels,*],galaxy[goodpixels]/noise[goodpixels],degre
 bestfit = c # sol
 err = (galaxy[goodpixels]-bestfit[goodpixels])/noise[goodpixels]
 
-if (total(sol gt 1D20) ge 1) then stop ; message, 'Problem here' ; test
+if (total(sol gt 1D20) ge 1) then splog, 'Possible problem!' ; message, 'Problem here' ; test
 
 ; output weights for the templates
 weights = sol[degree+1:n_elements(sol)-1]
