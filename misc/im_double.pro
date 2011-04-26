@@ -1,5 +1,5 @@
 ;+
-; NAME: ARM_DOUBLE
+; NAME: IM_DOUBLE
 ;       
 ; CATEGORY: miscellaneous
 ;
@@ -21,9 +21,10 @@
 ;    written by A.R.Marble, Steward Obs., December 3, 2003
 ;    modified to accomodate exponential format, ARM, December 5, 2003
 ;    return scalar rather than array of 1 value, ARM, 2004 June 4
+;    jm11apr25ucsd - ported into IMPRO
 ;-
 
-function arm_double, x
+function im_double, x
 
     nx = N_ELEMENTS(x)          ; number of elements in passed array
 

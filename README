@@ -1,0 +1,37 @@
+README
+cosmo - 
+distances - 
+dust - 
+etc - 
+filter - 
+fitting - 
+fivel - 
+galex - 
+gandalf - 
+hiiphot - 
+hiiregions - 
+html - 
+im_nebular - 
+image - 
+imaging_redux - 
+imf - 
+isedfit - general spectral energy distribution fitting code
+kcorr - 
+literature - 
+mangle - 
+mass - 
+math - 
+mcmc - 
+mcmc_lumfunc - 
+mf - 
+misc - 
+ned - 
+optimization - 
+plot - setting up postscript output; dealing with colors
+sextractor - 
+sfrs - 
+sky - 
+spec1d - 
+spectral_analysis - 
+src - 
+synthesis - 

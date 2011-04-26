@@ -220,7 +220,10 @@
 ;          give it to people. 15 August 2001. DWF.
 ;       Added ability to specify color names and indices as vectors. 5 Nov 2002. DWF.
 ;       Fixed a problem with the TRIPLE keyword when specifying a vector of color names. 14 Feb 2003. DWF.
-;       Fixed a small problem with the starting index when specifying ALLCOLORS. 24 March 2003. DWF.
+;       Fixed a small problem with the starting index when specifying
+;         ALLCOLORS. 24 March 2003. DWF.
+;       J. Moustakas, 2008 Aug 22, NYU - default to a white color when
+;         in the X environment, and black otherwise
 ;-
 ;
 ;###########################################################################
@@ -950,12 +953,12 @@ CASE N_Elements(theColor) OF
 
          IF Keyword_Set(triple) THEN BEGIN
             colors = LonArr(ncolors, 3)
-            FOR j=0,ncolors-1 DO colors[j,*] = FSC_Color(theColor[j], colorIndex[j], Filename=filename, $
+            FOR j=0,ncolors-1 DO colors[j,*] = im_Color(theColor[j], colorIndex[j], Filename=filename, $
                Decomposed=decomposedState, /Triple)
             RETURN, colors
          ENDIF ELSE BEGIN
             colors = LonArr(ncolors)
-            FOR j=0,ncolors-1 DO colors[j] = FSC_Color(theColor[j], colorIndex[j], Filename=filename, $
+            FOR j=0,ncolors-1 DO colors[j] = im_Color(theColor[j], colorIndex[j], Filename=filename, $
                Decomposed=decomposedState)
             RETURN, colors
         ENDELSE
