@@ -103,16 +103,18 @@ pro write_scamp_catalog, ra, dec, mag, ra_err=ra_err, $
     out1.field_header_card = hdr
 
 ; now make the source list FITS table; at minimum, you need RA, DEC,
-; RA_ERR, DEC_ERR, and MAG; scamp does not seem to use MAG_ERR
-    outcat = {ra: 0.0D, dec: 0.0D, err_a: 0.0D, $
-      err_b: 0.0D, mag: 0.0, mag_err: 0.0}
+; RA_ERR, DEC_ERR, and MAG; scamp does not seem to use MAG_ERR; use
+; the default scamp keywords
+    outcat = {x_world: 0.0D, y_world: 0.0D, erra_world: 0.0D, $
+      errb_world: 0.0D, errtheta_world: 0.0D, mag: 0.0, magerr: 0.0, $
+      flags: 0}
     outcat = replicate(outcat,nobj)
-    outcat.ra = ra
-    outcat.dec = dec
-    outcat.err_a = ra_err
-    outcat.err_b = dec_err
+    outcat.x_world = ra
+    outcat.y_world = dec
+    outcat.erra_world = ra_err
+    outcat.errb_world = dec_err
     outcat.mag = mag
-    outcat.mag_err = mag_err
+    outcat.magerr = mag_err
 
 ; write out; we have to perform some FITS table juggling to get the
 ; EXTNAME header keywords (required by SCAMP) written out

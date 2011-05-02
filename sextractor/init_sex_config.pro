@@ -46,7 +46,7 @@ function init_sex_config, ncopies
       SATUR_KEY:        'SATURATE'        ,$
       MAG_ZEROPOINT:    0.0               ,$
       MAG_GAMMA:        4.0               ,$
-      GAIN:             0.0               ,$ ; ???
+      GAIN:             ''                ,$ ; should be string, to handle MEF
       PIXEL_SCALE:      1.0               ,$
 ; star/galaxy separation
       SEEING_FWHM:      1.2               ,$
