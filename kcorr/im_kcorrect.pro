@@ -272,11 +272,19 @@ function im_kcorrect, redshift, maggies, ivarmaggies, in_filterlist, $
     if arg_present(uvflux) then begin
        k_load_vmatrix, vmatrix, lambda, vfile=vfile, $
          lfile=lfile, vpath=vpath, vname=vname
+       wave = k_lambda_to_centers(lambda)
        uvwave = [1500.0,2800.0]
-       uvindx = findex(k_lambda_to_centers(lambda),uvwave)
        uvflux = fltarr(n_elements(uvwave),nredshift)
-       for ii = 0L, nredshift-1L do uvflux[*,ii] = $ ; [erg/s/cm2/A]
-         interpolate(reform(vmatrix#coeffs[*,ii]),uvindx)
+;      uvindx = findex(wave,uvwave)
+;      for ii = 0L, nredshift-1L do uvflux[*,ii] = $ ; [erg/s/cm2/A]
+;        interpolate(reform(vmatrix#coeffs[*,ii]),uvindx)
+       ww1500 = where((wave gt uvwave[0]-30) and (wave lt uvwave[0]+30))
+       ww2800 = where((wave gt uvwave[1]-30) and (wave lt uvwave[1]+30))
+       for ii = 0L, nredshift-1L do begin
+          sed = reform(vmatrix#coeffs[*,ii])
+          uvflux[0,ii] = djs_mean(sed[ww1500])
+          uvflux[1,ii] = djs_mean(sed[ww2800])
+       endfor
     endif
        
 ;   rmatrix = out_rmatrix

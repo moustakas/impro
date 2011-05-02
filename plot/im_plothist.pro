@@ -58,9 +58,9 @@ pro im_plothist, arr, xhist, yhist, bin=bin, edge=edge, weight=weight, $
        bin = float(abs(bin))
     endelse
 
-    if (size(bin,/type) ne size(arr,/type)) then begin
-       message, 'BIN and ARR datatypes must match!'
-    endif
+;   if (size(bin,/type) ne size(arr,/type)) then begin
+;      message, 'BIN and ARR datatypes must match!'
+;   endif
     
     yhist = im_hist1d(arr,weight,binsize=bin,obin=xhist,binedge=edge,_extra=extra)
     n_hist = n_elements(yhist)

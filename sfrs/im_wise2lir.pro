@@ -59,18 +59,18 @@ function wise2lir_model_maggies, model, zref, dlum=dlum
 ; loop and call k_project_filters    
 ;   k_projection_table, rmatrix, model.flux, model.wave, $
 ;     zref, (wise_filterlist())[2:3]
-    model_maggies = dblarr(2,nmodel,nzref)
+    model_maggies = dblarr(4,nmodel,nzref)
     for ii = 0, nmodel-1 do begin
        for jj = 0, nzref-1 do begin
           model_maggies[*,ii,jj] = k_project_filters(k_lambda_to_edges($
             model.wave*(1.0+zref[jj])),model.flux[*,ii]/(4.0*!dpi*dlum[jj]^2)/$
-            (1.0+zref[jj]),filterlist=(wise_filterlist())[2:3])
+            (1.0+zref[jj]),filterlist=wise_filterlist())
        endfor
     endfor
 return, model_maggies
 end
 
-function im_wise2lir, redshift, maggies, ivarmaggies, $
+function im_wise2lir, redshift, maggies, ivarmaggies, chi2=chi2, $
   model_indx=model_indx, err_lir=err_lir, chary=chary, $
   dale=dale, rieke=rieke, debug=debug, zlog=zlog
 
@@ -130,7 +130,7 @@ function im_wise2lir, redshift, maggies, ivarmaggies, $
     nmodel = n_elements(model.lir)
     npix = n_elements(model.wave)
 
-    filt = (wise_filterlist())[2:3]
+    filt = wise_filterlist()
     weff = k_lambda_eff(filterlist=filt)
     nfilt = n_elements(filt)
     
@@ -142,53 +142,83 @@ function im_wise2lir, redshift, maggies, ivarmaggies, $
 ; give the 12- and 22-micron bands equal statistical weight; ignore
 ; the 3.3- and 4.6-micron fluxes
     new_ivarmaggies = ivarmaggies
-;   new_ivarmaggies[0:1,*] = 0.0
-;   new_ivarmaggies[0,*] = max(ivarmaggies,dim=1)
-;   new_ivarmaggies[1,*] = max(ivarmaggies,dim=1)
+    new_ivarmaggies[0:1,*] = 0.0
+;   new_ivarmaggies[2,*] = 0.0
+    new_ivarmaggies[2,*] = max(ivarmaggies,dim=1)
+    new_ivarmaggies[3,*] = max(ivarmaggies,dim=1)
     
 ; need to loop, unfortunately...  derive the uncertainties on L(IR)
 ; and L(24) using a simple Monte Carlo method
     model_indx = fltarr(ngal)-1.0
     lir = model_indx*0.0-1.0
     err_lir = model_indx*0.0-1.0
+    chi2 = model_indx*0.0-1.0
 
     nmonte = 100
+    nfine = 20
+
     lir_monte = fltarr(nmonte)
-    for igal = 0L, ngal-1L do begin
+    for igal = 0L, ngal-1 do begin
        nmaggies = abs(maggies[*,igal]*1.0D) ; need absolute value to deal with negative fluxes correctly
        nivarmaggies = new_ivarmaggies[*,igal]*1.0D
        if (total(nivarmaggies gt 0) ge 1) then begin
 ;      if (total((nmaggies gt 0) and (nivarmaggies gt 0)) ge 1) then begin
-; compute chi2
+; compute and minimize chi2 (see MFINDCHI2MIN)
           vmodelmaggies = model_maggies[*,*,igal]
           vmaggies = rebin(reform(nmaggies,nfilt,1),nfilt,nmodel)
           vivarmaggies = rebin(reform(nivarmaggies,nfilt,1),nfilt,nmodel)
           vchi2 = total(vivarmaggies*(vmaggies-vmodelmaggies)^2,1,/double)
-;         plot, findgen(nmodel), vchi2, psym=-6, /ylog, xsty=3, ysty=3
-;         cc = get_kbrd(1)
-          findchi2min, findgen(nmodel), vchi2, minchi2, modelindx1
-          
+
+; add a floor to prevent negative minima, which can occur          
+          chi2offset = 100
+          vchi2 = vchi2+chi2offset 
+
+          xx = findgen(nmodel)
+          minx = min(xx,max=maxx)
+          y2 = spl_init(xx,vchi2)
+          x2 = findgen(nmodel*nfine+1)/(nmodel*nfine)*(maxx-minx)+minx
+          chi2fit = spl_interp(xx,vchi2,y2,x2)
+
+; use a lower-order interpolation scheme if the chi^2 goes negative          
+          if (min(chi2fit) lt 0.0) then chi2fit = interpol(vchi2,xx,x2,/quad)
+          if (min(chi2fit) lt 0.0) then chi2fit = interpol(vchi2,xx,x2)
+          minchi2 = min(chi2fit,fitplace)
+
+          modelindx1 = x2[fitplace] 
           model_indx[igal] = modelindx1 ; fractional index number
           lir[igal] = interpolate(model.lir,modelindx1)
 
-; debugging QAplot
+          if (minchi2 le 0) then message, 'Negative chi^2'
+          minchi2 = minchi2-chi2offset
+          chi2[igal] = minchi2
+          
+; debugging QAplots
           if keyword_set(debug) then begin
-             modelflam = interpolate(model.flux/(4.0*!dpi*idlum[igal]^2)/(1.0+redshift[igal]),modelindx1)
+             splog, minchi2, modelindx1, lir[igal]
+
+             djs_plot, x2, chi2fit, psym=-6, sym=0.5, xsty=3, ysty=3, /ylog, $
+               xrange=modelindx1+5*[-1,1]
+             djs_oplot, xx, vchi2, psym=-6, sym=3, color='red'
+             djs_oplot, modelindx1*[1,1], 10^!y.crange, color='dark green'
+             djs_oplot, !x.crange, minchi2*[1,1], color='dark green'
+             cc = get_kbrd(1)
+             
+             modelflam = interpolate(model.flux,modelindx1)/(4.0*!dpi*idlum[igal]^2)/(1.0+redshift[igal])
              good = where(modelflam gt 0.0,ngood)
              modelwave = model.wave[good]*(1.0+redshift[igal])
              modelmab = -2.5*alog10(modelflam[good]*rebin(reform(modelwave,ngood,1),$
                ngood,nmodel)^2/im_light(/ang))-48.6
 
-             djs_plot, weff/1D4, -2.5*alog10(maggies[*,igal]), psym=7, color='yellow', $
-               sym=3, xr=[1,500], /xlog, yr=[max(modelmab),min(modelmab)]
-             djs_oplot, weff/1D4, -2.5*alog10(interpolate(vmodelmaggies,modelindx1)), psym=6, sym=3
+             djs_plot, weff*(1.0+redshift[igal])/1D4, -2.5*alog10(maggies[*,igal]), psym=7, color='yellow', $
+               sym=3, xr=[1,500], /xlog, yr=[max(modelmab),min(modelmab)], xsty=3, ysty=3
+             djs_oplot, weff*(1.0+redshift[igal])/1D4, -2.5*alog10(interpolate(vmodelmaggies,modelindx1)), $
+               psym=6, sym=3
              djs_oplot, modelwave/1D4, modelmab
 
 ;            plot, findgen(nmodel), vchi2, xsty=3, ysty=3, psym=6, /ylog, $
 ;              position=[2.0,max(modelmab)+2,9.0,min(modelmab)-2], /noerase, $
 ;              xrange=[0.0,nmodel], yrange=[minmax(vchi2)], /data
-             niceprint, nmaggies, nivarmaggies
-             splog, minchi2, modelindx1, lir[igal]
+;            niceprint, nmaggies, nivarmaggies
              cc = get_kbrd(1)
           endif
 
