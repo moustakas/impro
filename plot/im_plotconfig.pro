@@ -278,9 +278,6 @@ pro im_plotconfig, plotnum, position, psfile=psfile, psclose=psclose, $
 
     xpage1 = total(width1,/double)+total(xmargin1,/double)+total(xspace1,/double)
     ypage1 = total(height1,/double)+total(ymargin1,/double)+total(yspace1,/double)
-;   arm_plotconfig, nx=nx1,ny=ny1, xmargin=xmargin1, ymargin=ymargin1, $
-;     width=width1, height=height1, xspace=xspace1, yspace=yspace1, $
-;     xpage=xpage1, ypage=ypage1, landscape=landscape1, /show
 
 ; get the position vector
     position = im_getposition(nx=nx1,ny=ny1,xmargin=xmargin1,$

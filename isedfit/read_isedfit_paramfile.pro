@@ -69,7 +69,7 @@ function read_isedfit_paramfile, paramfile, sfhgrid=sfhgrid
           'igm': value = fix(value1)
           'maxold': value = fix(value1)
           'redshift': begin
-             zsplit = arm_double(strsplit(value1,',',/extract))
+             zsplit = im_double(strsplit(value1,',',/extract))
              minz = zsplit[0]
              maxz = zsplit[1]
              nz = zsplit[2]
