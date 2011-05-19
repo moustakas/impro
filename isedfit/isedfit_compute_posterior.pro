@@ -39,7 +39,7 @@
 ; General Public License for more details. 
 ;-
 
-function isedfit_packit, isedfit, array, type=type
+function isedfit_packit, isedfit, array, type=type, wquant=wquant
 
     tagavg = tag_indx(isedfit,type+'_avg')
     tagerr = tag_indx(isedfit,type+'_err')
@@ -82,15 +82,15 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
     bigsfr = bigage*0D
     bigsfr100 = bigage*0D ; average over the previous 100 Myr
     bigb100 = bigage*0D   ; birthrate parameter
-;   bigmgal = bigage*0D   ; galaxy mass ignoring mass loss 
+    bigmgal = bigage*0D   ; galaxy mass ignoring mass loss 
     for imod = 0L, nmodel-1 do begin
        these = lindgen(nage)+imod*nage
        sfr = isedfit_reconstruct_sfh(modelgrid[imod],outage=bigage[these],$
-         sfr100=sfr100,b100=b100);,mgalaxy=mgal)
-       bigsfr[these] = sfr
-       bigsfr100[these] = sfr100
+         sfr100=sfr100,b100=b100,mgalaxy=mgal)
+       bigsfr[these] = alog10(sfr)
+       bigsfr100[these] = alog10(sfr100) 
        bigb100[these] = b100
-;      bigmgal[these] = mgal
+       bigmgal[these] = mgal
     endfor
 
 ; additional priors: do not allow dusty, non-star-forming solutions
@@ -142,11 +142,12 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
           isedfit[igal] = isedfit_packit(isedfit[igal],bigebv[allow[these]],type='ebv')
           isedfit[igal] = isedfit_packit(isedfit[igal],bigmu[allow[these]],type='mu')
           isedfit[igal] = isedfit_packit(isedfit[igal],bigb100[allow[these]],type='b100')
-          isedfit[igal] = isedfit_packit(isedfit[igal],10.0^isedfit_post[igal].mass*$
-            bigsfr[allow[these]],type='sfr')
-          isedfit[igal] = isedfit_packit(isedfit[igal],10.0^isedfit_post[igal].mass*$
-            bigsfr100[allow[these]],type='sfr100')
-          
+
+; scale the SFR to the baryonic mass          
+          sfrfactor = alog10(bigmgal[allow[these]]) + galgrid[allow[these]].mass
+          isedfit[igal] = isedfit_packit(isedfit[igal],bigsfr[allow[these]]+sfrfactor,type='sfr')
+          isedfit[igal] = isedfit_packit(isedfit[igal],bigsfr100[allow[these]]+sfrfactor,type='sfr100')
+
           neg = where(isedfit_post[igal].mass le 0)
           if (neg[0] ne -1) then message, 'Negative mass!'
        
@@ -177,8 +178,8 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
           isedfit[igal].mass = galgrid[mindx].mass
           isedfit[igal].bestmaggies = galgrid[mindx].bestmaggies
           
-          isedfit[igal].sfr = 10.0^isedfit[igal].mass*bigsfr[mindx]
-          isedfit[igal].sfr100 = 10.0^isedfit[igal].mass*bigsfr100[mindx]
+          isedfit[igal].sfr = bigsfr[mindx] + isedfit[igal].mass
+          isedfit[igal].sfr100 = bigsfr100[mindx] + isedfit[igal].mass
        endif
     endfor 
 

@@ -1,7 +1,7 @@
 function isedfit_reconstruct_sfh, info, outage=outage, mtau=mtau, $
   aburst=aburst, mburst=mburst, mgalaxy=outmgalaxy, sfr100=outsfr100, $
   b100=outb100, notruncate=notruncate, sfhtau=outsfhtau, sfhburst=outsfhburst, $
-  nooversample=nooversample, debug=debug
+  nooversample=nooversample, debug=debug, _extra=extra
 ; jm10dec22ucsd - given an iSEDfit structure, reconstruct the star
 ; formation history, allowing for multiple bursts
 
@@ -143,6 +143,14 @@ function isedfit_reconstruct_sfh, info, outage=outage, mtau=mtau, $
           endelse
           sfr100[iage] = mtot100/(dt*1D9)
           b100[iage] = sfr100[iage]/(mgalaxy[iage]/(1D9*age[iage]))
+
+;         print, age[iage], mtot100, mtot100/(dt*1D9), sfh[iage]
+;         plot, age, sfhburst, xr=[1.4,2.4], psym=-6, xsty=3, ysty=3
+;         djs_oplot, age[iage]*[1,1], !y.crange, color='red'
+;         djs_oplot, (age[iage]-dt)*[1,1], !y.crange, color='blue'
+;         djs_oplot, age[0:iage], sfr100[0:iage], psym=-6, color='cyan'
+;         if (outage[iage] ge 1.65) then cc = get_kbrd(1) ; stop
+
        endfor
     endif
 
@@ -157,8 +165,9 @@ function isedfit_reconstruct_sfh, info, outage=outage, mtau=mtau, $
 
 ; QAplot    
     if keyword_set(debug) then begin
-       djs_plot, age, sfh, /xlog, xsty=3, ysty=3, psym=-6, xr=[min(age)>0.01,max(age)]
+       djs_plot, age, sfh, xlog=0, xsty=3, ysty=3, psym=-6, _extra=extra;, xr=[min(age)>0.01,max(age)]
        djs_oplot, outage, outsfh, psym=6, color='orange'
+       djs_oplot, outage, outsfr100, psym=6, color='blue'
 ;      djs_oplot, outage, outsfhtau, color='blue', psym=-6, sym=0.5
 ;      djs_oplot, outage, outsfhburst, color='red', psym=-6, sym=0.5
        if dotruncate then djs_oplot, tburst[nb-1]+info.tauburst*[1,1], !y.crange, color='yellow'

@@ -101,9 +101,10 @@ pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfi
        return
     endif
 
+    ndim = size(maggies,/n_dim)
     dims = size(maggies,/dim)
+    if (ndim eq 1) then ngal = 1 else ngal = dims[1]  ; number of galaxies
     nfilt = dims[0] ; number of filters
-    ngal = dims[1]  ; number of galaxies
 
 ; error checking on the input photometry    
     nmaggies = n_elements(maggies)

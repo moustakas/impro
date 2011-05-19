@@ -80,7 +80,7 @@ function build_isedfit_agegrid, info, inage=inage, nage=nage, $
     nsamp = long(round(nage*0.12)<(0.8*nage/float(nb))) ; ages per burst
     nsamp = nsamp+1*(odd(nsamp) eq 0) ; ensure odd
     if (nsamp gt 5) then begin                ; if NAGE is really small....
-       fact = range(0.3,4.0,(nsamp-1)/2,/log) ; 0.3-4-sigma
+       fact = range(0.1,4.0,(nsamp-1)/2,/log) ; 0.1-4-sigma
 
        for ib = 0, nb-1 do begin
           burstage1 = [reverse(tb[ib]-dtb[ib]*fact),tb[ib],tb[ib]+dtb[ib]*fact]
