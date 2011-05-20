@@ -73,10 +73,27 @@ function isedfit_reconstruct_sfh, info, outage=outage, mtau=mtau, $
 ;             aburst[ib] = fburst[ib]*mtau*(1.0-exp(-tburst[ib]/info.tau))/$
 ;           (sqrt(2.0*!pi)*dtburst[ib]*1D9)
 
-          sfhburst1[*,ib] = aburst[ib]*exp(-0.5*((age-tburst[ib])/dtburst[ib])^2)/sqrt(2.0*!pi) ; [Msun/yr]
-;         sfhburst1[*,ib] = aburst[ib]*exp(-0.5*((age-tburst[ib])/dtburst[ib])^2) ; [Msun/yr]
-          mburst[ib] = im_integral(age*1D9,sfhburst1[*,ib]) ; [Msun]
-;         mburst[ib] = aburst[ib]*sqrt(2.0*!pi)*dtburst[ib]*1D9 ; [Msun]
+; --------------------------------------------------
+; testing a step-function burst with exponential wings
+             during = where((age ge tburst[ib]) and (age le tburst[ib]+dtburst[ib]),nduring)
+             before = where(age lt tburst[ib],nbefore)
+             after = where(age gt tburst[ib]+dtburst[ib],nafter)
+             if (nbefore ne 0) then sfhburst1[before,ib] += aburst[ib]*exp(-(tburst[ib]-age[before])/0.01D)
+             if (nafter ne 0) then sfhburst1[after,ib] += aburst[ib]*exp(-(age[after]-(tburst[ib]+dtburst[ib]))/0.01D)
+             if (nduring ne 0) then sfhburst1[during,ib] += aburst[ib]
+             mburst[ib] = im_integral(age*1D9,sfhburst1[*,ib]) ; [Msun]
+; --------------------------------------------------
+; testing a step-function burst
+;         if (max(age) ge tburst[ib]) then begin
+;            t1 = (findex(age,tburst[ib]))>0
+;            t2 = (findex(age,tburst[ib]+dtburst[ib]))<(nage-1)
+;            sfhburst1[t1:t2,ib] = aburst[ib]
+;            mburst[ib] = aburst[ib]*(interpolate(age,t2)-interpolate(age,t1))*1D9 ; =dtburst[ib] except on the edges
+;         endif
+; --------------------------------------------------
+; old, good, Gaussian burst:
+;         sfhburst1[*,ib] = aburst[ib]*exp(-0.5*((age-tburst[ib])/dtburst[ib])^2)/sqrt(2.0*!pi) ; [Msun/yr]
+;         mburst[ib] = im_integral(age*1D9,sfhburst1[*,ib]) ; [Msun]
        endfor 
        sfhburst = total(sfhburst1,2,/double)
     endif else sfhburst = sfhtau*0D
@@ -166,6 +183,7 @@ function isedfit_reconstruct_sfh, info, outage=outage, mtau=mtau, $
 ; QAplot    
     if keyword_set(debug) then begin
        djs_plot, age, sfh, xlog=0, xsty=3, ysty=3, psym=-6, _extra=extra;, xr=[min(age)>0.01,max(age)]
+       djs_oplot, age, sfr100, psym=6, color='cyan'
        djs_oplot, outage, outsfh, psym=6, color='orange'
        djs_oplot, outage, outsfr100, psym=6, color='blue'
 ;      djs_oplot, outage, outsfhtau, color='blue', psym=-6, sym=0.5

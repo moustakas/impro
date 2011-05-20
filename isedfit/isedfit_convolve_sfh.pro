@@ -58,7 +58,7 @@
 ;-
 
 function isedfit_convolve_sfh, ssp, infosfh=infosfh, time=time, $
-  sfh=sfh, mstar=mstar, cspmstar=cspmstar, nsamp=nsamp
+  sfh=sfh, mstar=mstar, cspmstar=cspmstar, nsamp=nsamp, debug=debug
 
     if (n_elements(ssp) eq 0) or (n_elements(infosfh) eq 0) then begin
        doc_library, 'isedfit_convolve_sfh'
@@ -108,9 +108,18 @@ function isedfit_convolve_sfh, ssp, infosfh=infosfh, time=time, $
        isspflux = interpolate(ssp.flux,sspindx,/grid)
 
        thissfh = isedfit_reconstruct_sfh(infosfh,outage=thistime/1D9,/nooversample)
-;      djs_plot, time, sfh, psym=6, xsty=3, ysty=3, /xlog
-;      djs_oplot, thistime/1D9, thissfh, psym=6, sym=0.2, color='orange'
-;      print, ii, nthistime & cc = get_kbrd(1)
+       if keyword_set(debug) then begin
+          djs_plot, time, sfh, psym=6, xsty=3, ysty=3, /xlog, yrange=[min(sfh),max(sfh)>max(thissfh)];, xrange=[4.5,5.5]
+          djs_oplot, thistime/1D9, thissfh, psym=6, sym=0.2, color='orange'
+          nb = infosfh.nburst
+          if (nb gt 0) and (max(thistime/1D9) ge infosfh.tburst[0]) then begin
+             t1 = findex(thistime/1D9,infosfh.tburst[0:nb-1])
+             t2 = findex(thistime/1D9,infosfh.tburst[0:nb-1]+infosfh.dtburst[0:nb-1])
+             niceprint, t1, t2
+             cc = get_kbrd(1)
+          endif
+;         print, ii, nthistime & cc = get_kbrd(1)
+       endif
 
 ; do the convolution integral       
        dt = (shift(thistime,-1)-shift(thistime,+1))/2.0

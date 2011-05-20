@@ -236,7 +236,8 @@ pro build_grid, montegrid, chunkinfo, ssppath=ssppath, $
                 outmgal = outmstar*0+1
              endif else begin
                 outflux = isedfit_convolve_sfh(sspfits[jj],info=outinfo[indx1[jj]],time=outage,$
-                  mstar=sspfits[jj].mstar,cspmstar=outmstar,nsamp=1.0)
+                  mstar=sspfits[jj].mstar,cspmstar=outmstar,nsamp=1.0,debug=0)
+;               test = isedfit_reconstruct_sfh(outinfo[indx1[jj]],outage=outage,/debug,xr=[3.5,8])
              endelse
              
 ; divide by the mass in stars + remnants, since that's what we measure
@@ -290,7 +291,7 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
     if (n_elements(synthmodels) eq 0) then synthmodels = 'bc03'
     if (n_elements(imf) eq 0) then imf = 'chab' ; 'salp'
     if (n_elements(sfhgrid) eq 0) then sfhgrid = 1
-    if (n_elements(redcurve) eq 0) then redcurve = 0
+    if (n_elements(redcurve) eq 0) then redcurve = 1 ; charlot & fall
 
 ; call this routine iteratively    
     if (n_elements(sfhgrid) gt 1) or (n_elements(redcurve) gt 1) then begin
@@ -387,6 +388,9 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
 ;      montegrid.age = asinh_random(params.minage,params.maxage,[params.nage,params.nmonte],soft=
 ;      montegrid.age = 10^(randomu(seed,params.nage,params.nmonte)*(alog10(params.maxage)-$
 ;        alog10(params.minage))+alog10(params.minage))
+
+;      splog, 'TESTING WITH A UNIFORM AGE GRID!'
+;      for ii = 0L, params.nmonte-1 do montegrid[ii].age = range(params.minage,params.maxage,params.nage)
        montegrid.age = randomu(seed,params.nage,params.nmonte)*(params.maxage-params.minage)+params.minage
        for ii = 0L, params.nmonte-1 do montegrid[ii].age = montegrid[ii].age[sort(montegrid[ii].age)]
 
