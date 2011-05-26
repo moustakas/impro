@@ -91,45 +91,6 @@ pro im_galex_to_maggies, galex, maggies, ivarmaggies, filterlist=filterlist
        obsmaggieserr[0,good[good_fuv]] =  galex[good[good_fuv]].fuv_ncat_fluxerr*10^(-0.4*23.9)
     endif
 
-;; apply a variety of rules to pull out maximally reliable NUV and FUV
-;; photometry; note: we allow photometry from sources with
-;; NUV_ARTIFACT=1, following Wyder+07, and don't explicitly cut on
-;; FUV_ARTIFACT; also note: no explicit cut on FOV_RADIUS, although
-;; ARTIFACT bit 6 (=32) flags sources >0.6 deg from the center of the
-;; detector (see http://galex.stsci.edu/GR6/?page=ddfaq);
-;    obsmaggies = fltarr(2,ngal)-999.0
-;    obsmaggieserr = fltarr(2,ngal)-999.0
-;    
-;; case 1) solid (artifact-free) NUV measurement    
-;    case1 = where((galex.nuv_flux_auto gt -90.0) and (galex.nuv_artifact le 1),ncase1)
-;    if (ncase1 ne 0L) then begin
-;       obsmaggies[0,case1] = galex[case1].nuv_flux_auto*10^(-0.4*nuv_zpt) ; galex flux-->maggies
-;       obsmaggieserr[0,case1] = galex[case1].nuv_fluxerr_auto*10^(-0.4*nuv_zpt)
-;; use the aperture-matched FUV photometry, if possible
-;       case1_fuv = where(galex[case1].fuv_ncat_flux gt -900.0,ncase1_fuv)
-;       obsmaggies[1,case1[case1_fuv]] =  galex[case1[case1_fuv]].fuv_ncat_flux*10^(-0.4*23.9) ; microJy-->maggies
-;       obsmaggieserr[1,case1[case1_fuv]] =  galex[case1[case1_fuv]].fuv_ncat_fluxerr*10^(-0.4*23.9)
-;    endif
-;
-;; case 2) typically we should not trust the FUV photometry of objects
-;; without an NUV detection; however, a special case is if the NUV
-;; photometry is affected by artifacts and the FUV photometry is
-;; artifact-free, in which case we just use the FUV photometry
-;    case2 = where((galex.nuv_flux_auto gt -90.0) and (galex.nuv_artifact gt 1) and $
-;      (galex.fuv_artifact le 1) and (galex.fuv_flux_auto gt -90.0),ncase2)
-;    if (ncase2 ne 0L) then begin
-;       obsmaggies[1,case2] = galex[case2].fuv_flux_auto*10^(-0.4*fuv_zpt) ; galex flux-->maggies
-;       obsmaggieserr[1,case2] = galex[case2].fuv_fluxerr_auto*10^(-0.4*fuv_zpt)
-;; use the aperture-matched NUV photometry, if possible
-;       case2_nuv = where(galex[case2].nuv_fcat_flux gt -900.0,ncase2_nuv)
-;       obsmaggies[0,case2[case2_nuv]] =  galex[case2[case2_nuv]].nuv_fcat_flux*10^(-0.4*23.9) ; microJy-->maggies
-;       obsmaggieserr[0,case2[case2_nuv]] =  galex[case2[case2_nuv]].nuv_fcat_fluxerr*10^(-0.4*23.9)
-;    endif
-;
-;  ww = where(obsmaggies[0,*] lt -900 and obsmaggies[1,*] lt -900)
-;  niceprint, galex[ww].nuv_mag, galex[ww].nuv_artifact, galex[ww].fuv_mag, galex[ww].fuv_artifact
-;  help, where(obsmaggies[0,*] lt -900 and obsmaggies[1,*] gt -900)
-
 ; now correct for extinction, convert to ivarmaggies, and return
     maggies = dblarr(2,ngal)
     ivarmaggies = dblarr(2,ngal)
@@ -147,25 +108,6 @@ pro im_galex_to_maggies, galex, maggies, ivarmaggies, filterlist=filterlist
        maggies[0,fgood] = obsmaggies[0,fgood]*factor
        ivarmaggies[0,fgood] = 1.0/(obsmaggieserr[0,fgood]*factor)^2.0
     endif
-    
-;   bands = ['fuv','nuv']
-;   tags = bands+'_mag'
-;   maggies = fltarr(nbands,ngal)
-;   ivarmaggies = fltarr(nbands,ngal)
-;   errtags = bands+'_magerr'
-;   for ii = 0, nbands-1 do begin
-;      ftag = tag_indx(galex[0],tags[ii])
-;      utag = tag_indx(galex[0],errtags[ii])
-;      good = where($
-;        (galex.(ftag) gt 0.0) and (galex.(ftag) lt 90.0) and $
-;        (galex.(utag) gt 0.0) and (galex.(utag) lt 90.0),ngood)
-;      magerr = galex[good].(utag)
-;      mag = galex[good].(ftag) - kl[ii]*ebv[good]
-;      maggies[ii,good] = 10.0^(-0.4*mag)
-;      notzero = where((maggies[ii,good] gt 0.0),nnotzero)
-;      if (nnotzero ne 0L) then ivarmaggies[ii,good[notzero]] = $
-;        1.0/(0.4*alog(10.0)*(maggies[ii,good[notzero]]*magerr[notzero]))^2
-;   endfor
     
 ; minimum photometric error from Morrissey+07, plus a little
     minerr = sqrt([0.052,0.026]^2 + [0.05,0.05]^2)
