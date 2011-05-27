@@ -87,7 +87,17 @@ function init_isedfit, ngal, nfilt, sfhgrid, sfhgrid_paramfile=sfhgrid_paramfile
       tau_eff_err:    -1.0,$
       Z_eff_err:      -1.0,$
       ebv_eff_err:    -1.0,$
-      mu_eff_err:     -1.0}
+      mu_eff_err:     -1.0,$
+
+      mass_mode:     -1.0,$
+      age_mode:      -1.0,$
+      sfr_mode:      -1.0,$ ; instantaneous
+      sfr100_mode:   -1.0,$ ; 100 Myr
+      b100_mode:     -1.0,$
+      tau_mode:      -1.0,$
+      Z_mode:        -1.0,$
+      ebv_mode:      -1.0,$
+      mu_mode:       -1.0}
 
     isedfit = struct_addtags(struct_addtags(best,qmed),isedfit1)
     isedfit = replicate(temporary(isedfit),ngal)

@@ -39,24 +39,6 @@
 ; General Public License for more details. 
 ;-
 
-function isedfit_packit, isedfit, array, type=type, wquant=wquant
-
-    tagavg = tag_indx(isedfit,type+'_avg')
-    tagerr = tag_indx(isedfit,type+'_err')
-    tag50 = tag_indx(isedfit,type+'_50')
-    tagefferr = tag_indx(isedfit,type+'_eff_err')
-
-    isedfit.(tagavg) = djs_mean(array)
-    isedfit.(tagerr) = djsig(array)
-
-    quant = [1.0-gauss_pdf(2.0),0.5,gauss_pdf(2.0)]
-    wquant = weighted_quantile(array,quant=quant)
-    isedfit.(tag50) = wquant[1]
-    isedfit.(tagefferr) = (wquant[2]-wquant[0])/4.0
-
-return, isedfit
-end
-
 function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
   isedfit_post=isedfit_post, debug=debug
 

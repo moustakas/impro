@@ -362,7 +362,7 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
        if params.flattau then $
          montegrid.tau = randomu(seed,params.nmonte)*(params.tau[1]-params.tau[0])+params.tau[0] else $
            montegrid.tau = randomu(seed,params.nmonte,gamma=1.0)*params.tau[1]+params.tau[0]
-;      im_plothist, montegrid.tau, bin=0.02
+;      im_plothist, montegrid.tau, bin=0.2
 
 ;      nreplace = long(median(histogram(montegrid.tau,bin=params.tau[0])))
 ;      if params.addssp then montegrid[random_indices(params.nmonte,nreplace)].tau = 0.0 
