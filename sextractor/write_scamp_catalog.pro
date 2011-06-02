@@ -52,7 +52,7 @@
 ; General Public License for more details. 
 ;-
 
-pro write_scamp_catalog, ra, dec, mag, ra_err=ra_err, $
+pro write_scamp_catalog, ra, dec, mag, flags=flags, ra_err=ra_err, $
   dec_err=dec_err, mag_err=mag_err, outcat=outcat, $
   outfile=outfile
 
@@ -65,6 +65,7 @@ pro write_scamp_catalog, ra, dec, mag, ra_err=ra_err, $
     if (n_elements(ra_err) eq 0) then ra_err = ra*0.0+0.05/3600.0    ; 50 mas
     if (n_elements(dec_err) eq 0) then dec_err = dec*0.0+0.05/3600.0 ; 50 mas
     if (n_elements(mag_err) eq 0) then mag_err = mag*0.0+0.1   
+    if (n_elements(flags) eq 0) then flags = long(mag*0.0)
     if (n_elements(outfile) eq 0L) then outfile = 'scamp.cat'
     
     if (n_elements(dec) ne nobj) then begin
@@ -85,6 +86,10 @@ pro write_scamp_catalog, ra, dec, mag, ra_err=ra_err, $
     endif
     if (n_elements(mag_err) ne nobj) then begin
        splog, 'Dimensions of MAG and MAG_ERR do not match'
+       return
+    endif
+    if (n_elements(flags) ne nobj) then begin
+       splog, 'Dimensions of RA, DEC, and FLAGS do not match'
        return
     endif
 
@@ -115,6 +120,7 @@ pro write_scamp_catalog, ra, dec, mag, ra_err=ra_err, $
     outcat.errb_world = dec_err
     outcat.mag = mag
     outcat.magerr = mag_err
+    outcat.flags = flags
 
 ; write out; we have to perform some FITS table juggling to get the
 ; EXTNAME header keywords (required by SCAMP) written out
