@@ -49,7 +49,8 @@
 ;-
 ; CATEGORY:    ULY_UTIL
 ;------------------------------------------------------------------------------
-function xrebin, xin,yin,xout,SPLINE=spline,LSQUADRATIC=lsquadratic,QUADRATIC=quadratic, SPLINF=splinf, CUBIC=cubic
+function xrebin, xin,yin,xout,SPLINE=spline,LSQUADRATIC=lsquadratic, $
+  QUADRATIC=quadratic, SPLINF=splinf, CUBIC=cubic, missing=missing
 
 compile_opt idl2
 on_error, 2
@@ -72,7 +73,7 @@ if s[0] eq 1 then begin    ; case of a 1D array
 
         keyword_set(cubic): begin
             iout = interpol( indgen(n_elements(xin)), xin, xout)
-            integr_interp = interpolate(integr, iout, /GRID, CUBIC=-0.5)
+            integr_interp = interpolate(integr, iout, /GRID, CUBIC=-0.5, missing=missing)
         end
 
         else : $
@@ -104,7 +105,7 @@ endif else begin   ; case of a nD array
         keyword_set(cubic): begin
             iout = interpol( indgen(n_elements(xin)), xin, xout)
             yout = indgen(sr[2])
-            integr_interp = interpolate(integr, iout, yout, /GR, CUB=-0.5)
+            integr_interp = interpolate(integr, iout, yout, /GR, CUB=-0.5, missing=missing)
         end
 
         else: begin

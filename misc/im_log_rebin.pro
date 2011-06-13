@@ -14,26 +14,33 @@
 ;   vsc - velocity scale, i.e. size of each pixel in the log-rebinned
 ;     spectrum; if not specified, then VSC is computed from the input
 ;     spectrum  [km/s]
-;   ferr - corresponding error spectrum [NPIX]
+;   var - corresponding variance spectrum [NPIX]
 ;   minwave - minimum output wavelength [Angstrom] (default:
 ;     min(wave)) 
 ;   maxwave - maximum output wavelength [Angstrom] (default:
 ;     max(wave)) 
 ;
 ; KEYWORD PARAMETERS: 
-;   conserve_intensity - by default, this routine conserved *flux*;
-;     use this routine to account for the change in the size of the 
-;     pixels in order to conserve intensity
+;   conserve_flux - by default, this routine conserves *intensity*
+;     (flux density), accounting for the change in the size of the 
+;     pixels; use this keyword to turn this correction off (thereby
+;     conserving *flux*)
+;   wavestrict - strictly enforce MINWAVE and MAXWAVE, enabling
+;     extrapolation (default is to require MINWAVE and MAXWAVE to be
+;     within range of the input wavelength array)
 ;
 ; OUTPUTS: 
 ;   outflux - output flux vector [NOUTPIX] 
 ;
 ; OPTIONAL OUTPUTS:
 ;   outwave - output wavelength vector [Angstrom, NOUTPIX] 
-;   outferr - output err spectrum [NOUTPIX] 
+;   outvar - output variance spectrum [NOUTPIX] 
 ;
 ; COMMENTS:
 ;   Double precision is strongly recommended!
+;
+;   WAVESTRICT can be useful if you're interpolating several
+;   spectra (separately) onto a common wavelength array.
 ;
 ; EXAMPLES:
 ;
@@ -54,9 +61,9 @@
 ; General Public License for more details. 
 ;-
 
-function im_log_rebin, wave, flux, vsc=vsc, ferr=ferr, outwave=outwave, $
-  outferr=outferr, minwave=minwave, maxwave=maxwave, $
-  conserve_intensity=conserve_intensity
+function im_log_rebin, wave, flux, vsc=vsc, var=var, outwave=outwave, $
+  outvar=outvar, minwave=minwave, maxwave=maxwave, conserve_flux=conserve_flux, $
+  wavestrict=wavestrict
 
     compile_opt idl2
 ;   on_error, 2
@@ -78,9 +85,14 @@ function im_log_rebin, wave, flux, vsc=vsc, ferr=ferr, outwave=outwave, $
     borders[npix[0]] = 2.*wave[npix[0]-1] - borders[npix[0]-1]
     bordersLog = alog(borders)
 
+    dim = size(flux,/dim)
+    n_data = n_elements(flux)
+    n_var = n_elements(var)
+    n_dim = size(flux,/n_dim)
+
 ; Determine the velocity scale, vsc, preserving the total number of pixels
     if n_elements(vsc) eq 0 then begin
-;       We assume that the wavelength are ordered, and we do not check it
+;      We assume that the wavelength are ordered, and we do not check it
        if n_elements(waverange) gt 0 then begin
           nw = value_locate(wave, waverange)
           if nw[0] eq -1 then nw[0] = 0
@@ -98,11 +110,13 @@ function im_log_rebin, wave, flux, vsc=vsc, ferr=ferr, outwave=outwave, $
     logRange += [0.5d,-0.5d]*logScale
     if n_elements(waverange) gt 0 then begin
 ;  the 1D-7 is a tolerance for rounding errors
-       nshift = ceil(max([0d, (logRange[0] - alog(waverange[0])) / logScale - 1d-7]))
+       if keyword_set(wavestrict) then nshift = 0 else $
+         nshift = ceil(max([0d, (logRange[0] - alog(waverange[0])) / logScale - 1d-7]))
        logRange[0] = alog(waverange[0]) + logScale * nshift ; center of 1st out pix
-
-       if n_elements(waverange) eq 2 then $
-         logRange[1] = min([alog(waverange[1]), logRange[1]]) 
+       if n_elements(waverange) eq 2 then begin
+          if keyword_set(wavestrict) then logrange[1] = alog(waverange[1]) else $
+            logRange[1] = min([alog(waverange[1]), logRange[1]])
+       endif
 
        if logRange[1] lt logRange[0] then begin
           message, /INFO, 'waverange is not valid: '+ $
@@ -114,39 +128,32 @@ function im_log_rebin, wave, flux, vsc=vsc, ferr=ferr, outwave=outwave, $
     nout = round((logRange[1]-logRange[0]) / logScale + 1)
     logStart = logRange[0]
 
-    if logStart-logScale/2d gt bordersLog[npix[0]] then begin
+    if logstart-logscale/2d gt borderslog[npix[0]] then begin
        message, 'start value is not in the valid range', /INFO
        return, -1
     endif
 
 ; define the new borders of the bins
-    NewBorders = exp(logStart + (dindgen(nout+1)-0.5d) * logScale)
-
-    dim = size(flux, /DIM)
-    n_data = n_elements(flux)
-    n_err = n_elements(ferr)
-    n_dim = size(flux, /N_DIM)
-
-    if keyword_set(conserve_intensity) then begin
-; Determine the conversion factor/vector accounting for pixel size change
-       flat = fltarr(dim[0], /NOZERO) ; faster to create an array and
-       replicate_inplace, flat, 1B    ; populate with 1s 
-       flat = xrebin(borders, flat, NewBorders, /SPLINF) 
-       if n_dim gt 1 then flat = rebin(flat, [nout, dim[1:*]])
-       outflux = xrebin(borders,flux,NewBorders,/SPLINF) / flat 
-    endif else begin
-       outflux = xrebin(borders,flux,NewBorders,/cubic)
-;      outflux = xrebin(borders,flux,NewBorders,/SPLINF)
-    endelse
-
     outwave = logstart + dindgen(nout)*logscale
+    newborders = exp(logStart + (dindgen(nout+1)-0.5d) * logScale)
 
-; handle the error spectrum    
-    if (n_err eq n_data) then begin
-       var = xrebin(borders,(1.0d*ferr)^2,NewBorders,/SPLINF)
-       if keyword_set(conserve_intensity) then $
-         outferr = sqrt(abs(var)) / flat else $
-           outferr = sqrt(abs(var))
+    outflux = xrebin(borders,flux,newborders,/cubic,missing=missing)
+; determine the conversion factor/vector accounting for pixel size change
+    if (keyword_set(conserve_flux) eq 0) then begin
+       flat = fltarr(dim[0], /nozero) ; faster to create an array and
+       replicate_inplace, flat, 1B    ; populate with 1s 
+       flat = xrebin(borders,flat,newBorders,/cubic,missing=missing) 
+;      flat = xrebin(borders, flat, newBorders, /SPLINF)  
+       if n_dim gt 1 then flat = rebin(flat, [nout, dim[1:*]])
+       outflux = temporary(outflux)/(flat+(flat eq 0))*(flat ne 0)
+    endif
+
+; handle the variance spectrum    
+    if (n_var eq n_data) then begin
+       outvar = xrebin(borders,var,newborders,/cubic,missing=missing)
+;      outvar = xrebin(borders,var,newborders,/SPLINF)
+       if (keyword_set(conserve_flux) eq 0) then $
+         outvar = temporary(outvar)/(flat+(flat eq 0))*(flat ne 0)
     endif
 
 return, outflux
