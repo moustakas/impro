@@ -7,7 +7,7 @@
 ;   lower limits for a given 1-sided confidence interval. 
 ;
 ; INPUTS: 
-;   n_i  - number of (counting) events or samples (must be a scalar) 
+;   n_i  - number of (counting) events or samples
 ;   conf - desired confidence interval; for example, 0.8413, 0.9772,
 ;     and 0.9987 correspond to the usual 1-sided intervals for 1-, 2-, 
 ;     and 3-sigma Gaussian probabilities (must be a scalar)
@@ -33,8 +33,9 @@
 ;   jm09mar18nyu - use a default value (0.8413) for CONF
 ;   jm11mar31ucsd - updated to use the more accurate eq (9) for
 ;     computing upper limits
+;   jm11jul13ucsd - deal with vector inputs
 ;
-; Copyright (C) 2008-2010, John Moustakas
+; Copyright (C) 2008-2011, John Moustakas
 ; 
 ; This program is free software; you can redistribute it and/or modify 
 ; it under the terms of the GNU General Public License as published by 
@@ -49,21 +50,26 @@
 
 function im_poisson_limits, n_i, conf
 
-    if (n_elements(n_i) ne 1L) then begin
-       splog, 'N_I must be a scalar'
+    nn = n_elements(n_i)
+    if (nn eq 0L) then begin
+       doc_library, 'im_poisson_limits'
        return, -1.0
     endif
 
-    if (n_elements(conf) eq 0L) then conf = 0.8413D else $
-      if (n_elements(conf) ne 1L) then begin
+    if (n_elements(conf) eq 0) then conf = 0.8413D else $
+      if (n_elements(conf) ne 1) then begin
        splog, 'CONF must be a scalar'
        return, -1.0
     endif
+
+; call this routine recursively
+    if (nn eq 1) then n_i = n_i[0] else begin
+       lim = fltarr(2,nn)
+       for ii = 0L, nn-1 do lim[*,ii] = im_poisson_limits(n_i[ii],conf)
+       return, lim
+    endelse
     
-    if (n_i lt 0.0) then begin
-       splog, 'N_I must be positive!'
-       return, -1.0
-    endif
+    if (n_i lt 0.0) then message, 'N_I must be positive!' 
     
 ; define a grid of confidence intervals
     conf_grid = [0.8413D, 0.90D, 0.95D, 0.975D, 0.9772D, $

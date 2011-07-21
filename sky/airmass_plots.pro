@@ -77,7 +77,7 @@ pro airmass_plots, date, ra, dec, object=object, obsname=obsname, $
        for iobj = 0L, nra-1L do object[iobj] = 'object_'+$
          string(iobj,format='(I3.3)')
     endif
-    nobj = n_elements(object)
+    nobj = n_elements(ra)
 
     if (nra ne ndec) and (ndec ne nobj) then begin
        splog, 'Incompatible dimensions of RA, DEC, and OBJECT.'
@@ -156,7 +156,7 @@ pro airmass_plots, date, ra, dec, object=object, obsname=obsname, $
 
        if (minair gt 3.0) then begin
           if (keyword_set(silent) eq 0) then splog, $
-            strupcase(galaxy)+' is not observable on '+thedate+$
+            galaxy+' is not observable on '+thedate+$
             ' (minimum airmass = '+string(airmass[mindx],format='(F5.3)')+')'
        endif else begin
           if keyword_set(postscript) then begin
@@ -177,7 +177,7 @@ pro airmass_plots, date, ra, dec, object=object, obsname=obsname, $
           axis, xaxis=1, xsty=1, xtickformat='LABEL_DATE', xtickunits='TIME', $
             xrange=[jd[0],jd[n_elements(jd)-1]], charsize=1.7, charthick=postthick, $
             xthick=postthick, xtitle='Local Time'
-          legend, [strupcase(galaxy),rastr,decstr], /right, /top, box=0, $
+          legend, [galaxy,rastr,decstr], /right, /top, box=0, $
             charsize=1.7, charthick=postthick, margin=0
           legend, ['Minimum airmass '+strn(minair,length=4)+' at '+best_time+' Local Time',$
             thedate+' at '+strupcase(obsname)], $
