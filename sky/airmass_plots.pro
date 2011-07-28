@@ -57,7 +57,7 @@
 
 pro airmass_plots, date, ra, dec, object=object, obsname=obsname, $
   minairmass=minairmass, psname=psname, postscript=postscript, $
-  bigpostscript=bigpostscript, silent=silent
+  bigpostscript=bigpostscript, pdf=pdf, silent=silent
 
     ndate = n_elements(date)
     if (ndate eq 0L) then begin
@@ -94,8 +94,6 @@ pro airmass_plots, date, ra, dec, object=object, obsname=obsname, $
 ; time vector from 18:00 to 06:00 hours in 10 minute intervals
     jd = timegen(6,12,start=julday(mdy[1],mdy[2],$
       mdy[0],18),unit='minute',step=10)
-
-    
     jd_ut = timegen(6,12,start=julday(mdy[1],mdy[2],$
       mdy[0],18+obsinfo.tz),unit='minute',step=10)
     jd_ut = reform(jd_ut,n_elements(jd_ut))
@@ -204,7 +202,10 @@ pro airmass_plots, date, ra, dec, object=object, obsname=obsname, $
 
     if keyword_set(bigpostscript) then begin
        dfpsclose
-       spawn, 'gzip -f '+psname, /sh
+       if keyword_set(pdf) then begin
+          spawn, 'ps2pdf '+psname+' '+repstr(psname,'.ps','.pdf'), /sh
+          rmfile, psname
+       endif else spawn, 'gzip -f '+psname, /sh
     endif
     
 return

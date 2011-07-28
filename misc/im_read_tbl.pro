@@ -102,7 +102,8 @@ FOR i=0L, nchunks-1L DO BEGIN
     ENDFOR
     FOR j=0L,ncols-1L DO BEGIN
 ;print, i, j & wait, 0.1
-       nullindx=where(strtrim(chunk[j,0L:ninchunk-1L],2) eq 'null',nullcount)
+       nullindx=where(strtrim(chunk[j,0L:ninchunk-1L],2) eq 'null' or $
+         strtrim(chunk[j,0L:ninchunk-1L],2) eq 'nul',nullcount)
         if(nullcount gt 0) then chunk[j,nullindx]='0'
 ; jm10feb03ucsd - error check (not very general!)
         thischunk = chunk[j,0L:ninchunk-1L]
