@@ -14,20 +14,10 @@
 ;       ww - wavelength (Angstroms) [NWW]
 ;       z  - redshift
 ;
-; OPTIONAL INPUTS:
-;
 ; KEYWORD PARAMETERS:
 ;
 ; OUTPUTS:
 ;       taueff - effective optical depth [NWW]
-;
-; OPTIONAL OUTPUTS:
-;
-; PROCEDURES USED:
-;
-; COMMENTS:
-;
-; EXAMPLES:
 ;
 ; MODIFICATION HISTORY:
 ;       Leonidas A. Moustakas, 2003 March - written

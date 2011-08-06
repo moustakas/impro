@@ -45,6 +45,18 @@
 ; MODIFICATION HISTORY:
 ;       J. Moustakas, 2002 December 10, U of A
 ;       jm05feb24uofa - cleaned up the code and documentation 
+;
+; Copyright (C) 2002-2005, John Moustakas
+; 
+; This program is free software; you can redistribute it and/or modify 
+; it under the terms of the GNU General Public License as published by 
+; the Free Software Foundation; either version 2 of the License, or
+; (at your option) any later version. 
+; 
+; This program is distributed in the hope that it will be useful, but 
+; WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+; General Public License for more details. 
 ;-
 
 function flow_distance, ra, dec, H0=H0, searchradius=searchradius, $

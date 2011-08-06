@@ -28,7 +28,6 @@
 ;
 ; REVISION HISTORY:
 ;   29-April-2003  Written by C. Tremonti, Steward Observatory
-;
 ;-
 
 function hubble_distance, name, ra, dec, cz, h0 = h0
