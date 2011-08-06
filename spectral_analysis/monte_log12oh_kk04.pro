@@ -8,16 +8,23 @@
 ;
 ; INPUTS: 
 ;   r23, o32 - if you don't know what these are you probably shouldn't
-;     be using this routine 
+;     be using this routine [NOBJ]
 ;
 ; OPTIONAL INPUTS: 
 ;   nmonte - number of Monte Carlo realizations; note that if
 ;     NMONTE=0 then LOG12OH_AVG as well as the errors will not be
 ;     computed (default 250)
-;   line - input emission-line structure (see IM_ABUNDANCE for an
-;     example); required if NMONTE>0
 ;   maxiter - maximum number of iterations (default 50)
 ;   seed - random number seed
+;   line - emission-line structure containing the fluxes and errors of
+;     the [OII], [OIII] 4959+5007, and H-beta emission lines from which
+;     R23 and O32 were derived [NOBJ]:
+;
+;     IDL> help, line, /str
+;     ** Structure <1544078>, 3 tags, length=24, data length=24, refs=1:
+;        OII         FLOAT     Array[2]
+;        OIII        FLOAT     Array[2]
+;        HBETA       FLOAT     Array[2]
 ;
 ; KEYWORD PARAMETERS: 
 ;   log - indicates that R23 and O32 are in the log, i.e., log(R23),
@@ -31,8 +38,7 @@
 ;   result_monte - RESULT, for each Monte Carlo realization 
 ;
 ; COMMENTS:
-;
-; EXAMPLES:
+;   Note that LINE is only required if NMONTE>0.
 ;
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2008 Feb 06, NYU, written
@@ -41,7 +47,7 @@
 ;   jm10jul31ucsd - near-complete rewrite of uncertainties and
 ;     convergence testing; slower, but correct!
 ;
-; Copyright (C) 2008, 2010, John Moustakas
+; Copyright (C) 2008-2010, John Moustakas
 ; 
 ; This program is free software; you can redistribute it and/or modify 
 ; it under the terms of the GNU General Public License as published by 

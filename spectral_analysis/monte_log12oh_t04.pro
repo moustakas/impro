@@ -8,13 +8,20 @@
 ;
 ; INPUTS: 
 ;   r23 - if you don't know what this is you probably shouldn't be
-;     using this routine 
+;     using this routine [NOBJ]
 ;
 ; OPTIONAL INPUTS: 
 ;   nmonte - number of Monte Carlo realizations; note that if
 ;     NMONTE=0 then the errors will not be computed (default 250) 
-;   line - input emission-line structure (see IM_ABUNDANCE for an
-;     example); required if NMONTE>0
+;   line - emission-line structure containing the fluxes and errors of
+;     the [OII], [OIII] 4959+5007, and H-beta emission lines from which
+;     R23 and O32 were derived [NOBJ]:
+;
+;     IDL> help, line, /str
+;     ** Structure <1544078>, 3 tags, length=24, data length=24, refs=1:
+;        OII         FLOAT     Array[2]
+;        OIII        FLOAT     Array[2]
+;        HBETA       FLOAT     Array[2]
 ;
 ; KEYWORD PARAMETERS: 
 ;   log - indicates that R23 is in the log, i.e., log(R23)
@@ -26,7 +33,8 @@
 ;   result_monte - RESULT, for each Monte Carlo realization 
 ;
 ; COMMENTS:
-;   Only upper-branch metallicity is computed.
+;   Only upper-branch metallicity is computed.  Also note that LINE is
+;   only required if NMONTE>0. 
 ;
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2010 Aug 04, UCSD

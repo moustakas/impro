@@ -3,8 +3,7 @@
 ;   AIRMASS_PLOTS
 ;
 ; PURPOSE:
-;   Generate plots of airmass versus time for astronomical
-;   observations.
+;   Plot of airmass versus time for astronomical observations. 
 ;
 ; INPUTS:
 ;   date - date of the observations in FITS standard string

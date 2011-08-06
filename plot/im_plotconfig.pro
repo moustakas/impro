@@ -261,7 +261,7 @@ pro im_plotconfig, plotnum, position, psfile=psfile, psclose=psclose, $
           if (n_elements(width) eq 0) then width1 = 1.75*[1,1,1,1] else width1 = width
           if (n_elements(height) eq 0) then height1 = 3.2*[1,1,1] else height1 = height
        end
-       23: begin ; 2x6 portrait
+       23: begin ; 2x5 portrait
           nx1 = 2 & ny1 = 5 & landscape1 = 0
           if (n_elements(xmargin) eq 0) then xmargin1 = [1.1,0.4] else xmargin1 = xmargin
           if (n_elements(ymargin) eq 0) then ymargin1 = [0.3,1.1] else ymargin1 = ymargin
@@ -269,6 +269,24 @@ pro im_plotconfig, plotnum, position, psfile=psfile, psclose=psclose, $
           if (n_elements(yspace) eq 0) then yspace1 = 0.0 else yspace1 = yspace
           if (n_elements(width) eq 0) then width1 = 3.5*[1,1] else width1 = width
           if (n_elements(height) eq 0) then height1 = 1.9*[1,1,1,1,1] else height1 = height
+       end
+       24: begin ; 1x4 portrait
+          nx1 = 1 & ny1 = 4 & landscape1 = 0
+          if (n_elements(xmargin) eq 0) then xmargin1 = [1.1,0.4] else xmargin1 = xmargin
+          if (n_elements(ymargin) eq 0) then ymargin1 = [0.3,1.1] else ymargin1 = ymargin
+          if (n_elements(xspace) eq 0) then xspace1 = 0.0 else xspace1 = xspace
+          if (n_elements(yspace) eq 0) then yspace1 = 0.0 else yspace1 = yspace
+          if (n_elements(width) eq 0) then width1 = 7.0 else width1 = width
+          if (n_elements(height) eq 0) then height1 = 2.4*[1,1,1,1] else height1 = height
+       end
+       25: begin ; 1x5 portrait
+          nx1 = 1 & ny1 = 5 & landscape1 = 0
+          if (n_elements(xmargin) eq 0) then xmargin1 = [1.1,0.4] else xmargin1 = xmargin
+          if (n_elements(ymargin) eq 0) then ymargin1 = [0.3,1.1] else ymargin1 = ymargin
+          if (n_elements(xspace) eq 0) then xspace1 = 0.0 else xspace1 = xspace
+          if (n_elements(yspace) eq 0) then yspace1 = 0.0 else yspace1 = yspace
+          if (n_elements(width) eq 0) then width1 = 7.0 else width1 = width
+          if (n_elements(height) eq 0) then height1 = 2.0*[1,1,1,1,1] else height1 = height
        end
        else: begin
           splog, 'Plot number not recognized - write one!'
