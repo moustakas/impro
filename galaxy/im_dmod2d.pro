@@ -1,6 +1,40 @@
+;+
+; NAME:
+;   IM_DMOD2D()
+;
+; PURPOSE:
+;   Convert from distance modulus to distance in Mpc.
+;
+; INPUTS: 
+;   dmod - input distance modulus
+;
+; OPTIONAL INPUTS: 
+;   sigdmod - uncertainty on DMOD
+;   a_lambda - foreground Galactic extinction
+;
+; OUTPUTS: 
+;   distance - distance in Mpc
+;
+; OPTIONAL OUTPUTS:
+;   sigdistance - uncertainty on DISTANCE in Mpc
+;
+; MODIFICATION HISTORY:
+;   J. Moustakas, 2003 May 01, UofA
+;
+; Copyright (C) 2003, John Moustakas
+; 
+; This program is free software; you can redistribute it and/or modify 
+; it under the terms of the GNU General Public License as published by 
+; the Free Software Foundation; either version 2 of the License, or
+; (at your option) any later version. 
+; 
+; This program is distributed in the hope that it will be useful, but 
+; WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+; General Public License for more details. 
+;-
+
 function im_dmod2d, dmod, sigdmod=sigdmod, sigdistance=sigdistance, A_lambda=A_lambda
-; jm03may01uofa
-; convert a distance modulus and error to a distance (DMOD in Mpc)
     
     ndmod = n_elements(dmod)
     if ndmod eq 0L then begin
