@@ -53,6 +53,18 @@
 ;       J. Moustakas, 2004 March 24, U of A, written, based entirely
 ;          on IM_LINEFIT()
 ;       jm05mar24uofa - added COEFF_LIMITED and COEFF_LIMITS inputs 
+;
+; Copyright (C) 2004-2005, John Moustakas 
+; 
+; This program is free software; you can redistribute it and/or modify 
+; it under the terms of the GNU General Public License as published by 
+; the Free Software Foundation; either version 2 of the License, or
+; (at your option) any later version. 
+; 
+; This program is distributed in the hope that it will be useful, but 
+; WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+; General Public License for more details. 
 ;-
 
 function polyfunc, x, p

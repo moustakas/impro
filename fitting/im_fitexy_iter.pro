@@ -1,32 +1,41 @@
 ;+
 ; NAME:
-;       IM_FITEXY
+;   IM_FITEXY
 ;
 ; PURPOSE:
-;       Calls FITEXY (linear least squares with errors in both axes) 
-;       with iterative outlier rejection.
-;
-; CALLING SEQUENCE:
-;       im_fitexy_iter, x, y, xerr=, yerr=, nsig=, niter=, yfit=, coeff=
+;   Calls FITEXY (linear least squares with errors in both axes) with
+;   iterative outlier rejection. 
 ;
 ; INPUTS:
+;   x, y - input data [NPTS]
 ;
 ; OPTIONAL INPUTS:
+;   xerr, yerr - corresponding uncertainties on X,Y [NPTS] 
+;   nsig - sigma rejection threshold (default 3)
+;   niter - number of iterations (default 10)
 ;
 ; KEYWORD PARAMETERS:
 ;
 ; OUTPUTS:
-;
-; OPTIONAL OUTPUTS:
-;
-; PROCEDURES USED:
-;
-; COMMENTS:
-;
-; EXAMPLES:
+;   yfit - best-fitting model [NPTS]
+;   coeff - best-fit linear coefficients [2]
+;   good - indices of points not rejected
+;   reject - indices of rejected points
 ;
 ; MODIFICATION HISTORY:
-;       J. Moustakas, 2006 Jan 19, U of A - based on POLY_ITER
+;       J. Moustakas, 2006 Jan 19, U of A - based on POLY_ITER 
+;
+; Copyright (C) 2006, John Moustakas
+; 
+; This program is free software; you can redistribute it and/or modify 
+; it under the terms of the GNU General Public License as published by 
+; the Free Software Foundation; either version 2 of the License, or
+; (at your option) any later version. 
+; 
+; This program is distributed in the hope that it will be useful, but 
+; WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+; General Public License for more details. 
 ;-
 
 pro im_fitexy_iter, x, y, xerr=xerr, yerr=yerr, nsig=nsig, niter=niter, $
@@ -36,10 +45,10 @@ pro im_fitexy_iter, x, y, xerr=xerr, yerr=yerr, nsig=nsig, niter=niter, $
     nw = n_elements(x)
     w = lindgen(nw)
 
-    if (n_elements(niter) eq 0L) then niter = 10L
-    if (n_elements(nsig) eq 0L) then nsig = 3.0
+    if (n_elements(niter) eq 0) then niter = 10
+    if (n_elements(nsig) eq 0) then nsig = 3.0
     
-    for i=1L, niter do begin
+    for i=1, niter do begin
 
        fitexy, x[w], y[w], a_intercept, b_slope, sigma_a_b, chi_sq, $
          x_sigma=xerr[w], y_sigma=yerr[w]

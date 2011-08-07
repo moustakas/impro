@@ -50,7 +50,52 @@
 ;   jm04oct15uofa - added many new inputs; more testing;
 ;                   documentation added
 ;   jm05apr13uofa - added EXTRA optional input
+;
+; Copyright (C) 2004-2005, John Moustakas
+; 
+; This program is free software; you can redistribute it and/or modify 
+; it under the terms of the GNU General Public License as published by 
+; the Free Software Foundation; either version 2 of the License, or
+; (at your option) any later version. 
+; 
+; This program is distributed in the hope that it will be useful, but 
+; WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+; General Public License for more details. 
 ;-
+
+function onegauss, xval, pp, sigmares=sigmares
+; the sigma line-width is comprised of the fixed spectral resolution
+; width and the variable intrinsic line width
+
+    sigma_squared = sigmares^2.0 + pp[2]^2.0 ; total Gaussian sigma width [log-Angstrom]
+    sigma = sqrt(sigma_squared)
+
+    term1 = exp(-(xval - pp[1])^2 / (2. * sigma_squared ))
+    yval = pp[0] * term1 / (sqrt(2.*!pi) * sigma)
+
+;   print, sigmares*3E5*alog(10), pp[2]*3E5*alog(10), sigma*3E5*alog(10)
+;   term1 = exp( - (xval - pp[1])^2 / (2. * pp[2]^2) )
+;   yval = pp[0] * term1 / (sqrt(2.*!pi) * pp[2])
+
+return, yval
+end
+
+function manygauss, xindx, pp, nline=nline, nback=nback, loglam=loglam, $
+  sigmares=sigmares, background=background
+
+    yval = 0.0D
+
+    for iline=0, nline-1 do $
+      yval = yval + onegauss(loglam[xindx], pp[iline*3:iline*3+2], sigmares=sigmares[iline])
+    for iback=0, nback-1 do $
+      yval = yval + background[xindx,iback] * pp[nline*3+iback]
+
+;   plot, xindx, yval
+;   cc = get_kbrd(1)
+    
+return, yval
+end
 
 function im_construct_espectrum, wave, sfr=sfr, redshift=redshift, oiiha=oiiha, $
   oiiihb=oiiihb, niiha=niiha, ebv=ebv, lineres=lineres, linewidth=linewidth, $
