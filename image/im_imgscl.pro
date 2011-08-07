@@ -1,30 +1,45 @@
 ;+
 ; NAME:
-;       IM_IMGSCL()
+;   IM_IMGSCL()
 ;
 ; PURPOSE:
-;
-; CALLING SEQUENCE:
+;   Scale/stretch an image for display.
 ;
 ; INPUTS:
+;   image - input image
 ;
 ; OPTIONAL INPUTS:
+;   losig - low sigma threshold (default -2)
+;   hisig - high sigma threshold (default 3)
+;   boxfrac - fraction of the image in each dimension to use when
+;     computing statistics (default 0.2)
+;   topvalue - top image scaling value (default 239) 
+;   minvalue - bottom image scaling value (default -10)
 ;
 ; KEYWORD PARAMETERS:
+;   log - take the log of the image
+;   sqrroot - take the square root of the image
+;   negative - invert the image
 ;
 ; OUTPUTS:
+;   img - byte-scaled image
 ;
-; OPTIONAL OUTPUTS:
-;
-; PROCEDURES USED:
-;
-; COMMENTS:
-;
-; EXAMPLES:
-
 ; MODIFICATION HISTORY:
-;       J. Moustakas, 2005 Mar 22, U of A - written
-;       jm05jul25uofa - several improvements
+;   J. Moustakas, 2005 Mar 22, U of A - written
+;   jm05jul25uofa - several improvements
+;   jm11aug08ucsd - documented
+;
+; Copyright (C) 2005, 2011, John Moustakas
+; 
+; This program is free software; you can redistribute it and/or modify 
+; it under the terms of the GNU General Public License as published by 
+; the Free Software Foundation; either version 2 of the License, or
+; (at your option) any later version. 
+; 
+; This program is distributed in the hope that it will be useful, but 
+; WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+; General Public License for more details. 
 ;-
 
 function im_imgscl, image, losig=losig, hisig=hisig, boxfrac=boxfrac, log=log, $

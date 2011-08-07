@@ -1,7 +1,39 @@
+;+
+; NAME:
+;   IM_HEADERFORAGE()
+;
+; PURPOSE:
+;   Return the contents of a FITS file header as a structure.
+;
+; INPUTS: 
+;   fitslist - list of FITS files
+;
+; OPTIONAL INPUTS: 
+;   ext - extension number to read
+;
+; OUTPUTS: 
+;   forage - data structure with all the header entries as individual
+;     structure tags
+;
+; MODIFICATION HISTORY:
+;   J. Moustakas, 2005 Apr 07, U of A
+;   jm08aug06nyu - removed DATAPATH input; absolute file name now
+;     assumed; EXT optional input added 
+;
+; Copyright (C) 2005, 2008, John Moustakas
+; 
+; This program is free software; you can redistribute it and/or modify 
+; it under the terms of the GNU General Public License as published by 
+; the Free Software Foundation; either version 2 of the License, or
+; (at your option) any later version. 
+; 
+; This program is distributed in the hope that it will be useful, but 
+; WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+; General Public License for more details. 
+;-
+
 function im_headerforage, fitslist, ext=ext
-; jm05apr07uofa
-; jm08aug06nyu - removed DATAPATH input; absolute file name now
-;   assumed; EXT optional input added
 
     if (n_elements(fitslist) eq 0L) then begin
        print, 'Syntax - forage = im_headerforage()'

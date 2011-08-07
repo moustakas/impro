@@ -1,4 +1,3 @@
-;-----------------------------------------------------------------------
 ;+
 ; NAME:
 ;   hdr2struct
@@ -31,7 +30,6 @@
 ;   15-Jan-2004 - added IDL_VALIDNAME() and strcompress blank lines in
 ;                 the header
 ;-
-;-----------------------------------------------------------------------
 
 function im_hdr2struct, hdr
 

@@ -1,4 +1,3 @@
-pro mfilter_image, fitsname, nbeams=nbeams, outname=outname, datapath=datapath
 ;+
 ; NAME:
 ;	MFILTER_IMAGE
@@ -30,7 +29,21 @@ pro mfilter_image, fitsname, nbeams=nbeams, outname=outname, datapath=datapath
 ;
 ; MODIFICATION HISTORY:
 ;	J. Moustakas, 2001 August 31, U of A
+;
+; Copyright (C) 2001, John Moustakas
+; 
+; This program is free software; you can redistribute it and/or modify 
+; it under the terms of the GNU General Public License as published by 
+; the Free Software Foundation; either version 2 of the License, or
+; (at your option) any later version. 
+; 
+; This program is distributed in the hope that it will be useful, but 
+; WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+; General Public License for more details. 
 ;-
+
+pro mfilter_image, fitsname, nbeams=nbeams, outname=outname, datapath=datapath
 
     if n_params() ne 1L then begin
        print, 'Syntax - mfilter_image, fitsname, [nbeams=], [outname=]'
