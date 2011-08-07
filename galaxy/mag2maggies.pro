@@ -1,32 +1,26 @@
 ;+
 ; NAME:
-;   
+;   MAG2MAGGIES()
 ;
 ; PURPOSE:
-;
+;   Convert from magnitudes to maggies.
 ;
 ; INPUTS: 
-;
+;   mag - input magnitudes [NBAND,NOBJ]
 ;
 ; OPTIONAL INPUTS: 
-;
-;
-; KEYWORD PARAMETERS: 
-;
+;   magerr - corresponding 1-sigma error [NBAND,NOBJ]
+;   vega2ab - conversion from Vega to AB magnitudes (default 0.0)
+;     [NBAND] 
 ;
 ; OUTPUTS: 
-;
+;   maggies - output maggies [NBAND,NOBJ]
 ;
 ; OPTIONAL OUTPUTS:
-;
-;
-; COMMENTS:
-;
-;
-; EXAMPLES:
-;
+;   ivarmaggies - corresponding inverse variance maggies [NBAND,NOBJ]  
 ;
 ; MODIFICATION HISTORY:
+;   J. Moustakas, 2009 May 24, NYU
 ;
 ; Copyright (C) 2011, John Moustakas
 ; 
@@ -41,11 +35,8 @@
 ; General Public License for more details. 
 ;-
 
-
 function mag2maggies, mag, magerr=magerr, vega2ab=vega2ab, $
   ivarmaggies=ivarmaggies
-; jm09may24nyu - convert AB (or Vega) magnitudes to maggies and, given
-;   the magnitude error, to inverse variance maggies
 
     ndim = size(mag,/n_dim)
     dim = size(mag,/dim)
