@@ -206,7 +206,7 @@ pro isedfit_models, paramfile, params=params, iopath=iopath, $
 ; IGM attenuation    
     if params.igm then begin
        splog, 'Reading IGM attenuation lookup table'
-       igmgrid = mrdfits(getenv('IMPRO_DIR')+'/dust/igmtau_grid.fits.gz',1)
+       igmgrid = mrdfits(getenv('IMPRO_DIR')+'/etc/igmtau_grid.fits.gz',1)
     endif else begin
        splog, 'Neglecting IGM absorption'
     endelse 

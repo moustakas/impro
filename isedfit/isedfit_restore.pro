@@ -123,7 +123,7 @@ function isedfit_restore, paramfile, isedfit, params=params, $
 ; read the IGM absorption table
        if params.igm then begin
           splog, 'Reading IGM attenuation lookup table'
-          igmgrid = mrdfits(getenv('IMPRO_DIR')+'/dust/igmtau_grid.fits.gz',1)
+          igmgrid = mrdfits(getenv('IMPRO_DIR')+'/etc/igmtau_grid.fits.gz',1)
        endif
 
 ; loop through every object and construct the best-fit model
