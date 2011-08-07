@@ -1,4 +1,12 @@
+;+
+; NAME:
+;   GALEX_FILTERLIST()
+; PURPOSE:
+;   Return the GALEX filters.
+; MODIFICATION HISTORY:
+;   J. Moustakas, 2009 Oct 30, UCSD
+;-
+
 function galex_filterlist
-; jm09oc30ucsd
     return, 'galex_'+['FUV','NUV']+'.par'
 end

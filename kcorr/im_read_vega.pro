@@ -55,6 +55,18 @@
 ;       J. Moustakas, 2003 October 29, U of A
 ;       jm03oct29uofa - incorporated L. Moustakas' GVEGA() routine
 ;       jm04mar20uofa - do not use BC03's vega spectrum
+;
+; Copyright (C) 2003-2004, John Moustakas
+; 
+; This program is free software; you can redistribute it and/or modify 
+; it under the terms of the GNU General Public License as published by 
+; the Free Software Foundation; either version 2 of the License, or
+; (at your option) any later version. 
+; 
+; This program is distributed in the hope that it will be useful, but 
+; WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+; General Public License for more details. 
 ;-
 
 function read_vega

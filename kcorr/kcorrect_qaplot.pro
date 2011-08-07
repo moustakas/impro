@@ -7,8 +7,6 @@
 ;
 ; INPUTS: 
 ;
-; OPTIONAL INPUTS: 
-;
 ; KEYWORD PARAMETERS: 
 ;
 ; OUTPUTS: 

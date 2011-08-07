@@ -1,7 +1,6 @@
-function sstretch, im, npix=npix, silent=silent
 ;+
 ; NAME:
-;	SSTRETCH (that is, "smart stretch")
+;	SSTRETCH
 ;
 ; PURPOSE:
 ;	To return the median, standard deviation, minimum and maximum
@@ -26,6 +25,8 @@ function sstretch, im, npix=npix, silent=silent
 ;       multi-dimensional array.  This routine was inspired by a
 ;       section of Marc Buie's CCDPHOT
 ;       (http://www.lowell.edu/users/buie/idl/idl.html#categ12). 
+; 
+;       SSTRETCH =  "smart stretch"
 ;
 ; EXAMPLE:
 ;	Given an image, im, try the following:
@@ -38,7 +39,21 @@ function sstretch, im, npix=npix, silent=silent
 ;
 ; MODIFICATION HISTORY:
 ;	John Moustakas, 2001 April 28, U of A
+;
+; Copyright (C) 2001, John Moustakas
+; 
+; This program is free software; you can redistribute it and/or modify 
+; it under the terms of the GNU General Public License as published by 
+; the Free Software Foundation; either version 2 of the License, or
+; (at your option) any later version. 
+; 
+; This program is distributed in the hope that it will be useful, but 
+; WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+; General Public License for more details. 
 ;-
+
+function sstretch, im, npix=npix, silent=silent
 
     npixtot = n_elements(im)
 
