@@ -1,6 +1,6 @@
 ;+
 ; NAME:
-;     IONSPEC
+;     IM_IONSPEC
 ; PURPOSE:
 ;     Calculates the emission-line spectrum of an ion from an N-level
 ;     atom, and returns an array containing the wavelengths and
@@ -16,7 +16,7 @@
 ;
 ;
 ; CALLING SEQUENCE:
-;     IONSPEC, IONSTR, DENS, TEMP, RESULT, HBETA, ANNOT [, /SILENT ]
+;     IM_IONSPEC, IONSTR, DENS, TEMP, RESULT, HBETA, ANNOT [, /SILENT ]
 ;
 ; INPUT:
 ;      IONSTR: A string containing the name of the ion to be calculated.

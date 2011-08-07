@@ -1,6 +1,6 @@
 ;+
 ; NAME:
-;     IM_WPARSE
+;     IM_WPARSE()
 ;
 ; PURPOSE:
 ;  reads the files with input spectra into the structure used in
@@ -14,7 +14,7 @@
 ;
 ; CALLING SEQUENCE:
 ;
-;   spec_structure = WPARSE(infiles [, outfiles, LLIST = ])
+;   spec_structure = IM_WPARSE(infiles [, outfiles, LLIST = ])
 ;
 ; INPUT:  
 ;     INFILES  - list of strings containing the names of the input

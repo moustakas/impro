@@ -1,6 +1,6 @@
 ;+
 ; NAME:
-;       IM_COMPUTE_TE()
+;       IM_COMPUTE_FIVEL_TE()
 ;
 ; PURPOSE:
 ;       Compute the nebular electron temperature from the [O III] flux 
@@ -44,12 +44,12 @@
 ; General Public License for more details. 
 ;-
 
-function im_compute_te, data, nmonte=nmonte, snrcut=snrcut, $
+function im_compute_fivel_te, data, nmonte=nmonte, snrcut=snrcut, $
   fivel=fivel, stasinska=stasinska
 
     nobject = n_elements(data)
     if (nobject eq 0L) then begin
-       doc_library, 'im_compute_te'
+       doc_library, 'im_compute_fivel_te'
        return, -1L
     endif
 

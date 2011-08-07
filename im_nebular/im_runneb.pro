@@ -1,6 +1,6 @@
 ;+
 ; NAME:
-;     RUNNEB
+;     IM_RUNNEB
 ; PURPOSE:
 ;     Derives the ionic abundances from the input emission-line spectra.
 ;
@@ -17,7 +17,7 @@
 ;     are used to infer the abundances of the ions in the nebulae.
 ;
 ; CALLING SEQUENCE:
-;     RUNNEB, LIST, SPEC, ABUND, DENS, TEMP, DSOL, TSOL, DRATS, 
+;     IM_RUNNEB, LIST, SPEC, ABUND, DENS, TEMP, DSOL, TSOL, DRATS, 
 ;               TRATS, [, DDIR=DDIR ]
 ; INPUT:
 ;     LIST: A vector of strings designating the files containing the spectra.
@@ -53,13 +53,13 @@
 ;     With the database in the default directory, and the list of files
 ;     to be analyzed in LIST, the IDL NEBULAR package is run with the call
 ;
-;     RUNNEB, LIST, SPEC, ABUND, DENS, TEMP, DSOL, TSOL, DRATS, TRATS
+;     IM_RUNNEB, LIST, SPEC, ABUND, DENS, TEMP, DSOL, TSOL, DRATS, TRATS
 ;
 ;     If one wanted to run the IDL NEBULAR package again on the same spectra,
 ;     but using an alternate database of diagnostic ratios in the folder
 ;     'alt_database', the second call would be 
 ;
-;     RUNNEB, '', SPEC, ABUND, DENS, TEMP, DSOL, TSOL, DRATS, TRATS,
+;     IM_RUNNEB, '', SPEC, ABUND, DENS, TEMP, DSOL, TSOL, DRATS, TRATS,
 ;               ddir = 'alt_database'
 ;
 ;     assuming that SPEC still held the spectra to be analyzed.
