@@ -1,6 +1,13 @@
+;+
+; NAME:
+;   FITSDATE2JD()
+; PURPOSE:
+;   Convert FITS format date to julian date.
+; MODIFICATION HISTORY:
+;   J. Moustakas, 2003 Apr 23, U of A
+;-
+
 function fitsdate2jd, date
-; jm03apr23uofa
-; convert FITS format date to julian date
 
     ndate = n_elements(date)
     if ndate eq 0L then begin

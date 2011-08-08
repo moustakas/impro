@@ -1,5 +1,3 @@
-function convert_index, index, array
-
 ;+
 ; NAME:
 ;       CONVERT_INDEX
@@ -35,6 +33,8 @@ function convert_index, index, array
 ; MODIFICATION HISTORY:
 ;       Created October 1990 by Mark Rivers
 ;-
+
+function convert_index, index, array
 
 nd = size(array)
 ndims = nd(0)

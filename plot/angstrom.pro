@@ -1,3 +1,12 @@
+;+
+; NAME:
+;   ANGSTROM()
+; PURPOSE:
+;   Render the Angstrom symbol on a plot.
+; MODIFICATION HISTORY:
+;   J. Moustakas ???
+;-
+
 function angstrom
 ;return, '!6!sA!r!u!9 %!6!n'
 ;return, string(byte(197))
