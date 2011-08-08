@@ -1,8 +1,41 @@
+;+
+; NAME:
+;   FORMAT_FLUX_ERROR
+;
+; PURPOSE:
+;   Silly routine to truncate a vector to the correct number of
+;   significant digits, given the uncertainty on that measurement. 
+;
+; INPUTS: 
+;   flux - input vector (of any kind, not necessarily flux)
+;   ferr - error on FLUX
+;
+; OUTPUTS: 
+;   newflux - string output with correct number of significant digits 
+;   newferr - corresponding string error on NEWFLUX
+;
+; COMMENTS:
+;   This should be generalized and expanded, but it's right and
+;   it works. 
+;
+; MODIFICATION HISTORY:
+;   J. Moustakas, 2004 Apr 22, U of A
+;   jm05jul26uofa - vectorized
+;
+; Copyright (C) 2004-2005, John Moustakas
+; 
+; This program is free software; you can redistribute it and/or modify 
+; it under the terms of the GNU General Public License as published by 
+; the Free Software Foundation; either version 2 of the License, or
+; (at your option) any later version. 
+; 
+; This program is distributed in the hope that it will be useful, but 
+; WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+; General Public License for more details. 
+;-
+
 pro format_flux_error, flux, ferr, newflux, newferr
-; jm04apr22uofa
-; jm05jul26uofa - vectorized
-; given a flux and a flux error return the correct number of
-; significant digits on both quantities
 
     nflux = n_elements(flux)
     if (nflux gt 1L) then begin

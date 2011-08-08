@@ -1,3 +1,20 @@
+;+
+; NAME:
+;   GET_SERSICB()
+;
+; PURPOSE:
+;   Compute the Sersic bn parameter.
+;
+; INPUTS: 
+;   sersicn - Sersic "n" value
+;
+; COMMENTS:
+;   See Graham & Driver (2005), equations 1 and 4.
+;
+; MODIFICATION HISTORY:
+;   J. Moustakas ???
+;-
+
 function sersicb_func, bb
     common sersicb, nn
 return, gamma(2.0*nn)-2D*igamma(2*nn,bb)*gamma(2*nn)
