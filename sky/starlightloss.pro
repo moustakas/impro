@@ -41,7 +41,6 @@
 ;  REVISION HISTORY:
 ;    20-April-2003  Written by C. Tremonti, Steward Observatory
 ;-
-;------------------------------------------------------------------------------
 
 function starlightloss, seeing_fwhm, slit_width, theta = theta, $
          airmass = airmass, wave0 = wave0, max_arcsec = max_arcsec, $

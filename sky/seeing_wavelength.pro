@@ -1,7 +1,17 @@
+;+
+; NAME:
+;   SEEING_WAVELENGTH
+; PURPOSE:
+;   Plot the variation of the seeing disk with wavelength.  
+; KEYWORD PARAMETERS: 
+;   postscript - write out a postscript file
+; COMMENTS:
+;   Based on notes on Adaptive Optics from L. Close.
+; MODIFICATION HISTORY:
+;   J. Moustakas, 2002 Feb 15, U of A
+;-
+
 pro seeing_wavelength, postscript=postscript
-; jm02feb15uofa
-; plot the variation of the seeing disk with wavelength.  based on
-; notes on Adaptive Optics from L. Close
 
     minwave = 1000.0 ; [Angstrom]
     maxwave = 5E4    ; 5 micron [Angstrom]

@@ -11,7 +11,9 @@
 ;
 ; INPUTS:
 ;       paramfile - parameter file describing the characteristics of
-;                   the detector, the wavelength of observation, etc. 
+;                   the detector, the wavelength of observation,
+;                   etc. (see for example
+;                   $IMPRO_DIR/etc/snr_params_template.txt) 
 ;       f_obj     - scalar or vector target flux density [erg/s/cm2/A] 
 ;
 ; OPTIONAL INPUTS:

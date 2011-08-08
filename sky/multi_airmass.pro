@@ -1,6 +1,41 @@
+;+
+; NAME:
+;   MULTI_AIRMASS()
+;
+; PURPOSE:
+;   Generate a multi-page plot of airmass and PA versus time. 
+;
+; INPUTS: 
+;   date - date of the observation in FITS format [YYYY,MM,DD] (e.g.,
+;     '2002-02-10') 
+;   ra, dec - celestial coordinates of object(s)
+;
+; OPTIONAL INPUTS: 
+;   object - object name
+;   obsname - observatory name (default KPNO)
+;   psname - postscript file name 
+;
+; KEYWORD PARAMETERS: 
+;
+; OUTPUTS: 
+;
+; MODIFICATION HISTORY:
+;   J. Moustakas ???
+;
+; Copyright (C) 20??, John Moustakas
+; 
+; This program is free software; you can redistribute it and/or modify 
+; it under the terms of the GNU General Public License as published by 
+; the Free Software Foundation; either version 2 of the License, or
+; (at your option) any later version. 
+; 
+; This program is distributed in the hope that it will be useful, but 
+; WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+; General Public License for more details. 
+;-
 
-pro multi_airmass, date, ra, dec, object=object, obsname=obsname, $
-    psname=psname
+pro multi_airmass, date, ra, dec, object=object, obsname=obsname, psname=psname
 
     ndate = n_elements(date)
     nra = n_elements(ra)
@@ -69,8 +104,8 @@ pro multi_airmass, date, ra, dec, object=object, obsname=obsname, $
     for iobj = 0L, nobj-1L do begin
 
        galaxy[iobj] = strtrim(object[iobj],2)
-       radd = 15.0*im_hms2dec(ra[iobj]) & radd = radd[0] ; RA [degree]
-       ddec = im_hms2dec(dec[iobj]) & ddec = ddec[0]     ; DEC [degree]
+       radd = 15.0*hms2dec(ra[iobj]) & radd = radd[0] ; RA [degree]
+       ddec = hms2dec(dec[iobj]) & ddec = ddec[0]     ; DEC [degree]
 
 ; calculate sunset time and sunrise time
 

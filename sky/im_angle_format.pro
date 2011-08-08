@@ -1,6 +1,13 @@
+;+
+; NAME:
+;   IM_ANGLE_FORMAT()
+; PURPOSE:
+;   Place an angle in the interval [0-180].
+; MODIFICATION HISTORY:
+;   J. Moustakas, 2005 Apr 05, U of A
+;-
+
 function im_angle_format, angle
-; jm05apr05uofa
-; place an angle in the interval [0-180]
 
     if (n_elements(angle) eq 0L) then begin
        print, 'Syntax - newangle = im_angle_format(angle)'

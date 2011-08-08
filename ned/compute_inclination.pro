@@ -1,7 +1,37 @@
+;+
+; NAME:
+;   COMPUTE_INCLINATION()
+;
+; PURPOSE:
+;   Derive the inclination angle from the diameter ratio.
+;
+; INPUTS: 
+;   diam - input structure as returned by NED_WEBGET_DIAMETERS 
+;
+; KEYWORD PARAMETERS: 
+;   twomass - use the 2MASS diameters (default is to use RC3) 
+;
+; OUTPUTS: 
+;   incl - inclination angle, measured positive from North to East
+;     (degrees) 
+;
+; MODIFICATION HISTORY:
+;   J. Moustakas, 2006 Feb 16, U of A
+;
+; Copyright (C) 2006, John Moustakas
+; 
+; This program is free software; you can redistribute it and/or modify 
+; it under the terms of the GNU General Public License as published by 
+; the Free Software Foundation; either version 2 of the License, or
+; (at your option) any later version. 
+; 
+; This program is distributed in the hope that it will be useful, but 
+; WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+; General Public License for more details. 
+;-
+
 function compute_inclination, diam, twomass=twomass
-; jm06feb16uofa - compute the inclination angle; the input should be
-;                 the output from NED_WEBGET_DIAMETERS, or similar
-;                 structure 
 
     ndiam = n_elements(diam)
     if (ndiam eq 0L) then begin

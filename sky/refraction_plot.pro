@@ -1,10 +1,18 @@
-pro refraction_plot, postscript=postscript
-; jm02feb15uofa 
-; generate a plot of atmospheric refraction with respect to 5000 
-; Angstrom as a function of wavelength and zenith angle
-; references: Filippenko 1982, PASP, 94, 715
+;+
+; NAME:
+;   REFRACTION_PLOT
+; PURPOSE:
+;   Generate a plot of atmospheric refraction with respect to 5000 a
+;   as a function of wavelength and zenith angle.
+; KEYWORD PARAMETERS: 
+;   postscript - write out a postscript file
+; COMMENTS:
+;   See Filippenko 1982, PASP, 94, 715.
+; MODIFICATION HISTORY:
+;   J. Moustakas, 2002 Feb 15, U of A
+;-
 
-; zenith angle vector
+pro refraction_plot, postscript=postscript
     
     seczmin = 1.0
     seczmax = 5.0
