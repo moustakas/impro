@@ -1,6 +1,6 @@
 ;+
 ; NAME:
-;       CONVERT_INDEX
+;       IM_CONVERT_INDEX
 ; PURPOSE:
 ;       Converts a one dimensional array index into a vector of indices, whose
 ;       length is equal to the number of dimensions of the array. This is

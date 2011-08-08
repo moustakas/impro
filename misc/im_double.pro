@@ -1,21 +1,24 @@
 ;+
-; NAME: IM_DOUBLE
+; NAME: 
+;   IM_DOUBLE
 ;       
-; CATEGORY: miscellaneous
+; PURPOSE: 
+;   Convert a float to double-precision avoiding roundoff issues. 
 ;
-; PURPOSE: covert to double-precision (avoids DOUBLE() problem)
+; CALLING SEQUENCE: 
+;   result = IM_DOUBLE(x)
 ;
-; CALLING SEQUENCE: result = ARM_DOUBLE(x)
+; INPUTS: 
+;   x - a number
 ;
-; INPUTS: x - a number
+; OUTPUTS: 
+;   returns x as double-precision number
 ;
-; OUTPUTS: returns x as double-precision number
-;
-; COMMENTS: If you convert a non double-precision number to
-;           double-precision using DOUBLE(), you will get a numerical
-;           error (e.g., DOUBLE(0.01) --> 0.0099999998).  This routine
-;           was written in order to "up the precision" of a number
-;           without encountering this problem.
+; COMMENTS: 
+;   If you convert a non double-precision number to double-precision
+;   using DOUBLE(), you will get a numerical error (e.g., DOUBLE(0.01)
+;   --> 0.0099999998).  This routine was written in order to "up the
+;   precision" of a number without encountering this problem.
 ;
 ; MODIFICATION HISTORY:
 ;    written by A.R.Marble, Steward Obs., December 3, 2003

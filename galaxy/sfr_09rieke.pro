@@ -1,7 +1,39 @@
+;+
+; NAME:
+;   SFR_09RIEKE()
+;
+; PURPOSE:
+;   Compute the SFR from the observed 24-micron *flux* density. 
+;
+; INPUTS: 
+;   z - redshift
+;   f24 - observed 24-micron flux [Jy]
+;
+; OUTPUTS: 
+;   sfr - star formation rate based on Table 1 and equation 14 in
+;     Rieke et al. 2009.
+;
+; COMMENTS:
+;   Accounts for the 24-micron K-correction, for various SED types,
+;   from 0<z<3. 
+; 
+; MODIFICATION HISTORY:
+;   J. Moustakas, 2009 Nov 23, UCSD
+;
+; Copyright (C) 2009, John Moustakas
+; 
+; This program is free software; you can redistribute it and/or modify 
+; it under the terms of the GNU General Public License as published by 
+; the Free Software Foundation; either version 2 of the License, or
+; (at your option) any later version. 
+; 
+; This program is distributed in the hope that it will be useful, but 
+; WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+; General Public License for more details. 
+;-
+
 function sfr_09rieke, z, f24
-; jm09nov23ucsd - compute the SFR from the observed 24-micron *flux*
-;   density (this relation includes the K-correction, for various SED 
-;   types, from 0<z<3)
 
     common rieke_table1, ztable, atable, btable
     
