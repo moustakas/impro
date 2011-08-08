@@ -1,6 +1,6 @@
 ;+
 ; NAME:
-;	MONOTONIC
+;	MONOTONIC()
 ;
 ; PURPOSE:
 ;	Determine whether a vector is monotonically increasing or

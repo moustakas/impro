@@ -1,12 +1,12 @@
 ;+
 ; NAME:
-;   poly_iter
+;   im_poly_iter
 ;
 ; PURPOSE:
 ;   Calls IDL poly_fit iteratively with outlier rejection
 ;
 ; CALLING SEQUENCE:
-;   poly_iter, x, y, ndeg, nsig, yfit, coeff=coeff
+;   im_poly_iter, x, y, ndeg, nsig, yfit, coeff=coeff
 ;
 ; INPUTS:
 ;   x, y    - indep, dep variables
@@ -36,7 +36,6 @@
 ;                   of 1's) 
 ;
 ;-
-;------------------------------------------------------------------------------
 
 PRO im_poly_iter, x, y, ndeg, yfit, coeff=coeff, good=good, reject=reject, $
   yerr=yerr, niter=niter, nsig=nsig, e_coeff=e_coeff, sigma=sigma

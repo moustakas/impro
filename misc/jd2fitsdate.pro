@@ -1,6 +1,36 @@
+;+
+; NAME:
+;   JD2FITSDATE()
+;
+; PURPOSE:
+;   Convert a Julian date to a FITS format date.
+;
+; INPUTS: 
+;   jd - input Julian date
+;
+; KEYWORD PARAMETERS: 
+;   noyear - exclude the year from the output date
+;
+; OUTPUTS: 
+;   date - FITS-format date (YYYY-MM-DD)
+;
+; MODIFICATION HISTORY:
+;   J. Moustakas, 2002 Oct 17, U of A
+;
+; Copyright (C) 2002, John Moustakas
+; 
+; This program is free software; you can redistribute it and/or modify 
+; it under the terms of the GNU General Public License as published by 
+; the Free Software Foundation; either version 2 of the License, or
+; (at your option) any later version. 
+; 
+; This program is distributed in the hope that it will be useful, but 
+; WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+; General Public License for more details. 
+;-
+
 function jd2fitsdate, jd, noyear=noyear
-; jm02oct17uofa
-; convert julian date to a FITS format date    
 
     njd = n_elements(jd)
     if njd eq 0L then begin

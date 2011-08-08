@@ -1,7 +1,48 @@
+;+
+; NAME:
+;   IM_MWRFITS
+;
+; PURPOSE:
+;   Simple wrapper on MWRFITS with some bells and whistles.
+;
+; INPUTS: 
+;   outstruct - output structure of image to write out
+;   outfile - output file name
+;
+; OPTIONAL INPUTS: 
+;   hdr - output FITS-style header
+;
+; KEYWORD PARAMETERS: 
+;   silent - suppress messages to STDOUT
+;   append - append to an existing structure (default is to use
+;     /CREATE) 
+;   gzip - compress the output file (only needed after using /APPEND) 
+;   nogzip - do not compress the output file (default *is* to
+;     compress unless /APPEND)
+;   clobber - overwrite existing output file, otherwise exit
+;
+; OUTPUTS: 
+;   Writes out a FITS file.
+;
+; MODIFICATION HISTORY:
+;   J. Moustakas, 2009 Mar 18, NYU
+;   jm09nov10ucsd - added /CLOBBER keyword
+;
+; Copyright (C) 2009, John Moustakas
+; 
+; This program is free software; you can redistribute it and/or modify 
+; it under the terms of the GNU General Public License as published by 
+; the Free Software Foundation; either version 2 of the License, or
+; (at your option) any later version. 
+; 
+; This program is distributed in the hope that it will be useful, but 
+; WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+; General Public License for more details. 
+;-
+
 pro im_mwrfits, outstruct, outfile, hdr, silent=silent, $
   append=append, gzip=gzip, nogzip=nogzip, clobber=clobber
-; jm09mar18nyu - simple wrapper on MWRFITS that does what I want
-; jm09nov10ucsd - added /CLOBBER keyword
 
     if keyword_set(append) then begin
        if (file_test(outfile) eq 0) then begin

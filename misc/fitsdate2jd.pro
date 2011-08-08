@@ -1,10 +1,30 @@
 ;+
 ; NAME:
 ;   FITSDATE2JD()
+;
 ; PURPOSE:
-;   Convert FITS format date to julian date.
+;   Convert FITS format date to Julian date.
+;
+; INPUTS: 
+;   date - FITS-format date (YYYY-MM-DD)
+;
+; OUTPUTS: 
+;   jd - input Julian date
+;
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2003 Apr 23, U of A
+;
+; Copyright (C) 2002, John Moustakas
+; 
+; This program is free software; you can redistribute it and/or modify 
+; it under the terms of the GNU General Public License as published by 
+; the Free Software Foundation; either version 2 of the License, or
+; (at your option) any later version. 
+; 
+; This program is distributed in the hope that it will be useful, but 
+; WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+; General Public License for more details. 
 ;-
 
 function fitsdate2jd, date
