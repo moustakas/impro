@@ -3,7 +3,6 @@
 ;       SORT_ND
 ;
 ; PURPOSE:
-;
 ;       Efficiently perform an N-dimensional sort along any dimension
 ;       of an array.
 ;

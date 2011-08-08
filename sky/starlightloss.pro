@@ -3,8 +3,8 @@
 ;   starlightloss
 ; 
 ; PURPOSE: 
-;   Compute light losses from slit spectra as a function of seeing, $
-;   slit width, wavelength, paralactic angle, airmass 
+;   Compute light losses from slit spectra as a function of seeing, 
+;     slit width, wavelength, paralactic angle, airmass.
 ;
 ; CALLING SEQUENCE: 
 ;   starlightloss, seeing_fwhm, slit_width, theta=, airmass=, 

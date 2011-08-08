@@ -1,18 +1,19 @@
 ;+
 ; NAME:
-;   k_read_tbl
+;   im_read_tbl()
 ; PURPOSE:
 ;   Read 2MASS style table into IDL structure
 ; CALLING SEQUENCE:
-;   tbl= k_read_tbl(filename)
+;   tbl= im_read_tbl(filename,chunksize=,/silent)
 ; INPUTS:
 ;   filename - file name
 ; BUGS:
 ;   not well commented
 ; REVISION HISTORY:
 ;   Spring 2003, Written Malcolm Britton
+;   J. Moustakas, ??? - better error checking
 ;-
-;------------------------------------------------------------------------------
+
 FUNCTION type2var, type, val
 
 IF(strmatch(type,'d*') EQ 1) THEN $

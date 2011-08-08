@@ -1,12 +1,12 @@
 ;+
 ; NAME:
-;   struct_trimtags
+;   im_struct_trimtags
 ;
 ; PURPOSE:
 ;   Trim a structure to a list of selected and/or excluded tags
 ;
 ; CALLING SEQUENCE:
-;   outstruct = struct_trimtags(instruct, [ select_tags=, except_tags=, $
+;   outstruct = im_struct_trimtags(instruct, [ select_tags=, except_tags=, $
 ;    format= ]
 ;
 ; INPUTS:
@@ -46,7 +46,8 @@
 ; REVISION HISTORY:
 ;   05-Jun-2002  Written by D. Schlegel, Princeton
 ;   jm04jun28uofa - added NEWTAGS input
-;------------------------------------------------------------------------------
+; -
+
 function im_struct_trimtags, instruct, select_tags=select_tags, $
  except_tags=except_tags, format=format, newtags=newtags
 

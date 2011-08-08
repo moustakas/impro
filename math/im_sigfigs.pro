@@ -1,7 +1,6 @@
-function im_sigfigs,number,digits
 ;+
 ; NAME:
-;	STRNSIGNIF
+;	IM_SIGFIGS()
 ; PURPOSE:
 ;	Convert a number to a string with a fixed number of significant digits.
 ; EXPLANATION:
@@ -9,7 +8,7 @@ function im_sigfigs,number,digits
 ;	unlike strn(), with a fixed number of significant digits.
 ;
 ; CALLING SEQEUNCE:
-;	tmp = STRNSIGNIF( number, digits )
+;	tmp = IM_SIGFIGS( number, digits )
 ;
 ; INPUT:
 ;	NUMBER   This is the input number to be converted to a string.
@@ -31,6 +30,7 @@ function im_sigfigs,number,digits
 ;   J. Moustakas, 2012 Oct 12, UCSD - renamed im_sigfigs and vectorized
 ;-
 
+function im_sigfigs,number,digits
 
   if (n_params(0) lt 2) then begin
     print,'Call> str=strnsignif(number,digits)'
