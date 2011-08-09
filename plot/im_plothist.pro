@@ -3,26 +3,42 @@
 ;   IM_PLOTHIST
 ;
 ; PURPOSE:
-;   Generate a histogram plot.
+;   Generate a histogram plot with optional weights.
 ;
 ; INPUTS: 
+;   arr - input array [NPTS]
 ;
 ; OPTIONAL INPUTS: 
+;   weight - weight for each input point [NPTS]
+;   bin - histogram binsize
+;   edge - desired centering: 0=center, -1=left, +1=right (default 0)
+;   psym - plot symbol (default 10)
+;   normfactor - normalize the histogram by this factor
+;   fcolor - fill color (see PLOTHIST)
+;   fline - fill linestyle (see PLOTHIST)
+;   fspacing - fill line spacing (see PLOTHIST)
+;   fpattern - (see PLOTHIST)
+;   forientation - line orientation anlge(see PLOTHIST)
+;   extra - inputs for IM_HIST1D()
 ;
 ; KEYWORD PARAMETERS: 
-;    cumulative - plot the cumulative distribution
+;    cumulative - generate the cumulative distribution function
+;    overplot - render on an existing plot
+;    fill - use polyfill to fill in the histogram
+;    noplot - just build the histograms; do not plot
+;    fraction - normalize the histogram by the total area
 ;
 ; OUTPUTS: 
-;
-; OPTIONAL OUTPUTS:
+;   xhist - binned x-axis
+;   yhist - binned y-axis
 ;
 ; COMMENTS:
+;   Combines the best of HOGG_PLOTHIST and PLOTHIST (in my opinion!) 
 ;
 ; EXAMPLES:
 ;
 ; MODIFICATION HISTORY:
-;    J. Moustakas, 2007-Apr-02, NYU - written, based on
-;      HOGG_PLOTHIST and PLOTHIST
+;    J. Moustakas, 2007 Apr 02, NYU
 ;
 ; Copyright (C) 2007, John Moustakas
 ; 

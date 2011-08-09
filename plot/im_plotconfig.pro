@@ -8,28 +8,30 @@
 ;
 ; INPUTS: 
 ;   plotnum - preset plotting number, specifying the number and
-;     orientation of the panels
+;     orientation of the panels (see COMMENTS)
 ;
 ; OPTIONAL INPUTS: 
-;   psfile - 
-;   [x,y]margin - 
-;   [x,y]space - 
-;   [x,y]page - 
-;   width - 
-;   height - 
+;   psfile - output postscript file name (should be a .ps file unless
+;     encapsulated postscript output is needed, in which case use .eps)  
+;   [x,y]margin - x and y margins
+;   [x,y]space - space between plots in the x and y dimension
+;   [x,y]page - page size in the x and y dimension
+;   width - plot(s) width
+;   height - plot(s) height
 ;   extra - optional inputs for IM_PLOTFAVES and DEVICE 
 ;
 ; KEYWORD PARAMETERS: 
-;   psclose -
-;   keynote - 
-;   blackwhite - 
-;   gzip - 
-;   pdf - 
-;   pskeep - 
-;   silent - 
+;   psclose - close the postscript file
+;   keynote - generate a keynote-style plot
+;   blackwhite - no color
+;   gzip - compress the output
+;   pdf - convert the output postscript file to PDF, deleting the .PS
+;     file 
+;   pskeep - when using /PDF do not delete the postscript file 
+;   silent - do not print messages to the screen
 ;
 ; OUTPUTS: 
-;   position - position vector to 
+;   position - position vector to pass to PLOT
 ;
 ; COMMENTS:
 ;
