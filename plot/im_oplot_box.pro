@@ -50,6 +50,18 @@
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2003 May 22, U of A
 ;   jm03july10uofa - added NOPLOT keyword
+;
+; Copyright (C) 2003, John Moustakas
+; 
+; This program is free software; you can redistribute it and/or modify 
+; it under the terms of the GNU General Public License as published by 
+; the Free Software Foundation; either version 2 of the License, or
+; (at your option) any later version. 
+; 
+; This program is distributed in the hope that it will be useful, but 
+; WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+; General Public License for more details. 
 ;-
 
 pro im_oplot_box, xsize, ysize, pa, xoffset=xoffset, yoffset=yoffset, $

@@ -1,6 +1,6 @@
 ;+
 ; NAME:
-;   hogg_scatterplot
+;   im_hogg_scatterplot
 ; PURPOSE:
 ;   plot greyscale scatterplot with contours
 ; COMMENTS:
@@ -68,7 +68,9 @@
 ;   plus much, much more
 ; REVISION HISTORY:
 ;   2002-12-04  written --- Hogg
+;   J. Moustakas, various personal hacks
 ;-
+
 pro im_hogg_scatterplot, xxx,yyy,weight=weight, $
                       xnpix=xnpix1,ynpix=ynpix1, $
                       xrange=xrange,yrange=yrange, $

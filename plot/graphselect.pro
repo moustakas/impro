@@ -1,7 +1,6 @@
 ;+
 ; NAME:
 ;	GRAPHSELECT
-;
 ; PURPOSE:
 ;	Select points within an area of a graph defined by the cursor.
 ;

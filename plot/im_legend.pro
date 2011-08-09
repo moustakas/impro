@@ -1,6 +1,6 @@
 ;+
 ; NAME:
-;       LEGEND
+;       IM_LEGEND
 ; PURPOSE:
 ;       Create an annotation legend for a plot.
 ; EXPLANATION:

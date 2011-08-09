@@ -2,7 +2,7 @@
 ; NAME:
 ;   GETCR()
 ; PURPOSE:
-;   Return a carat.
+;   Return a string carriage return.
 ; MODIFICATION HISTORY:
 ;   J. Moustakas ???
 ;-

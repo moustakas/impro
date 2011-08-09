@@ -1,6 +1,6 @@
 ;+
 ; NAME:
-;   hogg_manyd_scatterplot
+;   im_manyd_scatterplot
 ; PURPOSE:
 ;   plot N-dimensional data sets
 ; INPUTS:
@@ -45,6 +45,7 @@
 ;   2002-12-14  re-constructed from ex_max_plot -- Hogg
 ;   Moustakas - hacked version of hogg_manyd_scatterplot
 ;-
+
 pro im_manyd_scatterplot, weight,point,psfilename,nsig=nsig, $
                             label=label,range=range, $
                             xdims=xdims,ydims=ydims, $

@@ -1,9 +1,8 @@
 ;+
 ; NAME:
-;       FSC_COLOR
+;       IM_COLOR
 ;
 ; PURPOSE:
-;
 ;       The purpose of this function is to obtain drawing colors
 ;       by name and in a device-decomposition independent way. The
 ;       color names and values may be read in as a file, or 88

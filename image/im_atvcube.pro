@@ -1,64 +1,3 @@
-pro atvcube_shutdown, base_id
-; destroy all the widgets and free the header pointers
-
-    widget_control, base_id, get_uvalue = info
-    for k = 0L, n_elements(info.jarray)-1L do ptr_free, info.headcube[k]
-    if xregistered('atvcube') then widget_control, base_id, /destroy
-    atv_shutdown
-    
-return
-end
-
-pro atvcube_event, event
-; atvcube event handler
-
-    widget_control, event.id, get_uvalue = event_name
-    widget_control, event.top, get_uvalue = info, /no_copy
-
-; if atv is dead, then kill the wrapper
-    
-    valid_atv = widget_info(info.state.base_id,/valid_id)
-    if not valid_atv then event_name = 'done'
-
-    case event_name of
-       'next': begin
-          info.jarray = shift([info.jarray],-1)
-          info.j = info.jarray[0]
-
-          atv, info.imcube[*,*,info.j], head=*(info.headcube[info.j]), /align, /stretch
-
-          if (size(info.imlist[0],/type) eq 7L) then $
-            widget_control, info.field, set_value = info.imlist[info.j] else $
-            widget_control, info.field, set_value = info.j
-       end
-       'previous': begin
-          info.jarray = shift([info.jarray],1)
-          info.j = info.jarray[0]
-
-          atv, info.imcube[*,*,info.j], head=*(info.headcube[info.j]), /align, /stretch
-
-          if (size(info.imlist[0],/type) eq 7L) then $
-            widget_control, info.field, set_value = info.imlist[info.j] else $
-            widget_control, info.field, set_value = info.j
-       end
-       'help': help = dialog_message(['Press the "Next" and "Previous" buttons to scroll',$
-                                      'through the image cube.  Press "Done" to quit ATV.'],$
-                                     dialog_parent=event.top,/info,title='ATV Wrapper Help')
-       'done': begin
-          widget_control, event.top, set_uvalue = info, /no_copy
-          atvcube_shutdown, event.top
-       end
-    endcase    
-
-; if the wrapper widget hasn't been killed then continue
-
-    valid_atvcube = widget_info(event.top,/valid_id)
-    if valid_atvcube then widget_control, event.top, set_uvalue = info, /no_copy
-    
-return
-end
-
-pro im_atvcube, imlist, headcube=headcube
 ;+
 ; NAME:
 ;	IM_ATVCUBE
@@ -129,7 +68,81 @@ pro im_atvcube, imlist, headcube=headcube
 ; MODIFICATION HISTORY:
 ;	John Moustakas, 2001 February 13, University of Arizona
 ;
+; Copyright (C) 2001, John Moustakas
+; 
+; This program is free software; you can redistribute it and/or modify 
+; it under the terms of the GNU General Public License as published by 
+; the Free Software Foundation; either version 2 of the License, or
+; (at your option) any later version. 
+; 
+; This program is distributed in the hope that it will be useful, but 
+; WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+; General Public License for more details. 
+;
 ;-
+
+pro atvcube_shutdown, base_id
+; destroy all the widgets and free the header pointers
+
+    widget_control, base_id, get_uvalue = info
+    for k = 0L, n_elements(info.jarray)-1L do ptr_free, info.headcube[k]
+    if xregistered('atvcube') then widget_control, base_id, /destroy
+    atv_shutdown
+    
+return
+end
+
+pro atvcube_event, event
+; atvcube event handler
+
+    widget_control, event.id, get_uvalue = event_name
+    widget_control, event.top, get_uvalue = info, /no_copy
+
+; if atv is dead, then kill the wrapper
+    
+    valid_atv = widget_info(info.state.base_id,/valid_id)
+    if not valid_atv then event_name = 'done'
+
+    case event_name of
+       'next': begin
+          info.jarray = shift([info.jarray],-1)
+          info.j = info.jarray[0]
+
+          atv, info.imcube[*,*,info.j], head=*(info.headcube[info.j]), /align, /stretch
+
+          if (size(info.imlist[0],/type) eq 7L) then $
+            widget_control, info.field, set_value = info.imlist[info.j] else $
+            widget_control, info.field, set_value = info.j
+       end
+       'previous': begin
+          info.jarray = shift([info.jarray],1)
+          info.j = info.jarray[0]
+
+          atv, info.imcube[*,*,info.j], head=*(info.headcube[info.j]), /align, /stretch
+
+          if (size(info.imlist[0],/type) eq 7L) then $
+            widget_control, info.field, set_value = info.imlist[info.j] else $
+            widget_control, info.field, set_value = info.j
+       end
+       'help': help = dialog_message(['Press the "Next" and "Previous" buttons to scroll',$
+                                      'through the image cube.  Press "Done" to quit ATV.'],$
+                                     dialog_parent=event.top,/info,title='ATV Wrapper Help')
+       'done': begin
+          widget_control, event.top, set_uvalue = info, /no_copy
+          atvcube_shutdown, event.top
+       end
+    endcase    
+
+; if the wrapper widget hasn't been killed then continue
+
+    valid_atvcube = widget_info(event.top,/valid_id)
+    if valid_atvcube then widget_control, event.top, set_uvalue = info, /no_copy
+    
+return
+end
+
+pro im_atvcube, imlist, headcube=headcube
 
     on_error, 2
     resolve_routine, ['atv'], /compile_full_file

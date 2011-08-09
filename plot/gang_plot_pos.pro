@@ -1,10 +1,8 @@
 ;+
 ; NAME:
-;
 ;  GANG_PLOT_POS
 ;
 ; PURPOSE:
-;
 ;  Simplify abutting multiple plots.
 ;
 ; CATEGORY:

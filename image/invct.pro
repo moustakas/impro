@@ -1,7 +1,3 @@
-Pro	InvCT, $
-		QUIET=quiet
-
-SccsId = '@(#)invct.pro 1.1 7/12/93 Fen Tamanaha'
 ;+
 ; NAME:
 ;	INVCT
@@ -43,6 +39,11 @@ SccsId = '@(#)invct.pro 1.1 7/12/93 Fen Tamanaha'
 ; MODIFICATION HISTORY:
 ; 	Written by:	Fen Tamanaha, July 10, 1993.  Revision 1.1
 ;-
+
+Pro	InvCT, $
+		QUIET=quiet
+
+SccsId = '@(#)invct.pro 1.1 7/12/93 Fen Tamanaha'
 
     Common colors, r,g,b,cur_red,cur_green,cur_blue
 

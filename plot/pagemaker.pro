@@ -1,4 +1,46 @@
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;+
+;
+;  NAME:  
+;    PAGEMAKER
+;
+;  PURPOSE:
+;    Returns plotting positions for desired page specifications,
+;    pagemaker can be run with no inputs (all defaults) or as much
+;    specification can be given as desired
+;
+;  OPTIONAL INPUT:  
+;
+;     XPAGE   - horizontal dimension of page in inches (default=8.5)
+;     YPAGE   - vertical dimension of page in inches (default=11.0)
+;     XMARGIN - left/right margin size in inches, can be an array (default=1.0)
+;     YMARGIN - top/bottom margin size in inches, can be an array (default=1.0)
+;     NX      - number of horizontal boxes across page (default=1)
+;     NY      - number of vertical boxes across page (default=2)
+;     WIDTH   - width of plot box(es) in inches, can be an array 
+;               for left to right
+;     HEIGHT  - height of plot box(es) in inches, can be an array
+;               for top to bottom
+;     XSPACE  - horizontal spacing between boxes in inches, can be
+;               an array for left to right (default=0.1*WIDTH)
+;     YSPACE  - vertical spacing between boxes in inches, can be
+;               an array for top to bottom (default=0.1*HEIGHT)
+;
+;  OUTPUT: position - a 4 x (NX*NY) array, position coords for each
+;                     plot box - [x0,y0,x1,y1]
+;
+;  KEYWORDS: 
+;
+;     landscape - switches from portrait mode to landscape mode
+;     normal    - returns normalized coordinates
+;
+;   EXAMPLE: IDL> pagemaker, nx=3, ny=5, xspace=0., yspace=0., $
+;                   position=pos, /normal
+;            IDL> window, xsize=500, ysize=647
+;            IDL> for i=0,14 do plot,findgen(10),position=pos[*,i],/noerase
+;
+;  HISTORY: written by Andy Marble (ARM), Steward Observatory,  Jan 2002
+;           overhauled by ARM, Jan 2003 - currently still under revision
+;-
 
 pro pm_err, message
     print,'ERROR (pagemaker.pro): '+message
@@ -13,49 +55,6 @@ pro pm_swap, a, b
     b   = a
  end
  
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;
-;;;  NAME:  pagemaker.pro 
-;;;
-;;;  DESCRIPTION:  returns plotting positions for desired page specifications,
-;;;                pagemaker can be run with no inputs (all defaults)
-;;;                or as much specification can be given as desired
-;;;
-;;;  OPTIONAL INPUT:  
-;;;
-;;;     XPAGE   - horizontal dimension of page in inches (default=8.5)
-;;;     YPAGE   - vertical dimension of page in inches (default=11.0)
-;;;     XMARGIN - left/right margin size in inches, can be an array (default=1.0)
-;;;     YMARGIN - top/bottom margin size in inches, can be an array (default=1.0)
-;;;     NX      - number of horizontal boxes across page (default=1)
-;;;     NY      - number of vertical boxes across page (default=2)
-;;;     WIDTH   - width of plot box(es) in inches, can be an array 
-;;;               for left to right
-;;;     HEIGHT  - height of plot box(es) in inches, can be an array
-;;;               for top to bottom
-;;;     XSPACE  - horizontal spacing between boxes in inches, can be
-;;;               an array for left to right (default=0.1*WIDTH)
-;;;     YSPACE  - vertical spacing between boxes in inches, can be
-;;;               an array for top to bottom (default=0.1*HEIGHT)
-;;;
-;;;  OUTPUT: position - a 4 x (NX*NY) array, position coords for each
-;;;                     plot box - [x0,y0,x1,y1]
-;;;
-;;;  KEYWORDS: 
-;;;
-;;;     landscape - switches from portrait mode to landscape mode
-;;;     normal    - returns normalized coordinates
-;;;
-;;;   EXAMPLE: IDL> pagemaker, nx=3, ny=5, xspace=0., yspace=0., $
-;;;                   position=pos, /normal
-;;;            IDL> window, xsize=500, ysize=647
-;;;            IDL> for i=0,14 do plot,findgen(10),position=pos[*,i],/noerase
-;;;
-;;;  HISTORY: written by Andy Marble (ARM), Steward Observatory,  Jan 2002
-;;;           overhauled by ARM, Jan 2003 - currently still under revision
-;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 pro pagemaker, xpage=xpage, ypage=ypage, xmargin=xmargin, ymargin=ymargin, $
                nx=nx, ny=ny, width=width, height=height, $ 
                xspace=xspace, yspace=yspace, position=position, $

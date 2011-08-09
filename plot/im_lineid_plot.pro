@@ -1,9 +1,6 @@
-pro im_lineid_plot,wave,flux,wline,text1,text2, extend_thick=extend_thick, $
-  lcharthick = lcharthick,lcharsize=lcharsize, _EXTRA = extra, axis_color=axis_color, $
-  spectrum_color=spectrum_color, label_color=label_color, extend_color=extend_color
 ;+
 ; NAME:
-;	LINEID_PLOT
+;	IM_LINEID_PLOT
 ; PURPOSE:
 ;	 Plot spectrum with specified line identifications annotated at the
 ;	 top of the plot.
@@ -89,7 +86,11 @@ pro im_lineid_plot,wave,flux,wline,text1,text2, extend_thick=extend_thick, $
 ;                       EXTEND_THICK
 ;       jm08aug01nyu - EXTEND_COLOR can be a vector
 ;-
-;----------------------------------------------------------------------------
+
+pro im_lineid_plot,wave,flux,wline,text1,text2, extend_thick=extend_thick, $
+  lcharthick = lcharthick,lcharsize=lcharsize, _EXTRA = extra, axis_color=axis_color, $
+  spectrum_color=spectrum_color, label_color=label_color, extend_color=extend_color
+
 	On_error,2
 
 	if n_params() lt 4 then begin

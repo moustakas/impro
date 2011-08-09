@@ -3,27 +3,47 @@
 ;   IM_PLOTCONFIG
 ;
 ; PURPOSE:
-;   Customized wrapper on generating postscript output. 
+;   High-level wrapper on IM_GETPOSITION() for generating multi-panel
+;   postscript output.
 ;
 ; INPUTS: 
 ;   plotnum - preset plotting number, specifying the number and
 ;     orientation of the panels
 ;
 ; OPTIONAL INPUTS: 
+;   psfile - 
+;   [x,y]margin - 
+;   [x,y]space - 
+;   [x,y]page - 
+;   width - 
+;   height - 
+;   extra - optional inputs for IM_PLOTFAVES and DEVICE 
 ;
 ; KEYWORD PARAMETERS: 
+;   psclose -
+;   keynote - 
+;   blackwhite - 
+;   gzip - 
+;   pdf - 
+;   pskeep - 
+;   silent - 
 ;
 ; OUTPUTS: 
-;
-; OPTIONAL OUTPUTS:
+;   position - position vector to 
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
 ;
 ; MODIFICATION HISTORY:
+;   J. Moustakas, 2008 Aug 21, NYU
+;   jm09mar20nyu - postscript output gets generated if PSFILE is passed,
+;     and depending on its extension (.PS vs .EPS), either regular or
+;     encapsulated postscript is built 
+;   jm09may25nyu - added GZIP and PDF keywords; if /PDF *and* /GZIP
+;     are set then /PDF wins; note that both keywords require PSFILE
 ;
-; Copyright (C) 2009, John Moustakas
+; Copyright (C) 2008-2009, John Moustakas
 ; 
 ; This program is free software; you can redistribute it and/or modify 
 ; it under the terms of the GNU General Public License as published by 
@@ -39,18 +59,8 @@
 pro im_plotconfig, plotnum, position, psfile=psfile, psclose=psclose, $
   xmargin=xmargin, ymargin=ymargin, xspace=xspace, yspace=yspace, $
   width=width, height=height, xpage=xpage, ypage=ypage, keynote=keynote, $
-  blackwhite=blackwhite, pcolor=pcolor, gzip=gzip, pdf=pdf, pskeep=pskeep, $
+  blackwhite=blackwhite, gzip=gzip, pdf=pdf, pskeep=pskeep, $
   silent=silent, _extra=extra
-; jm08aug21nyu - simple wrapper on ARM_PLOTCONFIG with a set of
-;   predefined plots that I frequently use
-; jm09mar20nyu - postscript output gets generated if PSFILE is passed,
-;   and depending on its extension (.PS vs .EPS), either regular or 
-;   encapsulated postscript is built
-; jm09may25nyu - added GZIP and PDF keywords; if /PDF *and* /GZIP are
-;   set then /PDF wins; note that both keywords require PSFILE
-
-;   common im_plotconfig, defcolor
-;   if (n_elements(defcolor) eq 0) then defcolor = !p.color
     
     if (n_elements(plotnum) eq 0) then plotnum = 0
     case plotnum of
@@ -350,13 +360,6 @@ pro im_plotconfig, plotnum, position, psfile=psfile, psclose=psclose, $
     endif
 
     if (!d.name eq 'X') then !p.color = djs_icolor('white')
-    
-;   if keyword_set(keynote) then $
-;     !p.color = djs_icolor('white') else $
-;       !p.color = djs_icolor('default')
-;      if (n_elements(pcolor) eq 0) then $
-;        pcolor = fsc_color('white',0) else $
-;          pcolor = fsc_color(pcolor)
     
 return
 end
