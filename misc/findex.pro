@@ -1,11 +1,13 @@
-function findex,u,v
 ;+
-; ROUTINE:  findex
+; ROUTINE:  
+;   findex
 ;
-; PURPOSE:  Compute "floating point index" into a table for use with
-;           INTERPOLATE.
+; PURPOSE:  
+;   Compute "floating point index" into a table for use with
+;   INTERPOLATE.
 ;
-; USEAGE:   result = findex(u,v)
+; USEAGE:   
+;   result = findex(u,v)
 ;
 ; INPUT:    
 ;   u       a monitically increasing or decreasing 1-D grid
@@ -51,9 +53,10 @@ function findex,u,v
 ;           paul@icess.ucsb.edu
 ;
 ; REVISIONS:
-;
 ;-
-;
+
+function findex,u,v
+
 nu=n_elements(u)
 nv=n_elements(v)
 

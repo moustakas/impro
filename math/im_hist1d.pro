@@ -1,6 +1,6 @@
 ;+
 ; NAME:
-;        HIST1D
+;        IM_HIST1D
 ;
 ; PURPOSE:
 ;        Returns the weighted histogram of a 1D array.

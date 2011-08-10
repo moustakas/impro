@@ -41,10 +41,10 @@ pro format_flux_error, flux, ferr, newflux, newferr
     if (nflux gt 1L) then begin
        newflux = strarr(nflux)
        newferr = strarr(nflux)
-       for iflux = 0L, nflux-1L do begin
+       for iflux = 0L, nflux-1 do begin
           format_flux_error, flux[iflux], ferr[iflux], newflux1, newferr1
-          newflux[iflux] = strtrim(newflux1,2)
-          newferr[iflux] = strtrim(newferr1,2)
+          newflux[iflux] = newflux1
+          newferr[iflux] = newferr1
        endfor
        return
     endif
@@ -57,6 +57,10 @@ pro format_flux_error, flux, ferr, newflux, newferr
     endif
     
     if (flux ge 0.1) and (flux lt 1.0) then begin
+       if (ferr ge 0.001) and (ferr lt 0.01) then begin
+          newflux = string(fix_digits(flux,4),format='(F12.4)')
+          newferr = string(fix_digits(ferr,4),format='(F12.4)')
+       endif
        if (ferr ge 0.01) and (ferr lt 0.1) then begin
           newflux = string(fix_digits(flux,3),format='(F12.3)')
           newferr = string(fix_digits(ferr,3),format='(F12.3)')
@@ -87,6 +91,10 @@ pro format_flux_error, flux, ferr, newflux, newferr
     endif
     
     if (flux ge 10.0) and (flux lt 100.0) then begin
+       if (ferr ge 0.001) and (ferr lt 0.01) then begin
+          newflux = string(fix_digits(flux,6),format='(F12.4)')
+          newferr = string(fix_digits(ferr,4),format='(F12.4)')
+       endif
        if (ferr ge 0.01) and (ferr lt 0.1) then begin
           newflux = string(fix_digits(flux,5),format='(F12.3)')
           newferr = string(fix_digits(ferr,3),format='(F12.3)')
@@ -222,6 +230,9 @@ pro format_flux_error, flux, ferr, newflux, newferr
     endif
 
     if (n_elements(newflux) eq 0L) then message, 'Code me up!'
+
+    newflux = strtrim(newflux,2)
+    newferr = strtrim(newferr,2)
     
 return
 end

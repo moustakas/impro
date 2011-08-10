@@ -1,8 +1,10 @@
 ;+
-;			integral
+; NAME:
+;       im_integral
 ;
-; Routine to perform trapezoidal integration in X,Y between limits
-; xmin to xmax.
+; PURPOSE:
+;       Routine to perform trapezoidal integration in X,Y between
+;       limits xmin to xmax. 
 ;
 ; CALLING SEQUENCE:
 ;	result = integral(x,y,xmin,xmax)
@@ -31,7 +33,7 @@
 ;       jm08apr14nyu - additional error checking; default XMIN,XMAX to
 ;                      min and max of X array
 ;
-; COMPUTE INDEX POSITIONS OF XMIN,XMAX
+;-
 
 FUNCTION IM_INTEGRAL, X, Y, XMIN1, XMAX1
 
