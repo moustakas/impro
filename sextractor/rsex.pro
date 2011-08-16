@@ -165,8 +165,8 @@ FUNCTION rsex,catalog, use_row=use_row
        bodyslam[*,i]=(str_sep(strcompress(strtrim(body[i],2)),' '))[0L:ntothead-1L] ; jm04nov22uofa
      carr=str_sep(strcompress(strtrim(cstr,1)),' ')
 
-     tind    = valid_num_arr(carr) ; 0=string 1=number
-     tindint = valid_num_arr(carr,/int) ; 0=non-integer 1=integer
+     tind    = valid_num(carr) ; 0=string 1=number
+     tindint = valid_num(carr,/int) ; 0=non-integer 1=integer
      if tind[0] eq 0 then $
        type='' else $
        if tindint[0] eq 1 then $

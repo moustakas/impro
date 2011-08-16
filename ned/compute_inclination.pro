@@ -3,7 +3,8 @@
 ;   COMPUTE_INCLINATION()
 ;
 ; PURPOSE:
-;   Derive the inclination angle from the diameter ratio.
+;   Derive the inclination angle from the major-to-minor axis ratio of
+;   a galaxy.  
 ;
 ; INPUTS: 
 ;   diam - input structure as returned by NED_WEBGET_DIAMETERS 

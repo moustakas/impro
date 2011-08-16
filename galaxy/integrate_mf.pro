@@ -1,39 +1,100 @@
 ;+
 ; NAME:
-;   mf_fit_schechter
+;   INTEGRATE_MF()
+;
 ; PURPOSE:
-;   fit schechter function to set of points
-; USAGE:
-;   mf_fit_schechter, mass, phi, phierr, schechter [, mden=]
-; INPUTS:
-;   mass - stellar mass at center of each bin
-;   phi - mass function at each bin
-;   phierr - error in mf at each bin
-; OUTPUTS:
-;   schechter - structure with
-;                  .PHISTAR 
-;                  .MSTAR 
-;                  .ALPHA 
-;                  .PHISTAR_ERR
-;                  .MSTAR_ERR
-;                  .ALPHA_ERR
+;   Integrate a 1/Vmax-weighted stellar mass function and, optionally,
+;   the best-fitting Schechter model.
+;
+; INPUTS: 
+;   mf_vmax - 1/Vmax weighted stellar mass function in the style of
+;     IM_MF_VMAX()
+;
+; OPTIONAL INPUTS: 
+;   schechter - input MF_SCHECHTER or MF_SCHECHTER_PLUS-style data
+;     structure (see /DOUBLE)
+;
+; KEYWORD PARAMETERS: 
+;   double - assume that SCHECHTER describes the double Schechter
+;     function used by MF_SCHECHTER_PLUS
+;
+; OUTPUTS: 
+;
+;
 ; OPTIONAL OUTPUTS:
-;   mden - total stellar mass density based on the best fit
-; REVISION HISTORY:
-;   14-Apr-2009  Written by John Moustakas, NYU, entirely based
-;     on M. Blanton's lf_fit_schechter
+;
+;
+; COMMENTS:
+;   Error checking isn't great.
+;
+; EXAMPLES:
+;
+;
+; MODIFICATION HISTORY:
+;   J. Moustakas, 2011 Aug 15, UCSD
+;
+; Copyright (C) 2011, John Moustakas
+; 
+; This program is free software; you can redistribute it and/or modify 
+; it under the terms of the GNU General Public License as published by 
+; the Free Software Foundation; either version 2 of the License, or
+; (at your option) any later version. 
+; 
+; This program is distributed in the hope that it will be useful, but 
+; WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+; General Public License for more details. 
 ;-
 
-function mf_fit_schechter_func, x, params
-return, mf_schechter(x,params[0],params[1],params[2])
+function do_schechter_integral, schechter, double=double
+
+    mass = range(0.0,100.0,500)
+    
+; rho_tot = Phi**M*Gamma(alpha+2)
+    rho = schechter.phistar*10^schechter.logmstar*gamma(schechter.alpha+2)
+    
+; rho(>M) = Phi**M*IGamma(alpha+2,M/M*)
+    rho = schechter.phistar*10^schechter.logmstar*$
+      (1-igamma(schechter.alpha+2,10^(9.0-schechter.logmstar)))
+    
+return, rho
 end
 
-pro mf_fit_schechter, logmass, phi, phierr, schechter, $
-  alpha_err=alpha_err, parinfo=parinfo, quiet=quiet, $
-  norhoerr=norhoerr, nmonte=nmonte
+function do_mf_integral, mass, phi, phierr=phierr, lomass=lomass, $
+  himass=himass, toterr=toterr, nmonte=nmonte
 
-; remember that MSTAR is logarithmic!
+; rho(>M) = 
+    rho = im_integral(10^mass,phi/alog(10),10^lomass,10^himass)
+    
+return, rho
+end
 
+function integrate_mf, mf_vmax, schechter=schechter, nmonte=nmonte
+
+    if (n_elements(mf_vmax) eq 0) and (n_elements(schechter) eq 0) then begin
+       doc_library, 'integrate_mf'
+       return, -1
+    endif
+
+    if (n_elements(nmonte) eq 0) then nmonte = 300
+
+; initialize the output data structure
+    int = {rho_tot: -1.0, rho_tot_err: -1.0, rho_model_tot: -1.0, rho_model_tot_err: -1.0}
+
+
+; integrate the data
+    if (n_elements(mf_vmax) ne 0) then begin
+       gd = where(mf_vmax.limit eq 1,ngd)
+       if (ngd ne 0) then int.rho_tot = do_mf_integral(mf_vmax.mass[gd],$
+         mf_vmax.phi[gd],phierr=mf_vmax.phi[gd],lomass=min(mf_vmax.mass[gd]),$
+         himass=max(mf_vmax.mass[gd]))
+    endif
+
+    mrho = do_schechter_integral(schechter,double=double)
+    
+stop
+    
+    
 ; alpha_err is for a very particular application; frequently, the
 ; faint-end slope alpha is not well-constrained and must be fixed;
 ; however, when computing the uncertainty on the stellar mass density
@@ -41,37 +102,6 @@ pro mf_fit_schechter, logmass, phi, phierr, schechter, $
 ; which can be accomplished using this parameter (in practice, I
 ; simply overwrite the output error from MPFIT, which is zero is the
 ; parameter is fixed)
-
-    if (n_elements(nmonte) eq 0) then nmonte = 500
-    
-    if (n_tags(schechter) eq 0) then begin
-       schechter = {phistar: 1.d-2, mstar: 10.5D, alpha:-1.0d, $
-         phistar_err: 0.0d, mstar_err: 0.0d, alpha_err: 0.0d, $
-         chi2_dof: 1E6, covar: dblarr(3,3), rho: 0.0D, rho_err: 0.0D, $
-         rho_tot: 0.0D, rho_tot_err: 0.0D}
-    endif
-
-    if (n_elements(parinfo) eq 0) then begin
-       parinfo = {value: 0.0D, fixed: 0,limited: [0,0], limits: [0.0D,0.0D]}
-       parinfo = replicate(parinfo,3)
-       parinfo[0].value = schechter.phistar
-       parinfo[1].value = schechter.mstar
-       parinfo[2].value = schechter.alpha
-    endif
-
-    params = mpfitfun('mf_fit_schechter_func',logmass,phi,$
-      phierr,parinfo=parinfo,perror=perror,status=mpstatus,$
-      quiet=quiet,bestnorm=chi2,dof=dof,covar=covar)
-    if (dof gt 0.0) then schechter.chi2_dof = chi2/float(dof)
-;   splog, perror, mpstatus
-
-    schechter.covar = covar
-    schechter.phistar = params[0]
-    schechter.mstar = params[1]
-    schechter.alpha = params[2]
-    schechter.phistar_err = perror[0]
-    schechter.mstar_err = perror[1]
-    schechter.alpha_err = perror[2]
 
 ; get the total stellar mass density two ways: by integrating the
 ; observed MF and also by integrating the *model* from 0-->infty  
@@ -143,5 +173,7 @@ pro mf_fit_schechter, logmass, phi, phierr, schechter, $
 ;       schechter.rho_err = djsig(rho_monte)
 ;    endif    
        
-return
+    
+return, 1
 end
+    
