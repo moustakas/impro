@@ -3,32 +3,33 @@
 ;   PARSE_NED_LITERATURE
 ;
 ; PURPOSE:
-;   Parse 
+;   Parse the output of a NED literature search.
 ;
 ; INPUTS: 
-;
+;   nedfile - literature results file from NED
 ;
 ; OPTIONAL INPUTS: 
-;
+;   outfile - output file name (default 'outfile.fits' or
+;     'outfile.txt'; see /TEXTFILE)
 ;
 ; KEYWORD PARAMETERS: 
-;
+;   textfile - write out an ASCII file (default is to write a binary
+;     FITS table)
+;   kms - convert redshifts to km/s (fragile!)
 ;
 ; OUTPUTS: 
-;
-;
-; OPTIONAL OUTPUTS:
-;
+;   Writes out a FITS or ASCII file with the derived literature
+;   results. 
 ;
 ; COMMENTS:
-;
-;
-; EXAMPLES:
-;
+;   Sorts the output by RA.
 ;
 ; MODIFICATION HISTORY:
+;   J. Moustakas, 2001 Nov 07, U of A
+;   jm02mar22uofa - modified to output a binary fits table; any
+;     existing binary fits table of the same name is overwritten 
 ;
-; Copyright (C) 2011, John Moustakas
+; Copyright (C) 2001-2002, John Moustakas
 ; 
 ; This program is free software; you can redistribute it and/or modify 
 ; it under the terms of the GNU General Public License as published by 
@@ -41,26 +42,14 @@
 ; General Public License for more details. 
 ;-
 
+pro parse_ned_literature, nedfile, outfile=outfile, textfile=textfile, kms=kms
 
-
-pro parse_ned_literature, nedfile, outfile=outfile, outpath=outpath, $
-  textfile=textfile, kms=kms
-; jm01nov7uofa
-; this routine will parse a ned text file from a literature search
-; jm02mar22uofa - modified to output a binary fits table; any existing
-;                 binary fits table of the same name is overwritten
-
-; if the redshifts are in km/s then set this keyword - doesn't work perfectly!!
-    
-    if n_elements(nedfile) eq 0L then begin
-       print, 'Syntax - parse_ned_literature, nedfile, [outfile=, outpath=], textfile=textfile, kms=kms'
+    if n_elements(nedfile) eq 0 then begin
+       doc_library, 'parse_ned_literature'
        return
     endif
     
-    cspeed = 2.99792458E5 ; [km/s]
-
 ; find out how many objects are in the file
-    
     if file_test(nedfile,/regular) eq 0L then begin
        splog, 'File '+nedfile+' not found.'
        return
@@ -83,7 +72,7 @@ pro parse_ned_literature, nedfile, outfile=outfile, outpath=outpath, $
     data = create_struct('galaxy', '', 'ra', '', 'dec', '', 'z', -999D, 'z_err', -999D)
     data = replicate(data,nobj)
 
-    if keyword_set(kms) then zscale = 2.99D5 else zscale = 1.0
+    if keyword_set(kms) then zscale = 2.99792458E5 else zscale = 1.0
     
     for i = 0L, nobj-1L do begin
        
@@ -103,22 +92,19 @@ pro parse_ned_literature, nedfile, outfile=outfile, outpath=outpath, $
     endfor
     
 ; sort by RA
-
     srtra = sort(im_hms2dec(data.ra))
     data = data[srtra]
 
 ; write a binary fits table or textfile
-    
-    if not keyword_set(outpath) then outpath = cwd()
     if keyword_set(textfile) then begin
        if not keyword_set(outfile) then outfile = 'outfile.txt'
-       splog, 'Writing '+outpath+outfile+'.'
-       print_struct, data, file=outpath+outfile
+       splog, 'Writing '+outfile+'.'
+       print_struct, data, file=outfile
     endif else begin
        if not keyword_set(outfile) then outfile = 'outfile.fits'
-       splog, 'Writing '+outpath+outfile+'.'
-       mwrfits, data, outpath+outfile, /create
-       spawn, ['gzip -f '+outpath+outfile], /sh
+       splog, 'Writing '+outfile+'.'
+       mwrfits, data, outfile, /create
+       spawn, ['gzip -f '+outfile], /sh
     endelse
     
 return

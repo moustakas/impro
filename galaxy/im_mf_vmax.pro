@@ -10,12 +10,15 @@
 ;   oneovervmax - 1/Vmax for each object (h^3 Mpc^-3) [NGAL] 
 ;
 ; OPTIONAL INPUTS: 
-;   masslimit - stellar mass above which the sample is complete;
-;     affects LIMIT output (default min(mass))
-;   binsize - logarithmic width of each stellar mass bin 
+;   mfbinsize - logarithmic width of each stellar mass bin 
 ;     (default 0.1 dex)
+;   masslimit - stellar mass above which the sample is complete;
+;     affects LIMIT output (default min(mass)); can also be an NGAL
+;     vector, which is useful when combining fields
 ;   minmass - minimum stellar mass
 ;   maxmass - maximum stellar mass
+;   noutbins - number of bins in the output data structure; allows
+;     different output structures from this routine to be 'stacked'  
 ;
 ; KEYWORD PARAMETERS: 
 ;   debug - make a simple plot and wait for a keystroke
@@ -34,8 +37,8 @@
 ;     phierr_upper - upper 1-sigma error on PHI (h^3 Mpc^-3) [NBINS]
 ;     phierr - average of PHIERR_LOWER and PHIERR_UPPER (h^3 Mpc^-3) [NBINS]
 ;     phierr_cv - uncertainty due to cosmic variance (not computed!)
-;     limit - -1=no galaxies in the bin; 0=lower limit; 1=all points
-;       have MASS>MASSLIMIT
+;     limit - 0=lower limit or no galaxies in the bin; 1=all points
+;       have MASS>MASSLIMIT 
 ;
 ; COMMENTS:
 ;   Basically a glorified wrapper on IM_HIST1D().
@@ -56,9 +59,8 @@
 ; General Public License for more details. 
 ;-
 
-function im_mf_vmax, mass, oneovervmax, masslimit=masslimit, $
-  binsize=binsize, minmass=minmass, maxmass=maxmass, $
-  debug=debug
+function im_mf_vmax, mass, oneovervmax, mfbinsize=mfbinsize, masslimit=masslimit1, $
+  minmass=minmass, maxmass=maxmass, noutbins=noutbins, debug=debug
 
     ngal = n_elements(mass)
     if (ngal eq 0L) then begin
@@ -73,15 +75,24 @@ function im_mf_vmax, mass, oneovervmax, masslimit=masslimit, $
     if (nzero ne 0L) then message, 'Some ONEOVERVMAX are <= 0!'
 
 ; round the bin centers to two decimal points
-    if (n_elements(binsize) eq 0) then binsize = 0.1 ; dex
-    if (n_elements(masslimit) eq 0) then masslimit = min(mass)
+    if (n_elements(mfbinsize) eq 0) then mfbinsize = 0.1 ; dex
+    nmasslimit = n_elements(masslimit1)
+    if (nmasslimit eq 0) then masslimit = replicate(min(mass),ngal) else begin
+       if (nmasslimit eq 1) then masslimit = replicate(masslimit1,ngal) else $
+         masslimit = masslimit1
+       if (n_elements(masslimit) ne ngal) then message, $
+         'Dimensions of MASS and MASSLIMIT do not agree!'
+    endelse 
+    
     if (n_elements(minmass) eq 0) then $
-      minmass = ceil((min(mass)+binsize/2.0)*100.0)/100.0-binsize/2.0
+      minmass = ceil((min(mass)+mfbinsize/2.0)*100.0)/100.0-mfbinsize/2.0
 
 ; generate weighted histogram    
-    phi = im_hist1d(mass,oneovervmax,binsize=binsize,obin=binmass,$
+    phi = im_hist1d(mass,oneovervmax,binsize=mfbinsize,obin=binmass,$
       binedge=0,omin=omin,omax=omax,h_err=phierr_poisson,$
       histmin=minmass,histmax=maxmass,reverse_indices=rev)
+    phi = phi/mfbinsize
+    phierr_poisson = phierr_poisson/mfbinsize
 
 ; compute LIMIT, NUMBER, and the statistical error in each bin, taking
 ; into account small-number statistics (see Zhu+09 and Gehrels+86);
@@ -95,23 +106,26 @@ function im_mf_vmax, mass, oneovervmax, masslimit=masslimit, $
     for ii = 0L, nbins-1 do begin
        number[ii] = rev[ii+1]-rev[ii] ; number of objects per bin
        if (rev[ii] eq rev[ii+1]) then begin ; NUMBER=0; compute upper limit
-          limit[ii] = -1
+          limit[ii] = 0 ; no galaxies
        endif else begin
-          limit[ii] = total(mass[rev[rev[ii]:rev[ii+1]-1]] lt masslimit) eq 0.0
+          limit[ii] = (binmass[ii]-mfbinsize/2.0) gt min(masslimit[rev[rev[ii]:rev[ii+1]-1]])
+;         limit[ii] = total(mass[rev[rev[ii]:rev[ii+1]-1]] lt masslimit) eq 0.0
           weff[ii] = total(oneovervmax[rev[rev[ii]:rev[ii+1]-1]]^2,/double)/$ ; effective weight
             total(oneovervmax[rev[rev[ii]:rev[ii+1]-1]],/double)
           if (weff[ii] le 0) then message, 'This should not happen!'
           neff[ii] = total(oneovervmax[rev[rev[ii]:rev[ii+1]-1]],/double)/weff[ii] ; effective number of objects
-          phierr_gehrels1 = weff[ii]*im_poisson_limits(neff[ii],0.8413)            ; 1-sigma
+          phierr_gehrels1 = weff[ii]*im_poisson_limits(neff[ii],0.8413)/mfbinsize  ; 1-sigma
           phierr_gehrels[0,ii] = phi[ii]-phierr_gehrels1[0]                        ; lower
           phierr_gehrels[1,ii] = phierr_gehrels1[1]-phi[ii]                        ; upper
        endelse
     endfor
 
 ; pack into a structure
-    null = fltarr(50>n_elements(phi))-1.0
+    if (n_elements(noutbins) eq 0) then noutbins = nbins
+    null = fltarr(noutbins)
     mf_data = {$
       ngal:           ngal,$
+      mfbinsize: mfbinsize,$
       nbins:         nbins,$
       number:    fix(null),$
       neff:           null,$

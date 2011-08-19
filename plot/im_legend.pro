@@ -446,7 +446,7 @@ pro im_legend, items, BOTTOM_LEGEND=bottom, BOX = box, CENTER_LEGEND=center, $
           if vectorfont[i] ne '' then begin
 ;    if (num eq 1) and vertical then xp = x + xt/2      ; IF 1, CENTERED.
              if (size(colors[i],/type) eq 7) then $
-               col = im_color(colors[i],1E8) else col = colors[i]
+               col = im_color(colors[i],100) else col = colors[i]
              xyouts,xp,yp,vectorfont[i],width=width,color=col, $
                size=charsize,align=xalign,charthick = charthick,/norm,font=font
              xt = xt > width
