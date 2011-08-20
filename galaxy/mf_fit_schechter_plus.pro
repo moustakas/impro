@@ -1,6 +1,6 @@
 ;+
 ; NAME:
-;   MF_FIT_SCHECHTER_PLUS
+;   MF_FIT_SCHECHTER_PLUS()
 ;
 ; PURPOSE:
 ;   Fit a binned stellar mass function using a double Schechter model.  
@@ -63,14 +63,13 @@ return, mf_schechter_plus(x,params[0],params[1],params[2],$
   params[3],params[4])
 end
 
-pro mf_fit_schechter_plus, logmass, phi, phierr, $
-  schechter_plus, parinfo=parinfo, quiet=quiet
+function mf_fit_schechter_plus, logmass, phi, phierr, parinfo=parinfo, quiet=quiet
 
     ngal = n_elements(logmass)
     if (ngal eq 0L) or (ngal ne n_elements(phi)) or $
       (ngal ne n_elements(phierr)) then begin
        doc_library, 'mf_fit_schechter_plus'
-       return
+       return, -1
     endif
     
 ; initialize the parameter structure
@@ -111,5 +110,5 @@ pro mf_fit_schechter_plus, logmass, phi, phierr, $
       alphaplus_err: perror[4], covar: covar, $
       chi2_dof: chi2/(dof+(dof eq 0))}
 
-return
+return, schechter_plus
 end

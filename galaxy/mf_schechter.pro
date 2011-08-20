@@ -13,8 +13,9 @@
 ;   alpha - low-mass slope
 ;
 ; OPTIONAL INPUTS: 
-;   schechter - MF_SCHECHTER() style structure with PHISTAR, LOGMSTAR, 
-;     and ALPHA (takes precedence over PHISTAR, LOGMSTAR, and ALPHA) 
+;   schechter - FIT_MF_SCHECHTER() style structure with PHISTAR,
+;     LOGMSTAR, and ALPHA (takes precedence over PHISTAR, LOGMSTAR,
+;     and ALPHA)  
 ;
 ; OUTPUTS: 
 ;   model - logarithmic Schechter model Phi(log M) 

@@ -3,14 +3,14 @@
 ;   IM_MF_VMAX()
 ;
 ; PURPOSE:
-;   Compute a 1/Vmax-weighted mass function.
+;   Compute a 1/Vmax-weighted mass *or* luminosity function.
 ;
 ; INPUTS: 
-;   mass - stellar mass for each galaxy [NGAL]
+;   mass - stellar mass or absolute magnitude for each galaxy [NGAL]
 ;   oneovervmax - 1/Vmax for each object (h^3 Mpc^-3) [NGAL] 
 ;
 ; OPTIONAL INPUTS: 
-;   mfbinsize - logarithmic width of each stellar mass bin 
+;   binsize - logarithmic width of each stellar mass bin 
 ;     (default 0.1 dex)
 ;   masslimit - stellar mass above which the sample is complete;
 ;     affects LIMIT output (default min(mass)); can also be an NGAL
@@ -21,6 +21,7 @@
 ;     different output structures from this routine to be 'stacked'  
 ;
 ; KEYWORD PARAMETERS: 
+;   lf - 
 ;   debug - make a simple plot and wait for a keystroke
 ;
 ; OUTPUTS: 
@@ -59,8 +60,8 @@
 ; General Public License for more details. 
 ;-
 
-function im_mf_vmax, mass, oneovervmax, mfbinsize=mfbinsize, masslimit=masslimit1, $
-  minmass=minmass, maxmass=maxmass, noutbins=noutbins, debug=debug
+function im_mf_vmax, mass, oneovervmax, binsize=binsize, masslimit=masslimit1, $
+  minmass=minmass, maxmass=maxmass, noutbins=noutbins, lf=lf, debug=debug
 
     ngal = n_elements(mass)
     if (ngal eq 0L) then begin
@@ -75,7 +76,7 @@ function im_mf_vmax, mass, oneovervmax, mfbinsize=mfbinsize, masslimit=masslimit
     if (nzero ne 0L) then message, 'Some ONEOVERVMAX are <= 0!'
 
 ; round the bin centers to two decimal points
-    if (n_elements(mfbinsize) eq 0) then mfbinsize = 0.1 ; dex
+    if (n_elements(binsize) eq 0) then binsize = 0.1 ; dex
     nmasslimit = n_elements(masslimit1)
     if (nmasslimit eq 0) then masslimit = replicate(min(mass),ngal) else begin
        if (nmasslimit eq 1) then masslimit = replicate(masslimit1,ngal) else $
@@ -85,14 +86,14 @@ function im_mf_vmax, mass, oneovervmax, mfbinsize=mfbinsize, masslimit=masslimit
     endelse 
     
     if (n_elements(minmass) eq 0) then $
-      minmass = ceil((min(mass)+mfbinsize/2.0)*100.0)/100.0-mfbinsize/2.0
+      minmass = ceil((min(mass)+binsize/2.0)*100.0)/100.0-binsize/2.0
 
 ; generate weighted histogram    
-    phi = im_hist1d(mass,oneovervmax,binsize=mfbinsize,obin=binmass,$
+    phi = im_hist1d(mass,oneovervmax,binsize=binsize,obin=binmass,$
       binedge=0,omin=omin,omax=omax,h_err=phierr_poisson,$
       histmin=minmass,histmax=maxmass,reverse_indices=rev)
-    phi = phi/mfbinsize
-    phierr_poisson = phierr_poisson/mfbinsize
+    phi = phi/binsize
+    phierr_poisson = phierr_poisson/binsize
 
 ; compute LIMIT, NUMBER, and the statistical error in each bin, taking
 ; into account small-number statistics (see Zhu+09 and Gehrels+86);
@@ -108,13 +109,15 @@ function im_mf_vmax, mass, oneovervmax, mfbinsize=mfbinsize, masslimit=masslimit
        if (rev[ii] eq rev[ii+1]) then begin ; NUMBER=0; compute upper limit
           limit[ii] = 0 ; no galaxies
        endif else begin
-          limit[ii] = (binmass[ii]-mfbinsize/2.0) gt min(masslimit[rev[rev[ii]:rev[ii+1]-1]])
+          if keyword_set(lf) then $
+            limit[ii] = (binmass[ii]-binsize/2.0) lt min(masslimit[rev[rev[ii]:rev[ii+1]-1]]) else $
+              limit[ii] = (binmass[ii]-binsize/2.0) gt min(masslimit[rev[rev[ii]:rev[ii+1]-1]])
 ;         limit[ii] = total(mass[rev[rev[ii]:rev[ii+1]-1]] lt masslimit) eq 0.0
           weff[ii] = total(oneovervmax[rev[rev[ii]:rev[ii+1]-1]]^2,/double)/$ ; effective weight
             total(oneovervmax[rev[rev[ii]:rev[ii+1]-1]],/double)
           if (weff[ii] le 0) then message, 'This should not happen!'
           neff[ii] = total(oneovervmax[rev[rev[ii]:rev[ii+1]-1]],/double)/weff[ii] ; effective number of objects
-          phierr_gehrels1 = weff[ii]*im_poisson_limits(neff[ii],0.8413)/mfbinsize  ; 1-sigma
+          phierr_gehrels1 = weff[ii]*im_poisson_limits(neff[ii],0.8413)/binsize  ; 1-sigma
           phierr_gehrels[0,ii] = phi[ii]-phierr_gehrels1[0]                        ; lower
           phierr_gehrels[1,ii] = phierr_gehrels1[1]-phi[ii]                        ; upper
        endelse
@@ -123,24 +126,44 @@ function im_mf_vmax, mass, oneovervmax, mfbinsize=mfbinsize, masslimit=masslimit
 ; pack into a structure
     if (n_elements(noutbins) eq 0) then noutbins = nbins
     null = fltarr(noutbins)
-    mf_data = {$
-      ngal:           ngal,$
-      mfbinsize: mfbinsize,$
-      nbins:         nbins,$
-      number:    fix(null),$
-      neff:           null,$
-      weff:           null,$
-      mass:           null,$
-      phi:            null,$
-      phierr_poisson: null,$
-      phierr_lower:   null,$
-      phierr_upper:   null,$
-      phierr:         null,$
-      phierr_cv:      null,$
-      limit:      fix(null)}
+
+    if keyword_set(lf) then begin
+       mf_data = {$
+         ngal:           ngal,$
+         binsize:     binsize,$
+         nbins:         nbins,$
+         number:    fix(null),$
+         neff:           null,$
+         weff:           null,$
+         absmag:         null,$
+         phi:            null,$
+         phierr_poisson: null,$
+         phierr_lower:   null,$
+         phierr_upper:   null,$
+         phierr:         null,$
+         phierr_cv:      null,$
+         limit:      fix(null)}
+       mf_data.absmag[0:nbins-1] = binmass
+    endif else begin
+       mf_data = {$
+         ngal:           ngal,$
+         binsize:     binsize,$
+         nbins:         nbins,$
+         number:    fix(null),$
+         neff:           null,$
+         weff:           null,$
+         mass:           null,$
+         phi:            null,$
+         phierr_poisson: null,$
+         phierr_lower:   null,$
+         phierr_upper:   null,$
+         phierr:         null,$
+         phierr_cv:      null,$
+         limit:      fix(null)}
+       mf_data.mass[0:nbins-1] = binmass
+    endelse
 
     mf_data.limit[0:nbins-1] = limit
-    mf_data.mass[0:nbins-1] = binmass
     mf_data.number[0:nbins-1] = number
     mf_data.neff[0:nbins-1] = neff
     mf_data.weff[0:nbins-1] = weff
