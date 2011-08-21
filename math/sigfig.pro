@@ -1,4 +1,3 @@
-function sigfig, inarr, nfigs
 ;+
 ; NAME:
 ;  SIGFIG
@@ -24,10 +23,9 @@ function sigfig, inarr, nfigs
 ; MODIFICATION HISTORY:
 ;      Documented.
 ;       Wed Nov 21 12:25:29 2001, Erik Rosolowsky <eros@cosmic>
-;
-;		
-;
 ;-
+
+function sigfig, inarr, nfigs
 
   outarr = strarr(n_elements(inarr))
 

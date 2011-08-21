@@ -3,7 +3,6 @@
 ;       HIST_ND
 ;
 ; PURPOSE:
-;
 ;       Perform an N-dimensional histogram, also known as the joint
 ;       density function of N variables, ala HIST_2D.
 ;

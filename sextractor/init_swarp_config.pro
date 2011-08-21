@@ -1,5 +1,18 @@
+;+
+; NAME:
+;   INIT_SWARP_CONFIG()
+; PURPOSE:
+;   Initialize a swarp configuration structure.
+; OPTIONAL INPUTS: 
+;   ncopies - number of times to copy the data structure
+; OUTPUTS: 
+;   config - swarp configuration structure with all the data needed to
+;     run swarp using IM_SWARP
+; MODIFICATION HISTORY:
+;   J. Moustakas, 2008 Aug 06, NYU
+;-
+
 function init_swarp_config, ncopies
-; jm08aug06nyu - support routine for IM_SWARP
 
     if (n_elements(ncopies) eq 0L) then ncopies = 1L
 

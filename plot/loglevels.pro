@@ -1,7 +1,6 @@
-;-------------------------------------------------------------
 ;+
 ; NAME:
-;        LOGLEVELS (function)
+;        LOGLEVELS()
 ;
 ; PURPOSE:
 ;        Compute default values for logarithmic axis labeling
@@ -69,7 +68,6 @@
 ; MODIFICATION HISTORY:
 ;        mgs, 17 Mar 1999: VERSION 1.00
 ;
-;-
 ; Copyright (C) 1999, Martin Schultz, Harvard University
 ; This software is provided as is without any warranty
 ; whatsoever. It may be freely used, copied or distributed
@@ -79,7 +77,7 @@
 ; please contact the author to arrange payment.
 ; Bugs and comments should be directed to mgs@io.harvard.edu
 ; with subject "IDL routine loglevels"
-;-------------------------------------------------------------
+;-
 
 
 function loglevels,range,min=mind,max=maxd,  $

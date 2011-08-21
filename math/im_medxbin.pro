@@ -34,13 +34,9 @@
 ;     quant75 -  75% quantile
 ;     quant95 -  95% quantile
 ;
-; OPTIONAL OUTPUTS:
-;
 ; COMMENTS:
 ;   Only bins containing more than MINPTS are returned (and therefore
 ;   the x-binning may be some factor of BINSIZE for some x).
-;
-; EXAMPLES:
 ;
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2005 Jan 01, U of A - roughly based on

@@ -1,7 +1,6 @@
-FUNCTION rsex,catalog, use_row=use_row
 ;+
 ; NAME:
-;       RSEX
+;       RSEX()
 ;
 ; PURPOSE:
 ;       Read in arbitrary SExtractor format catalogs, using native
@@ -57,6 +56,8 @@ FUNCTION rsex,catalog, use_row=use_row
 ;       JM  '08jul25 - use a variable logical unit number
 ;       LAM+JM '08dec11 - vetted - no changes made
 ;-
+
+FUNCTION rsex,catalog, use_row=use_row
 
 ; Check that an argument has been passed     
      IF n_params() LE 0 THEN BEGIN 

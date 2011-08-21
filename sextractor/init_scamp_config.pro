@@ -1,5 +1,18 @@
+;+
+; NAME:
+;   INIT_SCAMP_CONFIG()
+; PURPOSE:
+;   Initialize a scamp configuration structure.
+; OPTIONAL INPUTS: 
+;   ncopies - number of times to copy the data structure
+; OUTPUTS: 
+;   config - scamp configuration structure with all the data needed to
+;     run scamp using IM_SCAMP
+; MODIFICATION HISTORY:
+;   J. Moustakas, 2008 Aug 06, NYU
+;-
+
 function init_scamp_config, ncopies
-; jm08aug06nyu - support routine for IM_SCAMP
 
     if (n_elements(ncopies) eq 0L) then ncopies = 1L
 

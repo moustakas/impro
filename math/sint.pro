@@ -1,7 +1,7 @@
 ;+
 ; NAME:
 ;    sint
-; PURPOSE: (one line)
+; PURPOSE:
 ;    Sinc interpolation of a 1-D vector of data.
 ; DESCRIPTION:
 ;

@@ -1,13 +1,58 @@
-function im_stats, array, verbose=verbose, baremin=baremin, mask=mask, $
-  sigrej=sigrej, _extra=extra
-; jm03jun2uofa
-; jm04sep07uofa - added mask output
-; jm05jan20uofa - added MAD output, removed VARIANCE, SKEWNESS, and
-;                 KURTOSIS 
-; jm05jun14uofa - added BAREMIN; only print the bare minimum
-;                 statistics
-; jm05aug31uofa - added SIGREJ optional input    
+;+
+; NAME:
+;   IM_STATS()
+;
+; PURPOSE:
+;   Compute some basic statistics and pack into a structure.
+;
+; INPUTS: 
+;   array - input vector
+;
+; OPTIONAL INPUTS: 
+;   sigrej - rejection threshold (default 4)
+;   extra - extra keywords for DJS_ITERSTAT
+;
+; KEYWORD PARAMETERS: 
+;   verbose - print to the screen
+;   baremin - only print the bare minimum statistics 
+;
+; OUTPUTS: 
+;   stats - output data structure with lots of goodies
+;
+; OPTIONAL OUTPUTS:
+;   mask - bit mask of rejected values
+;
+; COMMENTS:
+;
+; MODIFICATION HISTORY:
+;   J. Moustakas, 2003 Jun 02, U of A
+;   jm04sep07uofa - added mask output
+;   jm05jan20uofa - added MAD output, removed VARIANCE, SKEWNESS, and
+;     KURTOSIS  
+;   jm05jun14uofa - added /BAREMIN
+;   jm05aug31uofa - added SIGREJ optional input    
+;
+; Copyright (C) 2003-2005, John Moustakas
+; 
+; This program is free software; you can redistribute it and/or modify 
+; it under the terms of the GNU General Public License as published by 
+; the Free Software Foundation; either version 2 of the License, or
+; (at your option) any later version. 
+; 
+; This program is distributed in the hope that it will be useful, but 
+; WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+; General Public License for more details. 
+;-
 
+function im_stats, array, verbose=verbose, baremin=baremin, $
+  mask=mask, sigrej=sigrej, _extra=extra
+
+    if (n_elements(array) eq 0L) then begin
+       doc_library, 'im_stats'
+       return, -1
+    endif
+    
     if (n_elements(sigrej) eq 0L) then sigrej = 4.0
     
     narray = n_elements(array)
@@ -38,9 +83,7 @@ function im_stats, array, verbose=verbose, baremin=baremin, mask=mask, $
 
 ; compute the lower and upper intervals that include 68% and 95% of
 ; the data    
-
     histarray = farray[sort(farray)]
-    
     linterp, findgen(nfinite)/float(nfinite), histarray, [0.025,0.16,0.84,0.975], dist
 
     sig68lo = dist[1]
@@ -72,9 +115,8 @@ function im_stats, array, verbose=verbose, baremin=baremin, mask=mask, $
     
     if keyword_set(verbose) then begin
        if keyword_set(baremin) then begin
-          struct_print, struct_trimtags(stats,select=['MINREJ','MAXREJ','MEAN_REJ','MEDIAN_REJ','SIGMA_REJ','NPTS']), _extra=extra
-;         struct_print, struct_trimtags(stats,select=['MIN','MAX','MEAN','MEDIAN','SIGMA','NPTS']), _extra=extra
-;         help, struct_trimtags(stats,select=['MEDIAN','MEAN_REJ','SIG68MEAN']), /structure x[
+          struct_print, struct_trimtags(stats,select=['MINREJ','MAXREJ',$
+            'MEAN_REJ','MEDIAN_REJ','SIGMA_REJ','NPTS']), _extra=extra
        endif else begin
           help, stats, /structure
        endelse

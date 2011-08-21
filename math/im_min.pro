@@ -1,6 +1,20 @@
-; wrapper for djs_iterstat
-; J. Moustakas, 2008 June 13, NYU
-; jm08aug01nyu - added NAN keyword
+;+
+; NAME:
+;   IM_MIN()
+; PURPOSE:
+;   Simple wrapper on DJS_ITERSTAT to compute the minimum value. 
+; INPUTS:
+;   x1 - input array
+; OPTIONAL INPUTS:
+;   sigrej - rejection threshold
+;   maxiter - maximum number of iterations
+; KEYWORD PARAMETERS:
+;   ignorezero - exclude zero from the calculation
+;   nan - ignore NAN's
+; MODIFICATION HISTORY:
+;   J. Moustakas, 2008 Jul 13, NYU
+;   jm08aug01nyu - added NAN keyword
+;-
 
 function im_min, x1, sigrej=sigrej, maxiter=maxiter, $
   ignorezero=ignorezero, nan=nan

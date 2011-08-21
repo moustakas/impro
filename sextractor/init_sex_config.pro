@@ -1,17 +1,31 @@
+;+
+; NAME:
+;   INIT_SEX_CONFIG()
+; PURPOSE:
+;   Initialize a sex configuration structure.
+; OPTIONAL INPUTS: 
+;   ncopies - number of times to copy the data structure
+; OUTPUTS: 
+;   config - sex configuration structure with all the data needed to
+;     run sex using IM_SEX
+; MODIFICATION HISTORY:
+;   J. Moustakas, 2008 Aug 06, NYU
+;   jm09mar05nyu - added default path to PARAMETERS, FILTER, and NNW
+;     files  
+;   jm11mar02ucsd - updated to SExtractor 2.8.6
+;-
+
 function init_sex_config, ncopies
 ; jm08aug06nyu - support routine for IM_SEX
-; jm09mar05nyu - added default path to PARAMETERS, FILTER, and NNW
-; files 
-; jm11mar02ucsd - updated to SExtractor 2.8.6
 
     if (n_elements(ncopies) eq 0L) then ncopies = 1L
 
-    path = getenv('IMPRO_DIR')+'/sextractor/'
+    etcpath = getenv('IMPRO_DIR')+'/etc/'
     config = {$
 ; catalog
       CATALOG_NAME:     'test.cat'        ,$
       CATALOG_TYPE:     'ASCII_HEAD'      ,$
-      PARAMETERS_NAME:  path+'default.sex.param'   ,$
+      PARAMETERS_NAME:  etcpath+'default.sex.param'   ,$
 ; extraction
       DETECT_TYPE:      'CCD'             ,$
       DETECT_MINAREA:   5                 ,$
@@ -19,7 +33,7 @@ function init_sex_config, ncopies
       DETECT_THRESH:    1.5               ,$
       ANALYSIS_THRESH:  1.5               ,$
       FILTER:           'Y'               ,$
-      FILTER_NAME:      path+'default.conv'    ,$
+      FILTER_NAME:      etcpath+'default.conv'    ,$
       FILTER_THRESH:    0                 ,$
       DEBLEND_NTHRESH:  32                ,$
       DEBLEND_MINCONT:  0.005             ,$
@@ -51,7 +65,7 @@ function init_sex_config, ncopies
       PIXEL_SCALE:      0.0               ,$
 ; star/galaxy separation
       SEEING_FWHM:      1.2               ,$
-      STARNNW_NAME:     path+'default.nnw'     ,$
+      STARNNW_NAME:     etcpath+'default.nnw'     ,$
 ; background
       BACK_TYPE:        'AUTO'            ,$
       BACK_VALUE:       0.0               ,$

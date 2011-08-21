@@ -1,6 +1,6 @@
 ;+
 ; NAME:
-;       im_integral
+;       IM_INTEGRAL()
 ;
 ; PURPOSE:
 ;       Routine to perform trapezoidal integration in X,Y between
