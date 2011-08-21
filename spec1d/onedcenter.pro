@@ -1,15 +1,50 @@
+;+
+; NAME:
+;   ONEDCENTER()
+;
+; PURPOSE:
+;   Find the intensity-weighted (partial-pixel) center of a 1D array.  
+;
+; INPUTS: 
+;   x - independent input vector (e.g., wavelength) [NPTS]
+;   y - dependent input vector (e.g., flux) [NPTS]
+;
+; OPTIONAL INPUTS: 
+;   dx - tolerance; maximum fractional shift in the x-center for
+;     convergence 
+;
+; KEYWORD PARAMETERS: 
+;   verbose - print messages to STDOUT
+;
+; OUTPUTS: 
+;   xcen - partial-pixel center of X
+;   ycen - interpolated value of Y at XCEN
+;
+; MODIFICATION HISTORY:
+;   J. Moustakas, 2001 Jul 13, U of A
+;
+; Copyright (C) 2001, John Moustakas
+; 
+; This program is free software; you can redistribute it and/or modify 
+; it under the terms of the GNU General Public License as published by 
+; the Free Software Foundation; either version 2 of the License, or
+; (at your option) any later version. 
+; 
+; This program is distributed in the hope that it will be useful, but 
+; WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+; General Public License for more details. 
+;-
+
 pro onedcenter, x, y, xcen, ycen, dx=dx, verbose=verbose
-; jm01jul13uofa
-; find the intensity-weighted (partial-pixel) center of a one-dimensional array
 
-; dx is the tolerance (maximum fractional shift in the x-center for convergence)
-; xcen is the outputed center of the array (in partial pixels) and
-; ycen is the interpolated maximum value of the y-array at xcen
-    
-    on_error, 2
-    if n_elements(x) ne n_elements(y) then message, 'Dimensions of x and y do not agree!'
+    npts = n_elements(x)
+    if (npts eq 0L) or (npts ne n_elements(y)) then begin
+       doc_library, 'onedcenter'
+       return
+    endif
 
-    if not keyword_set(dx) then dx = 1.0E-6 ; pixels
+    if (n_elements(dx) eq 0) then dx = 1.0E-6 ; pixels
 
     ymax = max(y,indx)
     xcenold = x[indx]
@@ -21,12 +56,13 @@ pro onedcenter, x, y, xcen, ycen, dx=dx, verbose=verbose
 ;      xcen = total((x-xcenold)*y)/total(y)+xcenold
        dxshift = abs(xcenold-xcen)
        xcenold = xcen
-       iter = iter + 1L
-    endrep until (dxshift lt dx) or (iter gt 25L)
+       iter++
+    endrep until (dxshift lt dx) or (iter gt 25)
 
     ycen = interpol(y,x,xcen) ; linear interpolation
     
-    if keyword_set(verbose) then message, 'The center converged in '+strn(iter)+' iterations.', /info
+    if keyword_set(verbose) then message, 'The center converged in '+$
+      strn(iter)+' iterations.', /info
     
 return
 end

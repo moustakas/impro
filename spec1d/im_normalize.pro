@@ -40,6 +40,18 @@
 ;       jm03dec30uofa - if NORMWAVE is specified then compute the
 ;                       mean, median, or max within the specified 
 ;                       wavelength interval
+;
+; Copyright (C) 2003, John Moustakas
+; 
+; This program is free software; you can redistribute it and/or modify 
+; it under the terms of the GNU General Public License as published by 
+; the Free Software Foundation; either version 2 of the License, or
+; (at your option) any later version. 
+; 
+; This program is distributed in the hope that it will be useful, but 
+; WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+; General Public License for more details. 
 ;-
 
 function im_normalize, spec, wave, normwave=normwave, $

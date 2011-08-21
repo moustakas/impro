@@ -28,7 +28,7 @@
 ;   jm05apr18uofa - check if CDELT1 is present instead of CD1_1 
 ;   jm10apr28ucsd - double precision, by default
 ;
-; Copyright (C) 1999, 2001-2003, 2005, 2010, John Moustakas
+; Copyright (C) 1999, John Moustakas
 ; 
 ; This program is free software; you can redistribute it and/or modify 
 ; it under the terms of the GNU General Public License as published by 

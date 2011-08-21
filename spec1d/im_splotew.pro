@@ -48,7 +48,7 @@
 ;       J. Moustakas, 2002 Jul 09, U of A - written
 ;       jm05jan06uofa - documented, updated, and streamlined 
 ;
-; Copyright (C) 2002,2005-2006, John Moustakas
+; Copyright (C) 2002, 2005, John Moustakas
 ; 
 ; This program is free software; you can redistribute it and/or modify 
 ; it under the terms of the GNU General Public License as published by 
@@ -60,6 +60,20 @@
 ; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 ; General Public License for more details. 
 ;-
+
+function lineew_init, linewave, linename
+; function for IM_SPLOTEW()
+    lineew = {$
+      linename:        linename, $
+      linewave:        linewave, $
+      linecenter:      0.0,$
+      linecenter_flux: 0.0,$
+      linewidth:       0.0,$
+      continuum:       [0.0,-1.0], $
+      gaussflux:       [0.0,-1.0], $
+      ew:              [0.0,-1.0]}
+return, lineew
+end
 
 function im_splotew, wave, flux, ivar, linewave, $
   linename=linename, nmonte=nmonte, boxwidth=boxwidth, $

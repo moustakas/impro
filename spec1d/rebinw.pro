@@ -1,7 +1,7 @@
-function rebinw,f,x,y,perbin=perbin,nbin=nbin,wrange=wrange,slowok=slowok,$
-	numbins=numbins,verbose=verbose, _extra=e
 ;+
-;function	rebinw
+; NAME:
+; 	rebinw
+; PURPOSE:
 ;	rebins the input array on a new grid and returns the output array.
 ;	this routine is preferred over simple INTERPOL or SPLINE because
 ;	this is guaranteed to e.g., conserve flux while rebinning spectra.
@@ -83,6 +83,9 @@ function rebinw,f,x,y,perbin=perbin,nbin=nbin,wrange=wrange,slowok=slowok,$
 ;	cleaned up behavior in the case of non-unique/non-monotonic inputs
 ;	  (VK; Mar05)
 ;-
+
+function rebinw,f,x,y,perbin=perbin,nbin=nbin,wrange=wrange,slowok=slowok,$
+	numbins=numbins,verbose=verbose, _extra=e
 
 forward_function findex
 

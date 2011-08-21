@@ -1,7 +1,9 @@
 ;+
-; NAME:              XREBIN
+; NAME:              
+;   XREBIN
 ;
-; PURPOSE:           Rebin a vector
+; PURPOSE:           
+;   Rebin a vector.
 ;
 ; USAGE:
 ;         yout = xrebin(xin, yin, xout [,/SPLINE] [,/LSQUADRATIC] 
