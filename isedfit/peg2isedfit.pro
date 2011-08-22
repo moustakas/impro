@@ -1,6 +1,38 @@
+;+
+; NAME:
+;   PEG2ISEDFIT()
+;
+; PURPOSE:
+;   Convert the output from IM_READ_PEG() to an iSEDfit compatible
+;   format. 
+;
+; INPUTS: 
+;   peg - data structure from IM_READ_PEG()
+;
+; OPTIONAL INPUTS: 
+;   sfr_const - scale by the continuous SFR back to 1 M_sun/yr, if
+;     necessary  
+;
+; OUTPUTS: 
+;   ised - iSEDfit-compatible data structure
+;
+; MODIFICATION HISTORY:
+;   J. Moustakas, 2011, ???
+;
+; Copyright (C) 2011, John Moustakas
+; 
+; This program is free software; you can redistribute it and/or modify 
+; it under the terms of the GNU General Public License as published by 
+; the Free Software Foundation; either version 2 of the License, or
+; (at your option) any later version. 
+; 
+; This program is distributed in the hope that it will be useful, but 
+; WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+; General Public License for more details. 
+;-
+
 function peg2isedfit, peg, sfr_const=sfr_const
-; convert the output from IM_READ_PEG() to an iSEDfit compatible
-; format
 
     dist = 10.0*3.085678D18     ; fiducial distance [10 pc in cm]
 

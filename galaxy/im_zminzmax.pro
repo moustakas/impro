@@ -159,19 +159,26 @@ function im_zminzmax, redshift, mag, coeffs, bright=bright, $
     k_projection_table, rmatrix, vmatrix, lambda, zvals, $
       filter, zmin=zrefmin, zmax=zrefmax, nz=nzref, /silent
 
-    absmag_grid = fltarr(nzref,ngal)
+    k_reconstruct_maggies, coeffs, redshift*0.0, $
+      restmaggies, rmatrix=rmatrix, zvals=zvals
+    k_reconstruct_maggies, coeffs, redshift, $
+      maggies_gal, rmatrix=rmatrix, zvals=zvals
+    kcorr_gal = +2.5*alog10(reform(restmaggies/maggies_gal))
+
+    kcorr_ref = fltarr(nzref,ngal)
     for ii = 0L, nzref-1L do begin
        k_reconstruct_maggies, coeffs, redshift*0.0+zref[ii], $
          maggies, rmatrix=rmatrix, zvals=zvals
-       absmag_grid[ii,*] = -2.5*alog10(maggies) + dm_ref[ii] - evol_ref[ii] 
+       kcorr_ref[ii,*] = +2.5*alog10(reform(restmaggies/maggies))
     endfor
-
+    
 ; now loop through each galaxy and compute zmin and zmax; force the
 ; apparent magnitude from the model at the redshift of the galaxy to
 ; be equal to the measured magnitude in the selection band
     offset = fltarr(ngal)
-    for jj = 0L, ngal-1L do begin
-       appmag = absmag_grid[*,jj] - dm_gal[jj] + evol_gal[jj]
+    for jj = 0L, ngal-1 do begin
+       appmag = mag[jj] + (dm_ref-dm_gal[jj]) + (kcorr_ref[*,jj]-kcorr_gal[jj]) - $
+         (evol_ref-evol_gal[jj])
        offset[jj] = mag[jj] - interpol(appmag,zref,redshift[jj])
 ;      splog, redshift[jj], mag[jj], offset[jj]
        appmag = appmag + offset[jj]

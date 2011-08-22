@@ -9,13 +9,11 @@
 ;   paramfile - parameter file name
 ;
 ; OPTIONAL INPUTS: 
-;
-; KEYWORD PARAMETERS: 
+;   sfhgrid - if sfhgrid in the parameter file is an array then
+;     subscript to SFHGRID
 ;
 ; OUTPUTS: 
-;   params - data structure containing the specified parameters
-;
-; OPTIONAL OUTPUTS:
+;   params - data structure containing the specified parameters 
 ;
 ; COMMENTS:
 ;
@@ -39,7 +37,7 @@
 
 function read_isedfit_paramfile, paramfile, sfhgrid=sfhgrid
 
-    if (file_test(paramfile,/regular) eq 0L) then $
+    if (file_test(paramfile,/regular) eq 0) then $
       message, 'PARAMFILE '+paramfile+' not found'
 
     lines1 = djs_readlines(paramfile)

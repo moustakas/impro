@@ -30,7 +30,7 @@
 ;     2 = O'Donnell 1994 (i.e., standard Milky Way)
 ;     3 = SMC
 ; 
-;   env_sfhgridpath - environment variable indicating where the grid
+;   sfhgrid_basedir - environment variable indicating where the grid 
 ;     should be written; allows the grids to be project-specific;
 ;     (default ${ISEDFIT_SFHGRID_DIR})
 ; 
@@ -48,16 +48,7 @@
 ;
 ; OPTIONAL OUTPUTS:
 ;
-; DESCRIPTION OF THE GRIDS:
-;   01 - default grid; range of tau-values, range of reddenings
-;        (0.0-1.0) with default /CHARLOT attenuation curve), and range
-;        of metallicities (0.004-0.05)
-;   02 - identical to 01, except the metallicity is fixed to solar
-;   03 - identical to 01, except assume *no* reddening
-;   04 - identical to 01, except the metallicity is fixed to 2.5*solar 
-;   20 - 
-;
-; ToDo:
+; TODO:
 ;   Build diagnostic plots showing the range of parameters spanned by
 ;   the models.
 ;

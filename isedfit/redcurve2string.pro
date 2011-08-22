@@ -1,5 +1,16 @@
+;+
+; NAME:
+;   REDCURVE2STRING()
+; PURPOSE:
+;   Map an iSEDfit reddening number to the appropriate reddening
+;   curve. 
+; COMMENTS:
+;   ISEDFIT support routine.
+; MODIFICATION HISTORY:
+;   J. Moustakas, ???
+;-
+
 function redcurve2string, redcurve
-; reddening curves
     case redcurve of
        -1: redcurvestring = ''
        0: redcurvestring = 'calzetti'

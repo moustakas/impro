@@ -18,6 +18,7 @@
 ;   are written to the 'pegase' subdirectory.
 ;
 ; COMMENTS:
+;   The code CREATE_PEGASE_SSPS needs to have been run.
 ;
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2011 Mar 29, UCSD

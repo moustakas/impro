@@ -3,14 +3,14 @@
 ;   ISEDFIT_RESTORE()
 ;
 ; PURPOSE:
-;   Function to restore the best-fitting spectral model, given the
-;   outputs from ISEDFIT. 
+;   Function to restore the best-fitting iSEDfit model. 
 ;
 ; INPUTS:
-;   result      - output from ISEDFIT
-;   result_info - output from ISEDFIT
+;   paramfile - ISEDFIT parameter file
 ;
 ; OPTIONAL INPUTS:
+;   params - ISEDFIT parameter data structure (over-rides PARAMFILE) 
+;   iopath - I/O path
 ;
 ; KEYWORD PARAMETERS:
 ;   maxold - see ISEDFIT
@@ -22,7 +22,7 @@
 ;           different depending on whether or not MAXOLD=1) 
 ;
 ; OPTIONAL OUTPUTS:
-;   filtinfo - filter information structure
+;   isedfit - ISEDFIT result structure
 ;
 ; COMMENTS:
 ;   The cosmological parameters are hard-wired to match

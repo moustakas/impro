@@ -69,6 +69,18 @@
 ;                       input 
 ;       jm05may05uofa - also return the emission-line and continuum
 ;                       spectra 
+;
+; Copyright (C) 2004-2005, John Moustakas
+; 
+; This program is free software; you can redistribute it and/or modify 
+; it under the terms of the GNU General Public License as published by 
+; the Free Software Foundation; either version 2 of the License, or
+; (at your option) any later version. 
+; 
+; This program is distributed in the hope that it will be useful, but 
+; WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+; General Public License for more details. 
 ;-
 
 pro bc03_grid2fits, grid, fitsgrid, mgalaxy=mgalaxy, redshift=redshift, $

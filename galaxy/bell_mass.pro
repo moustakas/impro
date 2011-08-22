@@ -27,11 +27,7 @@
 ; OUTPUTS:
 ;   mass - stellar mass (M_sun)
 ;
-; OPTIONAL OUTPUTS:
-;
 ; COMMENTS:
-;
-; EXAMPLES:
 ;
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2009 Jan 27, NYU - based on a earlier, crappy piece

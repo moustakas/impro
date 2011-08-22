@@ -1,16 +1,46 @@
-pro bc03_massnorm_test, makemodels=makemodels, postscript=postscript
-; jm04nov16uofa: plot up some of the BC03 templates to figure out if
-; they need to be divided by the mstar in the .4color file
-; jm07sep12nyu - test expanded
+;+
+; NAME:
+;   BC03_MASSNORM_TEST
+;
+; PURPOSE:
+;   Build a QAplot to determine whether the BC03 templates need to be
+;   divided by the mstar in the .4color file.
+;
+; INPUTS: 
+;
+; KEYWORD PARAMETERS: 
+;   makemodels - build the BC03 models we need
+;
+; OUTPUTS: 
+;   The models and QAplot are written to the ${bc03_dir}/massnorm_test
+;   directory. 
+;
+; MODIFICATION HISTORY:
+;   J. Moustakas, 2004 Nov 16, U of A
+;
+; Copyright (C) 2004, John Moustakas
+; 
+; This program is free software; you can redistribute it and/or modify 
+; it under the terms of the GNU General Public License as published by 
+; the Free Software Foundation; either version 2 of the License, or
+; (at your option) any later version. 
+; 
+; This program is distributed in the hope that it will be useful, but 
+; WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+; General Public License for more details. 
+;-
+
+pro bc03_massnorm_test, makemodels=makemodels
 
     bc03path = getenv('bc03_dir')+'/src/'         ; FORTRAN source path
     isedpath = getenv('bc03_dir')+'/models/Padova1994/salpeter/'
-    modelspath = getenv('bc03_dir')+'/massnorm_test/'    
+    modelspath = getenv('bc03_dir')+'/massnorm_test/'
+    if (file_test(modelspath) eq 0) then spawn, 'mkdir -p '+modelspath, /sh
     
     if keyword_set(makemodels) then begin
 
 ; tau = 3 Gyr
-
        input = 'tau_sfr.input'
        output = 'tau_sfr.output'
        isedfile = 'tau_sfr_m62_salp.ised'
@@ -65,13 +95,8 @@ pro bc03_massnorm_test, makemodels=makemodels, postscript=postscript
 
     endif
 
-    if keyword_set(postscript) then begin
-       dfpsplot, modelspath+'bc03_massnorm_test.ps', /square
-       postthick = 4.0
-    endif else begin
-       im_window, 0, xratio=0.4, /square
-       postthick = 1.0
-    endelse
+    dfpsplot, modelspath+'bc03_massnorm_test.ps', /square
+    postthick = 4.0
     
     ssp = im_read_bc03(age=[0.01,0.03,0.1,0.3,1,2,5,10],bc=sspe)
     
@@ -88,10 +113,7 @@ pro bc03_massnorm_test, makemodels=makemodels, postscript=postscript
       ssp.wave,10^!x.crange[1]), strtrim(string(ssp.age[i]/1E9,format='(F5.2)'),2), $
       align=0, charsize=1.0, charthick=postthick, /data
 
-    if (not keyword_set(postscript)) then cc = get_kbrd(1)
-
 ; continuous SFR    
-    
     isedpath = modelspath
     const = im_read_bc03(isedfile='const_sfr_m62_salp.ised',isedpath=isedpath,$
       age=[0.01,0.03,0.1,0.3,1,2,5,10],bc=conste,/salpeter)
@@ -111,10 +133,7 @@ pro bc03_massnorm_test, makemodels=makemodels, postscript=postscript
       const.wave,10^!x.crange[1]), strtrim(string(const.age[i]/1E9,format='(F5.2)'),2), $
       align=0, charsize=1.0, charthick=postthick, /data
 
-    if (not keyword_set(postscript)) then cc = get_kbrd(1)
-
 ; normalized
-
     djs_plot, const.wave, const.flux[*,0]/conste[0].m_, /xlog, /ylog, xr=[500,1E4], xsty=3, ysty=3, $
       yrange=[1D-5,1], charsize=1.8, charthick=postthick, xthick=postthick, $
       ythick=postthick, ytitle='f_{\lambda} [erg/s/M'+sunsymbol()+']', $
@@ -128,10 +147,7 @@ pro bc03_massnorm_test, makemodels=makemodels, postscript=postscript
       const.wave,10^!x.crange[1]), strtrim(string(const.age[i]/1E9,format='(F5.2)'),2), $
       align=0, charsize=1.0, charthick=postthick, /data
 
-    if (not keyword_set(postscript)) then cc = get_kbrd(1)
-
 ; tau = 3.0 SFR    
-    
     isedpath = modelspath
     tau = im_read_bc03(isedfile='tau_sfr_m62_salp.ised',isedpath=isedpath,$
       age=[0.01,0.03,0.1,0.3,1,2,5,10],bc=taue,/salpeter)
@@ -151,10 +167,7 @@ pro bc03_massnorm_test, makemodels=makemodels, postscript=postscript
       tau.wave,10^!x.crange[1]), strtrim(string(tau.age[i]/1E9,format='(F5.2)'),2), $
       align=0, charsize=1.0, charthick=postthick, /data
 
-    if (not keyword_set(postscript)) then cc = get_kbrd(1)
-
 ; normalized
-
     djs_plot, tau.wave, tau.flux[*,0]/taue[0].m_, /xlog, /ylog, xr=[500,1E4], xsty=3, ysty=3, $
       yrange=[1D-5,1], charsize=1.8, charthick=postthick, xthick=postthick, $
       ythick=postthick, ytitle='f_{\lambda} [erg/s/M'+sunsymbol()+']', $
@@ -168,9 +181,7 @@ pro bc03_massnorm_test, makemodels=makemodels, postscript=postscript
       tau.wave,10^!x.crange[1]), strtrim(string(tau.age[i]/1E9,format='(F5.2)'),2), $
       align=0, charsize=1.0, charthick=postthick, /data
 
-    if keyword_set(postscript) then dfpsclose
+    dfpsclose
 
-stop    
-    
 return
 end

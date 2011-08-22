@@ -31,8 +31,58 @@
 ;   jm05nov19uofa - added optional mass normalization
 ;   jm10nov04ucsd - major bug correction; MSTAR should be defined as
 ;     *all* stars, including remnants, not just *live* stars 
+;
+; Copyright (C) 2005, 2010, John Moustakas
+; 
+; This program is free software; you can redistribute it and/or modify 
+; it under the terms of the GNU General Public License as published by 
+; the Free Software Foundation; either version 2 of the License, or
+; (at your option) any later version. 
+; 
+; This program is distributed in the hope that it will be useful, but 
+; WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+; General Public License for more details. 
 ;-
 
+function im_peg_struct, ntime, ncont, nlines
+; jm05oct18uofa - compatible with IM_READ_PEG
+; jm10nov04ucsd - replaced MALLSTARS with MSTARLIVE
+    
+    peg = {$
+      file:          '',            $
+      nage:          ntime,         $
+      ncont:         ncont,         $
+      nlines:        nlines,        $
+      age:           0.0D,          $ ; need double precision
+      mgalaxy:       0.0,           $
+      mstar:         0.0,           $ ; M_star+M_wd+M_nsbh+M_substellar
+      mwd:           0.0,           $ ; white dwarfs
+      mnsbh:         0.0,           $ ; neutron stars, black holes
+      msubstellar:   0.0,           $
+      mstarlive:     0.0,           $ 
+      mgas:          0.0,           $
+      Zgas:          0.0,           $
+      Zstar_mass:    0.0,           $
+      Zstar_lbol:    0.0,           $
+      lbol:          0.0D,          $ ; double
+      tauv:          0.0,           $
+      ldust_lbol:    0.0,           $
+      sfr:           0.0,           $
+      nlyc:          0.0D,          $ ; double
+      sniirate:      0.0,           $
+      sniarate:      0.0,           $
+      starage_mass:  0.0,           $ ; Myr
+      starage_lbol:  0.0,           $ ; Myr
+      wave:          fltarr(ncont), $
+      flux:          dblarr(ncont), $ ; need double precision
+      linewave:      fltarr(nlines),$
+      lineflux:      dblarr(nlines)}  ; need double precision
+    peg = replicate(peg,ntime)
+
+return, peg
+end
+    
 function im_read_peg, pegfile, mass=mass
 
     if (n_elements(pegfile) eq 0L) then begin
