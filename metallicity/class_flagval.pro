@@ -3,7 +3,8 @@
 ;   class_flagval
 ;
 ; PURPOSE:
-;   Return bitmask values corresponding to labels.
+;   Return bitmask values corresponding to labels in support of
+;   ICLASSIFICATION. 
 ;
 ; CALLING SEQUENCE:
 ;   value = class_flagval(flagprefix, label)
@@ -19,7 +20,7 @@
 ;   value      - Signed long with any number of its bits set.
 ;
 ; COMMENTS:
-;   This function is the inverse of IM_FLAGNAME().
+;   This function is the inverse of CLASS_FLAGNAME().
 ;
 ; PROCEDURES CALLED:
 ;   splog
@@ -27,7 +28,7 @@
 ;   yanny_read
 ;
 ; DATA FILES:
-;   $IMPRO_DIR/imaging_redux/im_maskbits.par
+;   $IMPRO_DIR/etc/class_maskbits.par
 ;
 ; REVISION HISTORY:
 ;   02-Apr-2002 Written by D. Schlegel, Princeton.

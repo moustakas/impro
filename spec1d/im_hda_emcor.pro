@@ -1,35 +1,32 @@
 ;+
 ; NAME:
-;       IM_HDA_EMCOR()
+;   IM_HDA_EMCOR()
 ;
 ; PURPOSE:
-;       Given an H-alpha flux and a Ha/Hb Balmer decrement, compute
-;       the appropriate correction to apply to the Lick H-delta_A
-;       index to account for emission-line filling.
+;   Given an H-alpha flux and a Ha/Hb Balmer decrement, compute the
+;   appropriate correction to apply to the Lick H-delta_A index to
+;   account for emission-line filling.
 ;
 ; INPUTS: 
-;
-; OPTIONAL INPUTS: 
-;
-;
-; KEYWORD PARAMETERS: 
-;
+;   linenodust - iSPEC-style data structure of reddening-corrected
+;     emission-line fluxes (specifically, the output of
+;     IUNRED_LINEDUST)  
 ;
 ; OUTPUTS: 
-;
-;
-; OPTIONAL OUTPUTS:
-;
+;   hdcor - output data structure with the following tags:
+;     H_DELTA_DUST_PREDICT - *predicted, reddened* H-delta
+;       emission-line flux and error
+;     H_DELTA_NODUST - *predicted, unreddened* H-delta
+;       emission-line flux and error
+;     LICK_HD_A_COR - corrected Lick Hd A index 
 ;
 ; COMMENTS:
-;
-;
-; EXAMPLES:
-;
+;   Could use better error checking.
 ;
 ; MODIFICATION HISTORY:
+;   J. Moustakas, 2008 May 20, NYU
 ;
-; Copyright (C) 2008-May-20, John Moustakas, NYU
+; Copyright (C) 2008, John Moustakas
 ; 
 ; This program is free software; you can redistribute it and/or modify 
 ; it under the terms of the GNU General Public License as published by 
@@ -50,8 +47,6 @@ function im_hda_emcor, linenodust
        return, linenodust
     endif
 
-; NEEDS ERROR CHECKING!    
-    
     kl = k_lambda(4101.734,_extra=extra)
     R_HaHd = 11.1 ; intrinsic Ha/Hd ratio
 
@@ -91,7 +86,6 @@ function im_hda_emcor, linenodust
          linenodust[good].h_delta_continuum[1],/quotient)
 
 ; *add* the correction to make the absorption indices bigger
-       
        hdcor[good].lick_hd_a_cor[0] = linenodust[good].lick_hd_a[0] + hd_dust_predict_ew
        hdcor[good].lick_hd_a_cor[1] = sqrt(linenodust[good].lick_hd_a[1]^2 + $
          hd_dust_predict_ew_err^2)

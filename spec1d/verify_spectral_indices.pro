@@ -1,6 +1,15 @@
+;+
+; NAME:
+;   VERIFY_SPECTRAL_INDICES
+; PURPOSE:
+;   Compare the output of SPECTRAL_INDICES() against BC03. 
+; OUTPUTS: 
+;   Generates a QAplot.
+; MODIFICATION HISTORY:
+;   J. Moustakas, 2003 Oct 3, U of A
+;-
+
 pro verify_spectral_indices
-; jm03oct30uofa - verify SPECTRAL_INDICES()
-; jm09dec16ucsd - some updates
 
     common verify, res
     
@@ -8,7 +17,6 @@ pro verify_spectral_indices
     nage = n_elements(bc.age)
 
     if (n_elements(res) eq 0) then begin
-;      for ii = 152, 152 do begin
        for ii = 0L, nage-1 do begin
           print, format='("Spectral index ",I3,"/",I3,".",A1,$)', $
             ii+1, nage, string(13b)
@@ -64,7 +72,7 @@ pro verify_spectral_indices
 
     plotsym, 0, 1, fill=0, thick=3.0
     im_plotconfig, 6, pos, psfile=getenv('IMPRO_DIR')+$
-      '/spectral_analysis/verify_indices_new.ps', $
+      '/etc/verify_indices.ps', $
       xmargin=[1.4,0.4], yspace=1.0, width=6.7
     
     for jj = 0, n_elements(mynames)-1 do begin

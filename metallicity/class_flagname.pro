@@ -3,7 +3,8 @@
 ;   class_flagname
 ;
 ; PURPOSE:
-;   Return bitmask labels corresponding to bit numbers.
+;   Return bitmask labels corresponding to bit numbers in support of
+;   ICLASSIFICATION. 
 ;
 ; CALLING SEQUENCE:
 ;   label = class_flagname(flagprefix, flagvalue, [ /concat, /silent ] )
@@ -25,7 +26,7 @@
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
-;   This function is the inverse of IM_FLAGVAL().
+;   This function is the inverse of CLASS_FLAGVAL().
 ;
 ; EXAMPLES:
 ;
@@ -37,7 +38,7 @@
 ;   yanny_read
 ;
 ; DATA FILES:
-;   $IMPRO_DIR/imaging_redux/im_maskbits.par
+;   $IMPRO_DIR/etc/class_maskbits.par
 ;
 ; REVISION HISTORY:
 ;   01-Apr-2002 Written by D. Schlegel, Princeton.
@@ -59,7 +60,7 @@ function class_flagname, flagprefix, flagvalue, concat=concat, silent=silent
    ; (After that, store this info in a common block.)
 
     maskfile = filepath('class_maskbits.par',root_dir=getenv('IMPRO_DIR'),$
-      subdirectory='spectral_analysis')
+      subdirectory='etc')
     if (file_test(maskfile,/regular) eq 0L) then $
       message, 'File with mask bits not found'
     yanny_read, maskfile, pdat

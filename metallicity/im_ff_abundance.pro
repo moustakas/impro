@@ -1,73 +1,35 @@
 ;+
 ; NAME:
-;       IM_FF_ABUNDANCE()
+;   IM_FF_ABUNDANCE()
 ;
 ; PURPOSE:
-;       Compute empirical abundances and various relevant line-ratios
-;       from strong emission lines. 
-;
-; CALLING SEQUENCE:
-;       abund = im_abundance(line,snrcut_abundance=,ewalpha=,$
-;          nmonte=,/r23strict,/normalize,/electrondensity,/silent)
+;   Compute abundances using Pilyugin's "ff" method.
 ;
 ; INPUTS:
-;       line   - input structure of de-reddened line fluxes
+;   line   - iSPEC-style input structure of de-reddened line fluxes 
 ;
 ; OPTIONAL INPUTS:
-;       snrcut_abundance - require that individual emission lines have
-;                          a signal-to-noise ratio greater than
-;                          SNRCUT_ABUNDANCE 
-;       ewalpha          - alpha parameter for Kobulnicky & Phillips
-;                          (2003) EW abundances
-;       nmonte           - number of Monte Carlo realizations for
-;                          computing the errors in particular
-;                          abundances 
+;   snrcut_abundance - require that individual emission lines have
+;     a signal-to-noise ratio greater than SNRCUT_ABUNDANCE 
+;   nmonte - number of Monte Carlo realizations for computing the
+;     errors in particular abundances (default 500)
 ;
 ; KEYWORD PARAMETERS:
-;       r23strict       - do not compute abundances for objects with
-;                         log R23 > 1 
-;       normalize       - divide all the emission-line fluxes and flux  
-;                         errors by the flux at H-beta
-;       electrondensity - compute the electron density using the
-;                         sulfur line-ratio
-;       silent          - do not print messages to STDOUT
+;   electrondensity - compute the electron density using the sulfur
+;     line-ratio 
+;   observed - use the observed rather than the predicted value of R
+;     (see Pilyugin+06)
+;   silent - do not print messages to STDOUT
 ;
 ; OUTPUTS:
-;       abund - output data structure
-;
-; OPTIONAL OUTPUTS:
-;
-; PROCEDURES USED:
-;       LINERATIO, IDL_FIVEL(), DJS_MEAN()
+;   abund - output data structure
 ;
 ; COMMENTS:
-;       Be sure to first use ICLASSIFICATION() to remove AGN from the
-;       sample.  This routine must be passed *de-reddened* line fluxes
-;       from IUNRED_LINEDUST().
-;
-; EXAMPLES:
 ;
 ; MODIFICATION HISTORY:
-;        J. Moustakas, 2004 Feb 8, U of A, written
-;        jm04jul06uofa - added empirical Te-based abundances 
-;        jm04jul22uofa - added SILENT and COMBINATION keywords 
-;        jm04jul27uofa - added a warning flag if R23>1.1; added
-;                        ELECTRONDENSITY keyword
-;        jm04nov03uofa - documentation updated; HBETA keyword replaced
-;                        with HbHg keyword for consistency with
-;                        IUNRED_LINEDUST() 
-;        jm04dec08uofa - general development of various empirical
-;                        diagnostics; remove objects with log R23 > 1 
-;        jm05jan01uofa - compute EW line-ratios and abundances
-;        jm05jan06uofa - do not require reddening-corrected line
-;                        fluxes
-;        jm05feb08uofa - added NOTSTRICT keyword
-;        jm05mar31uofa - cleaned up the structure field names
-;        jm05sep05uofa - removed NOTSTRICT keyword in favor of
-;                        R23STRICT keyword
-;        jm06mar10uofa - added EWALPHA and NMONTE parameters 
+;    J. Moustakas, 2004 Feb 8, U of A, written
 ;
-; Copyright (C) 2004-2006, John Moustakas
+; Copyright (C) 2004, John Moustakas
 ; 
 ; This program is free software; you can redistribute it and/or modify 
 ; it under the terms of the GNU General Public License as published by 
@@ -85,19 +47,17 @@ function im_ff_abundance, line, snrcut_abundance=snrcut_abundance, nmonte=nmonte
     
     nspec = n_elements(line)
     if (nspec eq 0L) then begin
-       print, 'Syntax - abund = im_ff_abundance(line,snrcut_abundance=,nmonte=,$'
-       print, '   /electrondensity,/silent)'
-       return, -1L
+       doc_library, 'im_ff_abundance'
+       return, -1
     endif
     
     if (n_elements(snrcut_abundance) eq 0L) then snrcut_abundance = 3.0
     if not keyword_set(silent) then splog, 'S/N > '+string(snrcut_abundance,format='(G0.0)')+'.'
 
-    if (n_elements(nmonte) eq 0L) then nmonte = 500L
-    if (n_elements(electrondensity) eq 0L) then electrondensity = 0L
+    if (n_elements(nmonte) eq 0L) then nmonte = 500
+    if (n_elements(electrondensity) eq 0L) then electrondensity = 0
 
 ; initialize the output data structure    
-    
     abund = {$
       ff_r23:                       -999.0, $ ; ([O II] + [O III] 4959,5007) / H-beta
       ff_r23_err:                   -999.0, $
@@ -165,7 +125,6 @@ function im_ff_abundance, line, snrcut_abundance=snrcut_abundance, nmonte=nmonte
     endif
 
 ; observed R=[OIII] 4363/H-beta
-
     if (tag_exist(line[0],'OIII_4363') and tag_exist(line[0],'H_BETA')) then begin
 
        lineratio, line, 'OIII_4363', 'H_BETA', '', '', $
@@ -261,11 +220,13 @@ function im_ff_abundance, line, snrcut_abundance=snrcut_abundance, nmonte=nmonte
 
        p = abund[index].ff_p
        p_err = abund[index].ff_p_err
-       p_monte = rebin(reform(p,1,nindex),nmonte,nindex)+randomn(seed,nmonte,nindex)*rebin(reform(p_err,1,nindex),nmonte,nindex)
+       p_monte = rebin(reform(p,1,nindex),nmonte,nindex)+randomn(seed,nmonte,nindex)*$
+         rebin(reform(p_err,1,nindex),nmonte,nindex)
 
        r3 = abund[index].ff_r3
        r3_err = abund[index].ff_r3_err
-       r3_monte = rebin(reform(r3,1,nindex),nmonte,nindex)+randomn(seed,nmonte,nindex)*rebin(reform(r3_err,1,nindex),nmonte,nindex)
+       r3_monte = rebin(reform(r3,1,nindex),nmonte,nindex)+randomn(seed,nmonte,nindex)*$
+         rebin(reform(r3_err,1,nindex),nmonte,nindex)
 
        c = [-4.151D,-3.118D,+2.958D,-0.680D]
        
@@ -275,7 +236,8 @@ function im_ff_abundance, line, snrcut_abundance=snrcut_abundance, nmonte=nmonte
 
        for ii = 0L, nindex-1L do begin
           pos = where((p_monte[*,ii] gt 0.0) and (r3_monte[*,ii] gt 0.0) and (p_monte[*,ii] gt 0.0))
-          r_monte = c[0] + c[1]*alog10(P_monte[pos,ii]) + c[2]*alog10(r3_monte[pos,ii]) + c[3]*(alog10(p_monte[pos,ii]))^2.0
+          r_monte = c[0] + c[1]*alog10(P_monte[pos,ii]) + c[2]*$
+            alog10(r3_monte[pos,ii]) + c[3]*(alog10(p_monte[pos,ii]))^2.0
           logr_err[ii] = stddev(r_monte)
        endfor
 
@@ -367,9 +329,11 @@ function im_ff_abundance, line, snrcut_abundance=snrcut_abundance, nmonte=nmonte
           log12oh = alog10(oh) + 12.0
 
           pos = where((r3_monte gt 0.0) and (t3_monte gt 0.0))
-          log12oh_pp_err = stddev(alog10(r3_monte[pos]) + 6.200D + 1.251D/t3_monte[pos] - 0.55D*alog10(t3_monte[pos]) - 0.014D*t3_monte[pos])
+          log12oh_pp_err = stddev(alog10(r3_monte[pos]) + 6.200D + 1.251D/t3_monte[pos] - $
+            0.55D*alog10(t3_monte[pos]) - 0.014D*t3_monte[pos])
           pos = where((r2_monte gt 0.0) and (t2_monte gt 0.0))
-          log12oh_p_err = stddev(alog10(r2_monte[pos]) + 5.961D + 1.676D/t2_monte[pos] - 0.40D*alog10(t2_monte[pos]) - 0.034D*t2_monte[pos] + alog10(1.0+1.35D*x2))
+          log12oh_p_err = stddev(alog10(r2_monte[pos]) + 5.961D + 1.676D/t2_monte[pos] - $
+            0.40D*alog10(t2_monte[pos]) - 0.034D*t2_monte[pos] + alog10(1.0+1.35D*x2))
 
           oh_pp_err = alog(10.0)*log12oh_pp_err*oh_pp
           oh_p_err = alog(10.0)*log12oh_p_err*oh_p
