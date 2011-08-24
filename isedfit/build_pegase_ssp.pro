@@ -13,9 +13,9 @@
 ;   cosmic_imf - generate SSPs for my PRIMUS cosmic-IMF project 
 ;
 ; OUTPUTS:
-;   An information structure is written to
-;   getenv('ISEDFIT_SFHGRID_DIR')+'/ssp/' and the models themselves
-;   are written to the 'pegase' subdirectory.
+;   An information structure is written to getenv('ISEDFIT_SSP_DIR')
+;   and the models themselves are written to the 'pegase'
+;   subdirectory.
 ;
 ; COMMENTS:
 ;   The code CREATE_PEGASE_SSPS needs to have been run.
@@ -41,7 +41,7 @@ pro build_pegase_ssp, kroupa=kroupa, cosmic_imf=cosmic_imf
     splog, 'Building the PEGASE SSPs'
 
     pegpath = getenv('PEGASE_HR_DIR')+'/SSPs/'
-    ssppath = getenv('ISEDFIT_SFHGRID_DIR')+'/ssp/'
+    ssppath = getenv('ISEDFIT_SSP_DIR')+'/'
     outpath = ssppath+'pegase/'
 
     imfstr = 'salp'

@@ -13,9 +13,8 @@
 ;   chabrier - use the Chabrier+03 IMF
 ;
 ; OUTPUTS:
-;   An information structure is written to
-;   getenv('ISEDFIT_SFHGRID_DIR')+'/ssp/' and the models themselves
-;   are written to the 'fsps' subdirectory.
+;   An information structure is written to getenv('ISEDFIT_SSP_DIR')
+;   and the models themselves are written to the 'fsps' subdirectory.
 ;
 ; COMMENTS:
 ;
@@ -39,7 +38,7 @@ pro build_fsps_ssp, kroupa=kroupa, chabrier=chabrier
 
     splog, 'Building the FSPS SSPs'
 
-    ssppath = getenv('ISEDFIT_SFHGRID_DIR')+'/ssp/'
+    ssppath = getenv('ISEDFIT_SSP_DIR')+'/'
     outpath = ssppath+'fsps/'
 
     imfstr = 'salp'

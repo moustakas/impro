@@ -19,37 +19,47 @@
 ;       pegase - 
 ;       maraston05 - 
 ;
-;   imf - initial mass function to assume (default 'chab'); the
-;     available IMF depends on which SYNTHMODELS are 
-;       
+;   imf - initial mass function (default 'chab'=Chabrier); the
+;     available IMFs depend on which SYNTHMODELS are adopted, but as
+;     of 2011 Aug 24 they are:
+;       chab = Chabrier (2003): bc03, fsps
+;       salp = Salpeter (1955): bc03, fsps, maraston05, pegase
+;       kroupa01 = Kroupa (2001): basti, basti_ae, fsps, maraston05,
+;         pegase 
 ;
 ;   redcurve - reddening curve; current options are: 
 ;    -1 = none
-;     0 = Calzetti 2000 (default)
-;     1 = Charlot & Fall 2000
+;     0 = Calzetti 2000 
+;     1 = Charlot & Fall 2000 (default)
 ;     2 = O'Donnell 1994 (i.e., standard Milky Way)
 ;     3 = SMC
 ; 
+;   sfhgrid_paramfile - parameter file describing the the SFH grid to
+;     be built (default ${IMPRO_DIR}+/isedfit/isedfit_sfhgrid.par)  
+;
 ;   isedfit_sfhgrid_dir - environment variable indicating where the grid 
-;     should be written; allows the grids to be project-specific;
-;     (default ${ISEDFIT_SFHGRID_DIR})
-; 
-;   paramfile - parameter file describing the the grid to be built 
-;     (default ${IMPRO_DIR}+/isedfit/isedfit_sfhgrid.par) 
+;     should be written, which allows the grids to be project-specific
+;     (default ${ISEDFIT_SFHGRID_DIR}) 
 ;
 ; KEYWORD PARAMETERS: 
+;   make_montegrids - (re)build the Monte Carlo distribution of
+;     parameter values; if the Monte Carlo grid does not exist then
+;     this keyword is implicitly set
+;
 ;   clobber - delete old files from a previous call to this routine
 ;     (only do this if you know what you're doing!!); the default 
 ;     is to prompt before deleting files
+; 
+;   debug - make some debugging plots and wait for a keystroke 
 ;
 ; OUTPUTS: 
 ;   The grids get written out in a data model that ISEDFIT
-;   understands, and which is transparent to the user.
-;
-; OPTIONAL OUTPUTS:
+;   understands, and which should be transparent to the user. 
 ;
 ; COMMENTS:
-;   
+;   If both ISEDFIT_SFHGRID_DIR and the environment variable
+;   ${ISEDFIT_SFHGRID_DIR} are not defined then the code will still
+;   build the SFH grids *in the current working directory*!
 ;
 ; TODO:
 ;   Build diagnostic plots showing the range of parameters spanned by
@@ -61,8 +71,9 @@
 ;   jm10jul11ucsd - include SFR measures on various timescales and the
 ;     birthrate parameter at each age
 ;   jm10nov12ucsd - streamlined and parameter file adopted
+;   jm11aug24ucsd - documentation updated
 ;
-; Copyright (C) 2009-2010, John Moustakas
+; Copyright (C) 2009-2011, John Moustakas
 ; 
 ; This program is free software; you can redistribute it and/or modify 
 ; it under the terms of the GNU General Public License as published by 
@@ -234,10 +245,10 @@ pro build_grid, montegrid, chunkinfo, ssppath=ssppath, $
 ;               test = isedfit_reconstruct_sfh(outinfo[indx1[jj]],outage=outage,/debug,xr=[3.5,8])
              endelse
              
-; divide by the mass in stars + remnants, since that's what we measure
+; WRONG! divide by the mass in stars + remnants
 ;            outflux = outflux/rebin(reform(outmstar,1,params.nage),npix,params.nage)
              inf = where(finite(outflux) eq 0)
-             if (inf[0] ne -1) then message, 'Bad'
+             if (inf[0] ne -1) then message, 'Bad bad bad'
              
              outinfo[indx1[jj]].age = outage
              outinfo[indx1[jj]].mstar = outmstar
@@ -306,13 +317,12 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
     redcurvestring = redcurve2string(redcurve)
 
 ; read the SSP information structure    
-    ssppath = getenv('ISEDFIT_SSP_DIR')+'/'+synthmodels+'/'
+    ssppath = getenv('ISEDFIT_SSP_DIR')+'/'
     if (file_test(ssppath,/dir) eq 0) then begin
        splog, 'Verify that ${ISEDFIT_SSP_DIR} environment variable is defined!'
        return
     endif
-    sspinfofile = getenv('ISEDFIT_SFHGRID_DIR')+$
-      '/ssp/info_'+synthmodels+'_'+imf+'.fits.gz'
+    sspinfofile = ssppath+'info_'+synthmodels+'_'+imf+'.fits.gz'
     if (file_test(sspinfofile) eq 0) then begin
        splog, 'SSP info file '+sspinfofile+' not found!'
        splog, 'Run the appropriate BUILD_*_SSP code!'
@@ -521,7 +531,7 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
       'nchunk', nchunk, 'chunkfiles', sfhgridpath+chunkfiles)
 
     t0 = systime(1)
-    build_grid, montegrid, chunkinfo, ssppath=ssppath, $
+    build_grid, montegrid, chunkinfo, ssppath=ssppath+synthmodels+'/', $
       sspinfo=sspinfo, redcurve=redcurve, params=params, debug=debug
     chunkinfo.chunkfiles = file_basename(chunkinfo.chunkfiles)+'.gz'
     splog, 'Total time (min) = ', (systime(1)-t0)/60.0

@@ -12,9 +12,8 @@
 ;   chabrier - use the Chabrier+03 IMF (default is the Salpeter+55 IMF) 
 ;
 ; OUTPUTS:
-;   An information structure is written to
-;   getenv('ISEDFIT_SFHGRID_DIR')+'/ssp/' and the models themselves
-;   are written to the 'bc03' subdirectory.
+;   An information structure is written to getenv('ISEDFIT_SSP_DIR')
+;   and the models themselves are written to the 'bc03' subdirectory.
 ;
 ; COMMENTS:
 ;
@@ -38,7 +37,7 @@ pro build_bc03_ssp, chabrier=chabrier
 
     splog, 'Building the BC03 SSPs'
 
-    ssppath = getenv('ISEDFIT_SFHGRID_DIR')+'/ssp/'
+    ssppath = getenv('ISEDFIT_SSP_DIR')+'/'
     outpath = ssppath+'bc03/'
     bc03path = getenv('bc03_dir')+'/models/Padova1994/'
 

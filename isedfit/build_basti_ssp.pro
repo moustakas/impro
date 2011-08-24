@@ -12,9 +12,8 @@
 ;   enhanced - write out the alpha-enhanced models
 ;
 ; OUTPUTS:
-;   An information structure is written to
-;   getenv('ISEDFIT_SFHGRID_DIR')+'/ssp/' and the models themselves
-;   are written to the 'basti' subdirectory.
+;   An information structure is written to getenv('ISEDFIT_SSP_DIR')
+;   and the models themselves are written to the 'basti' subdirectory.
 ;
 ; COMMENTS:
 ;   See http://albione.oa-teramo.inaf.it for additional relevant
@@ -45,7 +44,7 @@ pro build_basti_ssp, enhanced=enhanced
     imfstr = 'kroupa01'
     if keyword_set(enhanced) then enh = 'ae' else enh = 'ss'
 
-    ssppath = getenv('ISEDFIT_SFHGRID_DIR')+'/ssp/'
+    ssppath = getenv('ISEDFIT_SSP_DIR')+'/'
     outpath = ssppath+'basti_'+enh+'/'
 
     dist = 10.0*3.085678D18 ; fiducial distance [10 pc in cm]

@@ -12,9 +12,9 @@
 ;   kroupa - use the Kroupa+01 IMF (default is the Salpeter+05 IMF) 
 ;
 ; OUTPUTS:
-;   An information structure is written to
-;   getenv('ISEDFIT_SFHGRID_DIR')+'/ssp/' and the models themselves
-;   are written to the 'maraston05' subdirectory.
+;   An information structure is written to getenv('ISEDFIT_SSP_DIR')
+;   and the models themselves are written to the 'maraston05'
+;   subdirectory.
 ;
 ; COMMENTS:
 ;
@@ -38,7 +38,7 @@ pro build_maraston05_ssp, kroupa=kroupa
 
     splog, 'Building the MARASTON05 SSPs'
 
-    ssppath = getenv('ISEDFIT_SFHGRID_DIR')+'/ssp/'
+    ssppath = getenv('ISEDFIT_SSP_DIR')+'/'
     outpath = ssppath+'maraston05/'
 
     hbmorph = 'rhb' ; red horizontal branch morphology
