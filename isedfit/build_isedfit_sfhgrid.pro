@@ -3,15 +3,12 @@
 ;   BUILD_ISEDFIT_SFHGRID
 ;
 ; PURPOSE:
-;   Build the individual star formation history grids used by
-;   ISEDFIT.  These SFH grids should not be rebuilt unless you know
-;   what you're doing!
-;
-;   Note: to build the full grids do the following:
-;      IDL> build_isedfit_sfhgrid, sfhgrid=[1,2,3], $
-;      IDL>  redcurve=[0,1,2,3], /clobber, imf='chab'
+;   Build one or more star formation history grids for use with
+;   ISEDFIT.  These SFH grids should not be rebuilt unless you
+;   know what you're doing! 
 ;
 ; INPUTS: 
+;   None required.
 ;
 ; OPTIONAL INPUTS: 
 ;   synthmodels - population synthesis models to use
@@ -47,6 +44,9 @@
 ;   understands, and which is transparent to the user.
 ;
 ; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;   
 ;
 ; TODO:
 ;   Build diagnostic plots showing the range of parameters spanned by
@@ -232,7 +232,7 @@ pro build_grid, montegrid, chunkinfo, ssppath=ssppath, $
              endelse
              
 ; divide by the mass in stars + remnants, since that's what we measure
-             outflux = outflux/rebin(reform(outmstar,1,params.nage),npix,params.nage)
+;            outflux = outflux/rebin(reform(outmstar,1,params.nage),npix,params.nage)
              inf = where(finite(outflux) eq 0)
              if (inf[0] ne -1) then message, 'Bad'
              

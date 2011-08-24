@@ -131,6 +131,8 @@ function init_isedfit, ngal, nfilt, sfhgrid, sfhgrid_paramfile=sfhgrid_paramfile
       dtburst:   burstarray2,$
       fburst:    burstarray1,$
 
+      scale:          -1.0,$ 
+      scale_err:      -1.0,$ 
       mass:           -1.0,$ 
       age:            -1.0,$
       sfr:            -1.0,$ ; instantaneous
@@ -195,8 +197,10 @@ function init_isedfit, ngal, nfilt, sfhgrid, sfhgrid_paramfile=sfhgrid_paramfile
 
 ; initialize the posterior distribution structure
     isedfit_post = {$
-      draws:  lonarr(ndraw)-1,$
-      mass:   fltarr(ndraw)-1}
+      draws:     lonarr(ndraw)-1,$
+      scale:     fltarr(ndraw)-1,$
+      scale_err: fltarr(ndraw)-1}
+;     mass:   fltarr(ndraw)-1}
 ;     Z:      fltarr(ndraw),$
 ;     age:    fltarr(ndraw),$
 ;     tau:    fltarr(ndraw),$

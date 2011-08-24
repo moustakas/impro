@@ -65,7 +65,7 @@ function isedfit_compute_chi2, maggies, ivarmaggies, chunkmodels, maxage, $
     nmodel = n_elements(chunkmodels)
     nage = n_elements(chunkmodels[0].age)
 
-    gridchunk = {mass: -1.0, mass_err: -1.0, chi2: 1E6, $ ; zptoffset: fltarr(nfilt), $
+    gridchunk = {scale: -1.0, scale_err: -1.0, chi2: 1E6, $ ; zptoffset: fltarr(nfilt), $
       bestmaggies: fltarr(nfilt)}
     gridchunk = replicate(gridchunk,nage,nmodel,ngal)
 
@@ -102,38 +102,39 @@ function isedfit_compute_chi2, maggies, ivarmaggies, chunkmodels, maxage, $
 ;         plot, chunkmodels[imodel].modelmaggies[5,these,*],zindx[igal])*1.0D
           modelmaggies = interpolate(chunkmodels[imodel].modelmaggies[*,these,*],zindx[igal])*1.0D
 ; perform acrobatic dimensional juggling to get the maximum likelihood
-; mass and corresponding chi2 as a function of age; VMASS is the
-; maximum likelihood mass and VMASSERR is the 1-sigma error (see pg 84
-; of http://www.hep.phy.cam.ac.uk/~thomson/lectures/statistics/FittingHandout.pdf)
+; scale-factor and corresponding chi2 as a function of age; VSCALE is
+; the maximum likelihood value of SCALE and VSCALE_ERR is the 1-sigma
+; error (see pg 84 of
+; http://www.hep.phy.cam.ac.uk/~thomson/lectures/statistics/FittingHandout.pdf)
           vmodelmaggies = reform(modelmaggies,nfilt,nthese)
           vmaggies = rebin(reform(nmaggies,nfilt,1),nfilt,nthese)
           vivarmaggies = rebin(reform(nivarmaggies,nfilt,1),nfilt,nthese)
-          vmass = total(reform((nivarmaggies*nmaggies),1,nfilt)#vmodelmaggies,1,/double)/$
+          vscale = total(reform((nivarmaggies*nmaggies),1,nfilt)#vmodelmaggies,1,/double)/$
             total(reform(nivarmaggies,1,nfilt)#vmodelmaggies^2,1,/double)
-          vmass_err = 1.0/sqrt(total(reform(nivarmaggies,1,nfilt)#vmodelmaggies^2,1,/double))
-          vchi2 = total(vivarmaggies*(vmaggies-rebin(reform(vmass,1,nthese),$
+          vscale_err = 1.0/sqrt(total(reform(nivarmaggies,1,nfilt)#vmodelmaggies^2,1,/double))
+          vchi2 = total(vivarmaggies*(vmaggies-rebin(reform(vscale,1,nthese),$
             nfilt,nthese)*vmodelmaggies)^2,1,/double)
-;         print, total(nivarmaggies*(nmaggies-(vmass[30]+vmass_err[30])*vmodelmaggies[*,30])^2)-vchi2[30]
+;         print, total(nivarmaggies*(nmaggies-(vscale[30]+vscale_err[30])*vmodelmaggies[*,30])^2)-vchi2[30]
 
 ;; for some galaxy samples maggies can be formally negative, and
-;; therefore the normalization (i.e., the mass) can be negative too; if
+;; therefore the normalization (i.e., SCALE) can be negative too; if
 ;; this happens then issue a warning message and take the absolute
 ;; value
-;          neg = where(vmass lt 0.0,nneg)
+;          neg = where(vscale lt 0.0,nneg)
 ;          if (nneg ne 0L) then begin
 ;             if (imodel eq 0L) then splog, 'Formally negative '+$
-;               'stellar mass for galaxy index '+strtrim(igal,2)
-;             vmass = abs(vmass)
+;               'stellar scale for galaxy index '+strtrim(igal,2)
+;             vscale = abs(vscale)
 ;          endif
 ; store the results
-          bestmaggies = rebin(reform(vmass,1,nthese),nfilt,nthese)*vmodelmaggies
+          bestmaggies = rebin(reform(vscale,1,nthese),nfilt,nthese)*vmodelmaggies
           gridchunk[these,imodel,igal].chi2 = vchi2
-          inf = where(finite(vmass) eq 0)
+          inf = where(finite(vscale) eq 0)
           if inf[0] ne -1 then message, 'Problem here'
-          check = where((vmass le 0) or (finite(vmass) eq 0))
-          if (check[0] ne -1) then message, 'Zero mass?!?'
-          gridchunk[these,imodel,igal].mass = alog10(vmass)
-          gridchunk[these,imodel,igal].mass_err = vmass_err/vmass/alog(10)
+          check = where((vscale le 0) or (finite(vscale) eq 0))
+          if (check[0] ne -1) then message, 'Zero scale?!?'
+          gridchunk[these,imodel,igal].scale = vscale ; alog10(vscale)
+          gridchunk[these,imodel,igal].scale_err = vscale_err ; /vscale/alog(10)
           gridchunk[these,imodel,igal].bestmaggies = bestmaggies
        endfor                   ; model loop
 ;      splog, format='("All models = ",G0," minutes")', (systime(1)-t1)/60.0       

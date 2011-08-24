@@ -53,6 +53,7 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
 
 ; build the model grid parameter arrays we care about
     bigage    = reform(modelgrid.age,nallmodel)
+    bigmass   = reform(modelgrid.mstar,nallmodel)
     bigtau    = reform(rebin(reform(modelgrid.tau,1,nmodel),nage,nmodel),nallmodel)
     bigZ      = reform(rebin(reform(modelgrid.Z,1,nmodel),nage,nmodel),nallmodel)
     bigebv    = reform(rebin(reform(modelgrid.ebv,1,nmodel),nage,nmodel),nallmodel)
@@ -69,8 +70,8 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
        these = lindgen(nage)+imod*nage
        sfr = isedfit_reconstruct_sfh(modelgrid[imod],outage=bigage[these],$
          sfr100=sfr100,b100=b100,mgalaxy=mgal)
-       bigsfr[these] = alog10(sfr)
-       bigsfr100[these] = alog10(sfr100) 
+       bigsfr[these] = sfr ; alog10(sfr)
+       bigsfr100[these] = sfr100 ; alog10(sfr100) 
        bigb100[these] = b100
        bigmgal[these] = mgal
     endfor
@@ -103,8 +104,10 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
           these = long(interpolate(lindgen(nallow+1),findex([0D,$
             total(post[allow],/cumu,/double)],randomu(seed,ndraw))))
           isedfit_post[igal].draws = allow[these]
-          isedfit_post[igal].mass = galgrid[allow[these]].mass+randomn(seed,ndraw)*$
-            galgrid[allow[these]].mass_err
+          isedfit_post[igal].scale = galgrid[allow[these]].scale
+
+;         isedfit_post[igal].mass = galgrid[allow[these]].mass+randomn(seed,ndraw)*$
+;           galgrid[allow[these]].mass_err
 
 ;; no need to store these distributions as we can easily reconstruct
 ;; them from the parent MONTEGRIDS       
@@ -117,7 +120,13 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
 ;         isedfit_post[igal].sfr    = 10.0^isedfit_post[igal].mass*bigsfr[allow[these]]
 ;         isedfit_post[igal].sfr100 = 10.0^isedfit_post[igal].mass*bigsfr100[allow[these]]
 
-          isedfit[igal] = isedfit_packit(isedfit[igal],isedfit_post[igal].mass,type='mass')
+;         isedfit[igal] = isedfit_packit(isedfit[igal],isedfit_post[igal].mass,type='mass')
+
+          logscale = alog10(galgrid[allow[these]].scale)
+          isedfit[igal] = isedfit_packit(isedfit[igal],alog10(bigmass[allow[these]])+logscale,type='mass')
+          isedfit[igal] = isedfit_packit(isedfit[igal],alog10(bigsfr[allow[these]])+logscale,type='sfr')
+          isedfit[igal] = isedfit_packit(isedfit[igal],alog10(bigsfr100[allow[these]])+logscale,type='sfr100')
+
           isedfit[igal] = isedfit_packit(isedfit[igal],bigage[allow[these]],type='age')
           isedfit[igal] = isedfit_packit(isedfit[igal],bigtau[allow[these]],type='tau')
           isedfit[igal] = isedfit_packit(isedfit[igal],bigZ[allow[these]],type='Z')
@@ -126,17 +135,19 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
           isedfit[igal] = isedfit_packit(isedfit[igal],bigb100[allow[these]],type='b100')
 
 ; scale the SFR to the baryonic mass          
-          sfrfactor = alog10(bigmgal[allow[these]]) + galgrid[allow[these]].mass
-          isedfit[igal] = isedfit_packit(isedfit[igal],bigsfr[allow[these]]+sfrfactor,type='sfr')
-          isedfit[igal] = isedfit_packit(isedfit[igal],bigsfr100[allow[these]]+sfrfactor,type='sfr100')
+;         sfrfactor = alog10(bigmgal[allow[these]]) + galgrid[allow[these]].mass
+;         isedfit[igal] = isedfit_packit(isedfit[igal],bigsfr[allow[these]]+sfrfactor,type='sfr')
+;         isedfit[igal] = isedfit_packit(isedfit[igal],bigsfr100[allow[these]]+sfrfactor,type='sfr100')
 
-          neg = where(isedfit_post[igal].mass le 0)
-          if (neg[0] ne -1) then message, 'Negative mass!'
+          neg = where(isedfit_post[igal].scale le 0)
+          if (neg[0] ne -1) then message, 'Negative scale factor!'
        
 ; now compute the maximum likelihood (best-fit) estimates of the
 ; various parameters
           ml = max(post,mindx)
           isedfit[igal].chi2 = galgrid[mindx].chi2
+          isedfit[igal].scale = galgrid[mindx].scale
+          isedfit[igal].scale_err = galgrid[mindx].scale_err
           
           allmindx = array_indices([nage,nmodel],mindx,/dim) ; parse the index
           isedfit[igal].ageindx = allmindx[0]
@@ -157,11 +168,15 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
           isedfit[igal].age = bigage[mindx]
           isedfit[igal].b100 = bigb100[mindx]
           
-          isedfit[igal].mass = galgrid[mindx].mass
+          isedfit[igal].mass = alog10(bigmass[mindx]*isedfit[igal].scale)
+          isedfit[igal].sfr = alog10(bigsfr[mindx]*isedfit[igal].scale)
+          isedfit[igal].sfr100 = alog10(bigsfr100[mindx]*isedfit[igal].scale)
+
           isedfit[igal].bestmaggies = galgrid[mindx].bestmaggies
           
-          isedfit[igal].sfr = bigsfr[mindx] + isedfit[igal].mass
-          isedfit[igal].sfr100 = bigsfr100[mindx] + isedfit[igal].mass
+;         isedfit[igal].mass = galgrid[mindx].mass
+;         isedfit[igal].sfr = bigsfr[mindx] + isedfit[igal].mass
+;         isedfit[igal].sfr100 = bigsfr100[mindx] + isedfit[igal].mass
        endif
     endfor 
 

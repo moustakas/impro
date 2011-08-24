@@ -3,6 +3,8 @@
 # See BUILD_ISEDFIT_SFHGRID for how the exponential TAU and EBV
 # distributions are handled.
 
+# sfhgrid09 - identical to 08 but with a potential bug fix in build_isedfit_sfhgrid
+
 typedef struct {
  int sfhgrid;          # grid number
  float tau[2];         # tau interval or exponential distribution parameters [Gyr]
@@ -31,3 +33,4 @@ PARAMS  5 {0.1,3.0} 0 {0.004 0.05} {0.0 0.25} 0 {0.3 0.2} 0.1 2.0 {0.05 10} {0.0
 PARAMS  6 {0.1,3.0} 0 {0.004 0.05} {0.0 0.25} 0 {0.3 0.2} 0.5 2.0 {0.01  4} {0.03 0.3}  -1   -1 120 0.1 13.0  500
 PARAMS  7 {0.1,3.0} 0 {0.004 0.05} {0.0 0.25} 0 {0.3 0.2} 0.5 2.0 {0.01  4} {0.03 0.3}  -1   -1 300 0.1 13.0  200
 PARAMS  8 {1.0,2.5} 0 {0.004 0.05} {0.0 0.25} 0 {0.3 0.2} 0.5 2.0 {0.01  4} {0.03 0.3}  -1   -1  60 0.1 13.0 1000
+PARAMS  9 {1.0,2.5} 0 {0.004 0.05} {0.0 0.25} 0 {0.3 0.2} 0.5 2.0 {0.01  4} {0.03 0.3}  -1   -1  60 0.1 13.0 1000
