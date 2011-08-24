@@ -57,7 +57,7 @@
 ;-
 
 pro isedfit_qaplot, paramfile, isedfit, params=params, iopath=iopath, $
-  galaxy=galaxy1, outprefix=outprefix, sfhgrid_basedir=sfhgrid_basedir, $
+  galaxy=galaxy1, outprefix=outprefix, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
   sfhgrid=sfhgrid, psfile=psfile1, index=index, clobber=clobber
 
     light = 2.99792458D18       ; speed of light [A/s]
@@ -83,7 +83,7 @@ pro isedfit_qaplot, paramfile, isedfit, params=params, iopath=iopath, $
              newparams2 = struct_trimtags(newparams1,except='redcurve')
              newparams2 = struct_addtags(newparams2,{redcurve: params.redcurve[jj]})
              isedfit_qaplot, params=newparams2, iopath=iopath, galaxy=galaxy1, $
-               outprefix=outprefix, sfhgrid_basedir=sfhgrid_basedir, $
+               outprefix=outprefix, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
                psfile=psfile1, index=index, clobber=clobber
           endfor
        endfor 
@@ -92,7 +92,7 @@ pro isedfit_qaplot, paramfile, isedfit, params=params, iopath=iopath, $
 
 ; allow the user to overwrite PSFILE
     fp = isedfit_filepaths(params,outprefix=outprefix,iopath=iopath,$
-      sfhgrid_basedir=sfhgrid_basedir)
+      isedfit_sfhgrid_dir=isedfit_sfhgrid_dir)
     if (n_elements(psfile1) eq 0) then $
       psfile = iopath+strtrim(fp.qaplot_psfile,2) else $
         psfile = psfile1
@@ -108,7 +108,7 @@ pro isedfit_qaplot, paramfile, isedfit, params=params, iopath=iopath, $
     nfilt = n_elements(filterlist)
 
     model = isedfit_restore(paramfile,isedfit,params=params,$
-      iopath=iopath,index=index,sfhgrid_basedir=sfhgrid_basedir,$
+      iopath=iopath,index=index,isedfit_sfhgrid_dir=isedfit_sfhgrid_dir,$
       outprefix=outprefix,silent=silent)
     ngal = n_elements(isedfit)
 

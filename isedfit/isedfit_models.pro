@@ -133,7 +133,7 @@
 ;-
 
 pro isedfit_models, paramfile, params=params, iopath=iopath, $
-  sfhgrid_basedir=sfhgrid_basedir, clobber=clobber
+  isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, clobber=clobber
 
     if (n_elements(paramfile) eq 0) and $
       (n_elements(params) eq 0) then begin
@@ -160,13 +160,13 @@ pro isedfit_models, paramfile, params=params, iopath=iopath, $
              newparams2 = struct_trimtags(newparams1,except='redcurve')
              newparams2 = struct_addtags(newparams2,{redcurve: params.redcurve[jj]})
              isedfit_models, params=newparams2, iopath=iopath, $
-               sfhgrid_basedir=sfhgrid_basedir, clobber=clobber
+               isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, clobber=clobber
           endfor
        endfor 
        return 
     endif 
 
-    fp = isedfit_filepaths(params,iopath=iopath,sfhgrid_basedir=sfhgrid_basedir)
+    fp = isedfit_filepaths(params,iopath=iopath,isedfit_sfhgrid_dir=isedfit_sfhgrid_dir)
     chunkfile = fp.modelspath+fp.isedfit_models_chunkfiles[0] ; check the first file
     if file_test(chunkfile+'.gz',/regular) and $
       (keyword_set(clobber) eq 0) then begin

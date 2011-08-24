@@ -37,7 +37,7 @@
 
 function isedfit_filepaths, params, outprefix=outprefix1, iopath=iopath, $
   ngalaxy=ngalaxy, ngalchunk=ngalchunk, galchunksize=galchunksize, $
-  sfhgrid_basedir=sfhgrid_basedir
+  isedfit_sfhgrid_dir=isedfit_sfhgrid_dir
 
     if (n_elements(iopath) eq 0L) then iopath = './'
     if (n_elements(params) eq 0L) then $
@@ -45,7 +45,7 @@ function isedfit_filepaths, params, outprefix=outprefix1, iopath=iopath, $
     if (n_elements(galchunksize) eq 0L) then $
       galchunksize = 5000L ; can play with this number
 
-    if (n_elements(sfhgrid_basedir) eq 0) then sfhgrid_basedir = $
+    if (n_elements(isedfit_sfhgrid_dir) eq 0) then isedfit_sfhgrid_dir = $
       '${ISEDFIT_SFHGRID_DIR}/'
     
 ; read the output from build_isedfit_sfhgrid based on the specified
@@ -59,12 +59,12 @@ function isedfit_filepaths, params, outprefix=outprefix1, iopath=iopath, $
 
 ; if CHUNKINFO file does not exist, try dropping the reddening curve 
     sfhgridstring = 'sfhgrid'+string(sfhgrid,format='(I2.2)')
-    sfhgridpath = sfhgrid_basedir+sfhgridstring+$
+    sfhgridpath = isedfit_sfhgrid_dir+sfhgridstring+$
       '/'+synthmodels+'/'+redcurvestring+'/'
     chunkinfofile = sfhgridpath+imf+'_chunkinfo.fits.gz'
     if (file_test(chunkinfofile) eq 0) then begin
        redcurvestring = ''
-       sfhgridpath = sfhgrid_basedir+sfhgridstring+$
+       sfhgridpath = isedfit_sfhgrid_dir+sfhgridstring+$
          '/'+synthmodels+'/'
        chunkinfofile = sfhgridpath+imf+'_chunkinfo.fits.gz'
     endif

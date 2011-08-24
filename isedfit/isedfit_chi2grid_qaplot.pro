@@ -112,7 +112,7 @@ return
 end
 
 pro isedfit_chi2grid_qaplot, paramfile, isedfit, params=params, iopath=iopath, $
-  galaxy=galaxy1, outprefix=outprefix, sfhgrid_basedir=sfhgrid_basedir, $
+  galaxy=galaxy1, outprefix=outprefix, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
   psfile=psfile1, index=index, clobber=clobber
 
     if (n_elements(paramfile) eq 0L) and (n_elements(params) eq 0) then begin
@@ -150,7 +150,7 @@ pro isedfit_chi2grid_qaplot, paramfile, isedfit, params=params, iopath=iopath, $
 ; allow the user to overwrite PSFILE
     fp = isedfit_filepaths(params,outprefix=outprefix,iopath=iopath,$
       ngalaxy=ngal,ngalchunk=ngalchunk,galchunksize=galchunksize,$
-      sfhgrid_basedir=sfhgrid_basedir)
+      isedfit_sfhgrid_dir=isedfit_sfhgrid_dir)
     if (n_elements(psfile1) eq 0) then $
       psfile = iopath+strtrim(fp.qaplot_chi2grid_psfile,2) else $
         psfile = psfile1

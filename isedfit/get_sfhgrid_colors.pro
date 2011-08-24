@@ -1,6 +1,6 @@
 function get_sfhgrid_colors, sfhgrid, synthmodels=synthmodels, imf=imf, $
   redcurve=redcurve, sfhgrid_paramfile=sfhgrid_paramfile, $
-  sfhgrid_basedir=sfhgrid_basedir, filterlist=filterlist, $
+  isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, filterlist=filterlist, $
   band_shift=band_shift
 ; jm10jan28ucsd - take the output from BUILD_ISEDFIT_SFHGRID and
 ; synthesize photometry in an arbitrary set of bandpasses
@@ -25,10 +25,10 @@ function get_sfhgrid_colors, sfhgrid, synthmodels=synthmodels, imf=imf, $
 ;   params = read_sfhgrid_paramfile(sfhgrid,sfhgrid_paramfile=sfhgrid_paramfile)
     redcurvestring = redcurve2string(redcurve)
 
-    if (n_elements(sfhgrid_basedir) eq 0) then sfhgrid_basedir = $
+    if (n_elements(isedfit_sfhgrid_dir) eq 0) then isedfit_sfhgrid_dir = $
       '${ISEDFIT_SFHGRID_DIR}/'
     sfhgridstring = 'sfhgrid'+string(sfhgrid,format='(I2.2)')
-    sfhgridpath = sfhgrid_basedir+sfhgridstring+$
+    sfhgridpath = isedfit_sfhgrid_dir+sfhgridstring+$
       '/'+synthmodels+'/'+redcurvestring+'/'
 
     chunkinfofile = sfhgridpath+imf+'_chunkinfo.fits.gz'

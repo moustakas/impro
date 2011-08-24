@@ -54,7 +54,7 @@
 ;-
 
 function isedfit_restore, paramfile, isedfit, params=params, $
-  iopath=iopath, index=index, sfhgrid_basedir=sfhgrid_basedir, $
+  iopath=iopath, index=index, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
   outprefix=outprefix, flambda=flambda, fnu=fnu, $
   nomodels=nomodels, silent=silent
 
@@ -67,7 +67,7 @@ function isedfit_restore, paramfile, isedfit, params=params, $
     if (n_elements(params) eq 0) then params = $
       read_isedfit_paramfile(paramfile)
     fp = isedfit_filepaths(params,outprefix=outprefix,iopath=iopath,$
-      sfhgrid_basedir=sfhgrid_basedir)
+      isedfit_sfhgrid_dir=isedfit_sfhgrid_dir)
 
 ; restore the ISEDFIT output
     if (file_test(fp.iopath+fp.isedfit_outfile+'.gz',/regular) eq 0L) then $

@@ -104,7 +104,7 @@ return, measure
 end
 
 pro isedfit_measure, paramfile, measure, isedfit, params=params, $
-  iopath=iopath, outprefix=outprefix, sfhgrid_basedir=sfhgrid_basedir, $
+  iopath=iopath, outprefix=outprefix, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
   clobber=clobber, nowrite=nowrite, abmag=abmag, _extra=extra
 ; ABMAG - convert the UBVRIJHK rest-frame photometry to AB
     
@@ -142,7 +142,7 @@ pro isedfit_measure, paramfile, measure, isedfit, params=params, $
     endif 
 
     fp = isedfit_filepaths(params,outprefix=outprefix,iopath=iopath,$
-      sfhgrid_basedir=sfhgrid_basedir)
+      isedfit_sfhgrid_dir=isedfit_sfhgrid_dir)
     measurefile = iopath+strtrim(fp.measure_outfile,2)
     if file_test(measurefile+'.gz',/regular) and $
       (keyword_set(clobber) eq 0) then begin

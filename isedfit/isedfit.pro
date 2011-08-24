@@ -216,7 +216,7 @@ end
 
 pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfit_post, $
   params=params, iopath=iopath, nminphot=nminphot, galchunksize=galchunksize, $
-  outprefix=outprefix, sfhgrid_paramfile=sfhgrid_paramfile, sfhgrid_basedir=sfhgrid_basedir, $
+  outprefix=outprefix, sfhgrid_paramfile=sfhgrid_paramfile, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
   index=index, allages=allages, clobber=clobber, debug=debug, write_chi2grid=write_chi2grid, $
   nowrite=nowrite, silent=silent
 
@@ -278,7 +278,7 @@ pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfi
              isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfit_post, $
                params=newparams2, iopath=iopath, nminphot=nminphot, $
                galchunksize=galchunksize, outprefix=outprefix, index=index, $
-               sfhgrid_paramfile=sfhgrid_paramfile, sfhgrid_basedir=sfhgrid_basedir, $
+               sfhgrid_paramfile=sfhgrid_paramfile, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
                allages=allages, clobber=clobber, debug=debug, write_chi2grid=write_chi2grid, $
                nowrite=nowrite, silent=silent
           endfor
@@ -288,7 +288,7 @@ pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfi
 
     fp = isedfit_filepaths(params,outprefix=outprefix,iopath=iopath,$
       ngalaxy=ngal,ngalchunk=ngalchunk,galchunksize=galchunksize,$
-      sfhgrid_basedir=sfhgrid_basedir)
+      isedfit_sfhgrid_dir=isedfit_sfhgrid_dir)
 
     outfile = fp.iopath+fp.isedfit_outfile
     if file_test(outfile+'.gz',/regular) and $
@@ -304,7 +304,7 @@ pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfi
          isedfit1, isedfit_post=isedfit_post1, params=params, nminphot=nminphot, $
          outprefix=outprefix, allages=allages, iopath=iopath, clobber=clobber, $
          debug=debug, write_chi2grid=write_chi2grid, /nowrite, silent=silent, $
-         sfhgrid_paramfile=sfhgrid_paramfile, sfhgrid_basedir=sfhgrid_basedir
+         sfhgrid_paramfile=sfhgrid_paramfile, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir
        isedfit = init_isedfit(ngal,nfilt,params.sfhgrid,sfhgrid_paramfile=sfhgrid_paramfile,$
          isedfit_post=isedfit_post)
        isedfit[index] = isedfit1
