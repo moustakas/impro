@@ -8,17 +8,20 @@
 ;   know what you're doing! 
 ;
 ; INPUTS: 
-;   None required.
+;   sfhgrid - SFH grid number to build (default 1)
 ;
 ; OPTIONAL INPUTS: 
-;   synthmodels - population synthesis models to use
-;     bc03 - (default)
-;     pegase - 
-;     basti - solar-scaled models
-;     basti_ae - alpha-enhanced models
-;     maraston05 - 
+;   synthmodels - population synthesis models to use (see the
+;     corresponding BUILD_*_SSP routine for details)
+;       bc03 - (default)
+;       basti - solar-scaled models
+;       basti_ae - alpha-enhanced models
+;       pegase - 
+;       maraston05 - 
 ;
-;   sfhgrid - SFH grid number to build (default '1')
+;   imf - initial mass function to assume (default 'chab'); the
+;     available IMF depends on which SYNTHMODELS are 
+;       
 ;
 ;   redcurve - reddening curve; current options are: 
 ;    -1 = none
@@ -27,7 +30,7 @@
 ;     2 = O'Donnell 1994 (i.e., standard Milky Way)
 ;     3 = SMC
 ; 
-;   sfhgrid_basedir - environment variable indicating where the grid 
+;   isedfit_sfhgrid_dir - environment variable indicating where the grid 
 ;     should be written; allows the grids to be project-specific;
 ;     (default ${ISEDFIT_SFHGRID_DIR})
 ; 
@@ -275,7 +278,7 @@ end
 
 pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
   redcurve=redcurve, sfhgrid_paramfile=sfhgrid_paramfile, $
-  sfhgrid_basedir=sfhgrid_basedir, make_montegrid=make_montegrid, $
+  isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, make_montegrid=make_montegrid, $
   clobber=clobber, debug=debug
 
 ; some defaults
@@ -290,7 +293,7 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
           for jj = 0, n_elements(redcurve)-1 do begin
              build_isedfit_sfhgrid, sfhgrid[ii], synthmodels=synthmodels, imf=imf, $
                redcurve=redcurve[jj], sfhgrid_paramfile=sfhgrid_paramfile, $
-               sfhgrid_basedir=sfhgrid_basedir, clobber=clobber, $
+               isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, clobber=clobber, $
                make_montegrid=make_montegrid, debug=debug
           endfor
        endfor
@@ -303,24 +306,31 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
     redcurvestring = redcurve2string(redcurve)
 
 ; read the SSP information structure    
-    ssppath = getenv('ISEDFIT_SFHGRID_DIR')+'/ssp/'+synthmodels+'/'
+    ssppath = getenv('ISEDFIT_SSP_DIR')+'/'+synthmodels+'/'
+    if (file_test(ssppath,/dir) eq 0) then begin
+       splog, 'Verify that ${ISEDFIT_SSP_DIR} environment variable is defined!'
+       return
+    endif
     sspinfofile = getenv('ISEDFIT_SFHGRID_DIR')+$
       '/ssp/info_'+synthmodels+'_'+imf+'.fits.gz'
     if (file_test(sspinfofile) eq 0) then begin
        splog, 'SSP info file '+sspinfofile+' not found!'
+       splog, 'Run the appropriate BUILD_*_SSP code!'
        return
     endif
     sspinfo = mrdfits(sspinfofile,1,/silent)
     
 ; make directories and delete old files
-    if (n_elements(sfhgrid_basedir) eq 0) then sfhgrid_basedir = $
+    if (n_elements(isedfit_sfhgrid_dir) eq 0) then isedfit_sfhgrid_dir = $
       '${ISEDFIT_SFHGRID_DIR}/'
     sfhgridstring = 'sfhgrid'+string(sfhgrid,format='(I2.2)')
-    sfhgridpath = sfhgrid_basedir+sfhgridstring+$
+    sfhgridpath = isedfit_sfhgrid_dir+sfhgridstring+$
       '/'+synthmodels+'/'+redcurvestring+'/'
 
-    if (file_test(sfhgridpath,/dir) eq 0) then $
-      spawn, 'mkdir -p '+sfhgridpath
+    if (file_test(sfhgridpath,/dir) eq 0) then begin
+       splog, 'Making directory '+sfhgridpath
+       spawn, 'mkdir -p '+sfhgridpath
+    endif
     cc = 'N'
     if (keyword_set(clobber) eq 0) then begin
        splog, 'Delete all *'+imf+'* files from '+sfhgridpath+' [Y/N]?'
@@ -403,16 +413,9 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
 ; of width PBURSTINTERVAL [Gyr]; don't let a burst happen on
 ; the first or last "point" in the age vector
        if (nmaxburst gt 0) then begin
-;         rand = randomu(seed,nmaxburst,params.nmonte)
-;         tmin = lindgen(nmaxburst)*params.pburstinterval+params.minage
-;         tmax = (lindgen(nmaxburst)+1)*params.pburstinterval+params.minage
           tburst = dblarr(nmaxburst,params.nmonte)-1.0
           ran = randomu(seed,nmaxburst,params.nmonte)
           for imod = 0L, params.nmonte-1 do begin
-;            dage = (shift(montegrid[imod].age,-1)-shift(montegrid[imod].age,+1))/2.0
-;            dage[0] = (montegrid[imod].age[1]-montegrid[imod].age[0])/2.0
-;            dage[params.nage-1] = (montegrid[imod].age[params.nage-1]-$
-;              montegrid[imod].age[params.nage-2])/2.0
              for ib = 0, nmaxburst-1 do begin
                 tmin = params.minage+ib*params.pburstinterval
                 tmax = (params.minage+(ib+1)*params.pburstinterval)<params.maxage
@@ -428,7 +431,6 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
                 prob = params.pburst*total([[dageleft],[dageright]],2)/params.pburstinterval
                 if (prob[0] le 0) then message, 'This should not happen!'
 
-;               ran = randomu(seed)
                 this = where(total(prob,/cum) gt ran[ib,imod])
                 if (this[0] ne -1) then tburst[ib,imod] = age1[this[0]]
 ;               splog, tmin, tmax, ran[ib,imod], tburst[ib,imod] & if ib eq 0 then print
@@ -506,14 +508,14 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
 ; now build the actual composite stellar populations; do it in chunks
 ; to avoid memory issues and pass along all the parameters
     chunkinfofile = sfhgridpath+imf+'_chunkinfo.fits'
-    chunksize = 100L ; number of models per output FITS table
+    chunksize = 100 ; number of models per output FITS table
 
     chunkinfo1 = struct_addtags(params,{imf: imf, $
       synthmodels: synthmodels, sfhgridstring: sfhgridstring, $
       redcurve: redcurvestring, chunksize: chunksize})
     
     nchunk = ceil(params.nmonte/float(chunksize))
-    chunkfiles = imf+'_chunk_'+string(lindgen(nchunk)+1L,$
+    chunkfiles = imf+'_chunk_'+string(lindgen(nchunk)+1,$
       format='(I4.4)')+'.fits'
     chunkinfo = create_struct(chunkinfo1, 'nmodel', params.nmonte, $
       'nchunk', nchunk, 'chunkfiles', sfhgridpath+chunkfiles)
