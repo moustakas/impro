@@ -9,9 +9,9 @@
 ;   logmass - log-base-10 stellar mass at the center of each bin
 ;     (presumably in units of Msun) [NGAL] 
 ;   phi - number density, i.e., the mass function (Mpc^-3) [NGAL] 
-;   phierr - 1-sigma uncertainty in PHI in the same units [NGAL]
 ;
 ; OPTIONAL INPUTS: 
+;   phierr - 1-sigma uncertainty in PHI in the same units [NGAL]
 ;   parinfo - MPFIT() parameter structure; can be used to constrain or
 ;     fix any of the model parameters
 ;
@@ -57,8 +57,7 @@ end
 function mf_fit_schechter, logmass, phi, phierr, parinfo=parinfo, quiet=quiet
 
     ngal = n_elements(logmass)
-    if (ngal eq 0L) or (ngal ne n_elements(phi)) or $
-      (ngal ne n_elements(phierr)) then begin
+    if (ngal eq 0L) or (ngal ne n_elements(phi)) then begin
        doc_library, 'mf_fit_schechter'
        return, -1
     endif
@@ -72,7 +71,7 @@ function mf_fit_schechter, logmass, phi, phierr, parinfo=parinfo, quiet=quiet
        parinfo[2].value = -1.0D
     endif
 
-; do the fit    
+; do the fit 
     params = mpfitfun('mf_fit_schechter_func',logmass,phi,$
       phierr,parinfo=parinfo,perror=perror,status=mpstatus,$
       quiet=quiet,bestnorm=chi2,dof=dof,covar=covar)

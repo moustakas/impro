@@ -51,7 +51,8 @@ function read_isedfit_paramfile, paramfile, sfhgrid=sfhgrid
        words = strsplit(lines[ii],' ',/extract)
        words = words[where(strcompress(words,/remove) ne '')]
        name = strtrim(words[0],2)
-       value1 = strtrim(words[1],2)
+       if (n_elements(words) eq 1) then value1 = '' else $ ; blank, probably REDCURVE
+         value1 = strtrim(words[1],2)
        case name of
           'sfhgrid': begin
              if (n_elements(sfhgrid) eq 0) then begin
