@@ -9,38 +9,43 @@
 ;   paramfile - ISEDFIT parameter file
 ;
 ; OPTIONAL INPUTS:
-;   params - ISEDFIT parameter data structure (over-rides PARAMFILE) 
-;   iopath - I/O path
+;   params - ISEDFIT parameter data structure (over-rides PARAMFILE)
+;   iopath - I/O path (default ./)
+;   index - index array of spectra to restore (default is to rebuild
+;     everything, which can be memory-intensive if the sample is too
+;     big!) 
+;   isedfit_sfhgrid_dir - root directory of all the iSEDfit grids
+;     (default ${ISEDFIT_SFHGRID_DIR})
+;   outprefix - read models/results with a different prefix than that
+;     given in PARAMFILE or PARAMS (see also ISEDFIT)
 ;
 ; KEYWORD PARAMETERS:
-;   maxold - see ISEDFIT
+;   flambda - convert the output spectra to erg/s/cm^2/A (default is AB mag)
+;   fnu - convert the output spectra to erg/s/cm^2/Hz (default is AB mag)
+;   nomodels - do not restore the model spectra, just read the ISEDFIT
+;     output structure
 ;   silent - suppress messages to STDOUT
 ;
 ; OUTPUTS:
-;   model - data structure array containing the best-fitting
-;           spectrum for each object (the structure will be
-;           different depending on whether or not MAXOLD=1) 
+;   model - output data structure array [NGAL]
+;     WAVE: wavelength array [NPIX, Angstrom]
+;     FLUX: corresponding flux vector [NPIX, AB mag]
 ;
 ; OPTIONAL OUTPUTS:
-;   isedfit - ISEDFIT result structure
+;   isedfit - ISEDFIT result structure [NGAL]
 ;
 ; COMMENTS:
-;   The cosmological parameters are hard-wired to match
-;   ISEDFIT_MODELS.  
+;   Consistency in the cosmological model between this routine and
+;   ISEDFIT_MODELS should be enforced.
 ;
 ;   Floating underflow messages are suppressed.
-;
-;   Note that the best-fitting models are interpolated onto a
-;   common wavelength grid, currently hard-wired between 100 A and
-;   5 microns, with a spacing of 2 A/pixel.
-;
-; EXAMPLES:
 ;
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2007 Jun 27, NYU - largely excised from
 ;     ISEDFIT_QAPLOT and ISEDFIT_MEASURE
+;   jm11aug29ucsd - documentation cleaned up a bit
 ;
-; Copyright (C) 2007, John Moustakas
+; Copyright (C) 2007, 2011, John Moustakas
 ; 
 ; This program is free software; you can redistribute it and/or modify 
 ; it under the terms of the GNU General Public License as published by 
@@ -53,10 +58,9 @@
 ; General Public License for more details. 
 ;-
 
-function isedfit_restore, paramfile, isedfit, params=params, $
-  iopath=iopath, index=index, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
-  outprefix=outprefix, flambda=flambda, fnu=fnu, $
-  nomodels=nomodels, silent=silent
+function isedfit_restore, paramfile, isedfit, params=params, iopath=iopath, $
+  index=index, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, outprefix=outprefix, $
+  flambda=flambda, fnu=fnu, nomodels=nomodels, silent=silent
 
     if (n_elements(paramfile) eq 0L) and (n_elements(params) eq 0) then begin
        doc_library, 'isedfit_restore'
@@ -83,8 +87,8 @@ function isedfit_restore, paramfile, isedfit, params=params, $
     if keyword_set(nomodels) then begin
        return, 1
     endif else begin
-       light = 2.99792458D18             ; speed of light [A/s]
-       dist = 10.0*3.085678D18           ; fiducial distance [10 pc in cm]
+       light = 2.99792458D18                ; speed of light [A/s]
+       dist = 10.0*3.085678D18              ; fiducial distance [10 pc in cm]
        dlum = dluminosity(isedfit.zobj,/cm) ; luminosity distance [cm]
 
 ; read the models; group by chunks; remove objects that were not
@@ -106,8 +110,7 @@ function isedfit_restore, paramfile, isedfit, params=params, $
           these = where(chunks[ichunk] eq allchunks,nthese)
           if (nthese ne 0L) and (chunks[ichunk] ge 0) then begin
              chunkfile = strtrim(fp.sfhgrid_chunkfiles[chunks[ichunk]],2)
-             if (not keyword_set(silent)) then $
-               splog, 'Reading '+chunkfile
+             if (keyword_set(silent) eq 0) then splog, 'Reading '+chunkfile
              grid = mrdfits(chunkfile,1,/silent)
              for ii = 0L, nthese-1L do begin
                 if (isedfit[these[ii]].chi2 lt 1E6) then begin
