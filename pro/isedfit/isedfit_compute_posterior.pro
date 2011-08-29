@@ -15,7 +15,6 @@
 ;   quant - 
 ;
 ; KEYWORD PARAMETERS: 
-;   debug - 
 ;
 ; OUTPUTS: 
 ;   isedfit - 
@@ -40,7 +39,7 @@
 ;-
 
 function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
-  isedfit_post=isedfit_post, debug=debug
+  isedfit_post=isedfit_post
 
     ngal = n_elements(isedfit)
     nmodel = n_elements(modelgrid)

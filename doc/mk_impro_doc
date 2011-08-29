@@ -1,0 +1,5 @@
+# build the HTML documentation for impro
+
+pushd ${IMPRO_DIR}
+echo "make_html_help, 'pro/*', './doc/impro_doc.html', /strict, title='IDL Help for impro', /verbose" | idl 
+popd

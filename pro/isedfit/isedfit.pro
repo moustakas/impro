@@ -3,80 +3,67 @@
 ;   ISEDFIT
 ;
 ; PURPOSE:
-;   Given photometry in NFILT bands, and the output from
-;   ISEDFIT_MODELS, compute the best-fitting model parameters
-;   (mass, reddening, age, tau value, and stellar metallicity). 
+;   Model the spectral energy distributions of galaxies using
+;   population synthesis models to infer their physical properties. 
 ;
 ; INPUTS:
-;   maggies     - photometry [NFILT,NGALAXY]
-;   ivarmaggies - inverse variance array for MAGGIES [NFILT,NGALAXY]  
-;   zobj        - galaxy redshift [NGALAXY] 
+;   paramfile - iSEDfit parameter file see README_ISEDFIT for details) 
+;   maggies - photometry [NFILT,NGAL]
+;   ivarmaggies - inverse variance array for MAGGIES [NFILT,NGAL]  
+;   zobj - galaxy redshift [NGAL] 
 ;
 ; OPTIONAL INPUTS:
-;   filterlist    - use photometry only in this list of filters;
-;                   must be all or a subset of the filters used in 
-;                   ISEDFIT_MODELS
-;   datapath      - must match ISEDFIT_MODELS [default CWD()]
-;   modelsprefix  - see ISEDFIT_MODELS (default 'isedfit_models')
-;   isedfitprefix - output prefix; may be different than
-;                   MODELSPREFIX if using only a subset of the 
-;                   filters (see FILTERLIST) (default 'isedfit') 
-;   galaxy        - optional galaxy name [NGALAXY] 
-;   nmonte        - number of Monte Carlo realizations [NMONTE] 
-;   nminphot      - require good photometry in at least NMINPHOT
-;                   bandpasses to perform the fitting
+;   params - data structure with the same information contained in
+;     PARAMFILE (over-rides PARAMFILE)
+;   iopath - full path name to the input and output files (default ./) 
+;   nminphot - require at least NMINPHOT bandpasses of well-measured
+;     photometry (i.e., excluding upper limits) before fitting
+;     (default 3)  
+;   galchunksize - split the sample into GALCHUNKSIZE sized chunks,
+;     which is necessary if the sample is very large (default 5000)
+;   outprefix - optionally write out files with a different prefix
+;     from that specified in PARAMFILE (or PARAMS)
+;   sfhgrid_paramfile - parameter file name giving details on all the
+;     available SFH grids (needed to initialize the output data
+;     structure) 
+;   isedfit_sfhgrid_dir - full pathname to the precomputed SFH grids 
+;   index - use this optional input to fit a zero-indexed subset of
+;     the full sample (default is to fit everything)
 ;
 ; KEYWORD PARAMETERS:
-;   milkyway   - use the O'Donnell (1994) Milky Way extinction
-;                curve (default is to use Charlot & Fall 2000)
-;   smc        - use the Gordon et al. 2003 SMC bar extinction
-;                curve (default is to use Charlot & Fall 2000)
-;   calzetti   - use the Calzetti 2000 continuum attenuation
-;                curve for starburst galaxies (default is to use
-;                Charlot & Fall 2000)
-;   maxold     - include a second, maximally old component
-;   noagelimit - allow solutions with ages that are older than the
-;                age of the universe at the redshift of the object
-;   write      - write out
+;   allages - allow solutions with ages that are older than the age of
+;     the universe at the redshift of the object 
+;   write_chi2grid - write out the full chi^2 grid across all the
+;     models (these can be big files!)
+;   silent - suppress messages to STDOUT
+;   nowrite - do not write out any of the output files (generally not
+;     recommended!) 
+;   clobber - overwrite existing files of the same name (the default
+;     is to check for existing files and if they exist to exit
+;     gracefully)  
 ;
 ; OUTPUTS:
-;   result      - output data structure
-;   result_info - corresponding information structure
+;   
 ;
 ; OPTIONAL OUTPUTS:
+;   isedfit - output data structure containing all the results; see
+;     README_ISEDFIT for a detailed breakdown and explanation of all
+;     the outputs
+;   isedfit_post - output data structure containing the random draws
+;     from the posterior distribution function, which can be used to
+;     rebuild the posterior distributions of any of the output
+;     parameters 
 ;
 ; COMMENTS:
-;   No error checking is done to verify that the MAGGIES through
-;   the appropriate filters were computed in ISEDFIT_MODELS,
-;   relative to the MAGGIES array that is given to this routine.
-;   Garbage in, garbage out.
-;
-; TODO:
-;   If a subset of the available filters are used, then still
-;   store the best-fitting magnitudes of the filters not used so
-;   they can be plotted in ISEDFIT_QAPLOT.
-;
-; EXAMPLES:
 ;
 ; MODIFICATION HISTORY:
-;   J. Moustakas, 2005 Feb 12, U of A
-;   jm05feb22uofa - better memory management
-;   jm05mar22uofa - added optional input FILTERLIST, which can be
-;                   a subset of the filters used in ISEDFIT_MODELS 
-;   jm05may24uofa - bug fix in identifying multiple chi2 minima
-;   jm05aug04uofa - write out RESULT and CHI2RESULT after every
-;                   iteration in case the code crashes before
-;                   finishing 
-;   jm06mar02uofa - major re-write & upgrade
-;   jm06mar15uofa - additional error checking for infinite values
-;                   in the input data, and verifying that the
-;                   filter dimensions of MAGGIES matches
-;                   FILTERLIST
-;   jm06mar21uofa - added MAXOLD and NOAGELIMIT keywords 
-;   jm06jul13uofa - various bug fixes
-;   jm07mar15nyu  - further developments
+;   J. Moustakas, 2011 Sep 01, UCSD - I began writing iSEDfit in 2005
+;     while at the U of A, adding updates off-and-on through 2007;
+;     however, the code has evolved so much that the old modification
+;     history became obsolete!  Future changes to the officially
+;     released code will be documented here.
 ;
-; Copyright (C) 2005-2007, John Moustakas
+; Copyright (C) 2011, John Moustakas
 ; 
 ; This program is free software; you can redistribute it and/or modify 
 ; it under the terms of the GNU General Public License as published by 
@@ -182,16 +169,6 @@ function init_isedfit, ngal, nfilt, sfhgrid, sfhgrid_paramfile=sfhgrid_paramfile
       ebv_eff_err:    -1.0,$
       mu_eff_err:     -1.0}
 
-;     mass_mode:     -1.0,$
-;     age_mode:      -1.0,$
-;     sfr_mode:      -1.0,$ ; instantaneous
-;     sfr100_mode:   -1.0,$ ; 100 Myr
-;     b100_mode:     -1.0,$
-;     tau_mode:      -1.0,$
-;     Z_mode:        -1.0,$
-;     ebv_mode:      -1.0,$
-;     mu_mode:       -1.0}
-
     isedfit = struct_addtags(struct_addtags(best,qmed),isedfit1)
     isedfit = replicate(temporary(isedfit),ngal)
 
@@ -200,15 +177,6 @@ function init_isedfit, ngal, nfilt, sfhgrid, sfhgrid_paramfile=sfhgrid_paramfile
       draws:     lonarr(ndraw)-1,$
       scale:     fltarr(ndraw)-1,$
       scale_err: fltarr(ndraw)-1}
-;     mass:   fltarr(ndraw)-1}
-;     Z:      fltarr(ndraw),$
-;     age:    fltarr(ndraw),$
-;     tau:    fltarr(ndraw),$
-;     ebv:    fltarr(ndraw),$
-;     mu:     fltarr(ndraw),$
-;     sfr:    fltarr(ndraw),$
-;     sfr100: fltarr(ndraw),$
-;     b100:   fltarr(ndraw)}
     isedfit_post = replicate(temporary(isedfit_post),ngal)
     
 return, isedfit
@@ -217,8 +185,8 @@ end
 pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfit_post, $
   params=params, iopath=iopath, nminphot=nminphot, galchunksize=galchunksize, $
   outprefix=outprefix, sfhgrid_paramfile=sfhgrid_paramfile, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
-  index=index, allages=allages, clobber=clobber, debug=debug, write_chi2grid=write_chi2grid, $
-  nowrite=nowrite, silent=silent
+  index=index, allages=allages, write_chi2grid=write_chi2grid, silent=silent, $
+  nowrite=nowrite, clobber=clobber
 
     if (n_elements(paramfile) eq 0) and $
       (n_elements(params) eq 0) then begin
@@ -279,7 +247,7 @@ pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfi
                params=newparams2, iopath=iopath, nminphot=nminphot, $
                galchunksize=galchunksize, outprefix=outprefix, index=index, $
                sfhgrid_paramfile=sfhgrid_paramfile, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
-               allages=allages, clobber=clobber, debug=debug, write_chi2grid=write_chi2grid, $
+               allages=allages, clobber=clobber, write_chi2grid=write_chi2grid, $
                nowrite=nowrite, silent=silent
           endfor
        endfor
@@ -303,7 +271,7 @@ pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfi
        isedfit, paramfile, maggies[*,index], ivarmaggies[*,index], zobj[index], $
          isedfit1, isedfit_post=isedfit_post1, params=params, nminphot=nminphot, $
          outprefix=outprefix, allages=allages, iopath=iopath, clobber=clobber, $
-         debug=debug, write_chi2grid=write_chi2grid, /nowrite, silent=silent, $
+         write_chi2grid=write_chi2grid, /nowrite, silent=silent, $
          sfhgrid_paramfile=sfhgrid_paramfile, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir
        isedfit = init_isedfit(ngal,nfilt,params.sfhgrid,sfhgrid_paramfile=sfhgrid_paramfile,$
          isedfit_post=isedfit_post)
@@ -362,7 +330,6 @@ pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfi
 
 ; loop on each galaxy chunk    
     t1 = systime(1)
-;   for gchunk = 2, ngalchunk-1L do begin
     for gchunk = 0L, ngalchunk-1L do begin
        g1 = gchunk*galchunksize
        g2 = ((gchunk*galchunksize+galchunksize)<ngal)-1L
@@ -407,7 +374,7 @@ pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfi
        t0 = systime(1)
        temp_isedfit_post = isedfit_post[gthese]
        isedfit[gthese] = isedfit_compute_posterior(isedfit[gthese],$
-         modelgrid,fullgrid,isedfit_post=temp_isedfit_post,debug=debug)
+         modelgrid,fullgrid,isedfit_post=temp_isedfit_post)
        isedfit_post[gthese] = temporary(temp_isedfit_post) ; pass-by-value
        if (keyword_set(silent) eq 0) then splog, format='("Time = '+$
          '",G0," minutes")', (systime(1)-t0)/60.0

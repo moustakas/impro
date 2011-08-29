@@ -1,9 +1,53 @@
-function get_sfhgrid_colors, sfhgrid, synthmodels=synthmodels, imf=imf, $
-  redcurve=redcurve, sfhgrid_paramfile=sfhgrid_paramfile, $
-  isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, filterlist=filterlist, $
-  band_shift=band_shift
-; jm10jan28ucsd - take the output from BUILD_ISEDFIT_SFHGRID and
-; synthesize photometry in an arbitrary set of bandpasses
+;+
+; NAME:
+;   GET_SFHGRID_COLORS()
+;
+; PURPOSE:
+;   Synthesize photometry in arbitrary bandpasses given an iSEDfit
+;   grid number generated using BUILD_ISEDFIT_SFHGRID.
+;
+; INPUTS: 
+;   sfhgrid - SFH grid number
+;   filterlist - filter curves to use 
+;
+; OPTIONAL INPUTS - see BUILD_ISEDFIT_SFHGRID for details:
+;   imf - initial mass function (default 'chab')
+;   synthmodels - population synthesis models (default 'bc03')
+;   redcurve - reddening curve (default 1)
+;   sfhgrid_paramfile - SFH grid parameter file
+;   isedfit_sfhgrid_dir - pathname indicating the location of the
+;     grids 
+;   band_shift - band-shifting factor to apply to the input filters
+;     (default 0.0) 
+;
+; KEYWORD PARAMETERS: 
+;
+; OUTPUTS: 
+;   colors - output data structure that contains the details of every
+;     model and the rest-frame AB magnitudes in each of the bandpasses
+;     in FILTERLIST 
+;
+; COMMENTS:
+;
+; MODIFICATION HISTORY:
+;   J. Moustakas, 2010 Jan 28, UCSD
+;
+; Copyright (C) 2010, John Moustakas
+; 
+; This program is free software; you can redistribute it and/or modify 
+; it under the terms of the GNU General Public License as published by 
+; the Free Software Foundation; either version 2 of the License, or
+; (at your option) any later version. 
+; 
+; This program is distributed in the hope that it will be useful, but 
+; WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+; General Public License for more details. 
+;-
+
+function get_sfhgrid_colors, sfhgrid, filterlist=filterlist, imf=imf, $
+  synthmodels=synthmodels, redcurve=redcurve, sfhgrid_paramfile=sfhgrid_paramfile, $
+  isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, band_shift=band_shift
 
     if (n_elements(sfhgrid) eq 0) then begin
        doc_library, 'get_sfhgrid_colors'
@@ -18,7 +62,7 @@ function get_sfhgrid_colors, sfhgrid, synthmodels=synthmodels, imf=imf, $
 
     if (n_elements(synthmodels) eq 0) then synthmodels = 'bc03'
     if (n_elements(imf) eq 0) then imf = 'chab' ; 'salp'
-    if (n_elements(redcurve) eq 0) then redcurve = 0
+    if (n_elements(redcurve) eq 0) then redcurve = 1
 
 ; read the parameter file describing each of the grids and get the
 ; reddening curve

@@ -37,9 +37,9 @@
 ;   sfhgrid_paramfile - parameter file describing the the SFH grid to
 ;     be built (default ${IMPRO_DIR}+/isedfit/isedfit_sfhgrid.par)  
 ;
-;   isedfit_sfhgrid_dir - environment variable indicating where the grid 
-;     should be written, which allows the grids to be project-specific
-;     (default ${ISEDFIT_SFHGRID_DIR}) 
+;   isedfit_sfhgrid_dir - pathname indicating where the grid should be
+;     written, which allows the grids to be project-specific (default
+;     ${ISEDFIT_SFHGRID_DIR})  
 ;
 ; KEYWORD PARAMETERS: 
 ;   make_montegrids - (re)build the Monte Carlo distribution of

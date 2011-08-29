@@ -6,10 +6,10 @@
 ;   Function to restore the best-fitting iSEDfit model. 
 ;
 ; INPUTS:
-;   paramfile - ISEDFIT parameter file
+;   paramfile - iSEDfit parameter file
 ;
 ; OPTIONAL INPUTS:
-;   params - ISEDFIT parameter data structure (over-rides PARAMFILE) 
+;   params - iSEDfit parameter data structure (over-rides PARAMFILE) 
 ;   iopath - I/O path
 ;
 ; KEYWORD PARAMETERS:
@@ -17,9 +17,9 @@
 ;   silent - suppress messages to STDOUT
 ;
 ; OUTPUTS:
-;   model - data structure array containing the best-fitting
-;           spectrum for each object (the structure will be
-;           different depending on whether or not MAXOLD=1) 
+;   model - data structure array containing the best-fitting spectrum
+;     for each object (the structure will be different depending on
+;     whether or not MAXOLD=1)  
 ;
 ; OPTIONAL OUTPUTS:
 ;   isedfit - ISEDFIT result structure
@@ -53,10 +53,9 @@
 ; General Public License for more details. 
 ;-
 
-function isedfit_restore, paramfile, isedfit, params=params, $
-  iopath=iopath, index=index, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
-  outprefix=outprefix, flambda=flambda, fnu=fnu, $
-  nomodels=nomodels, silent=silent
+function isedfit_restore, paramfile, isedfit, params=params, iopath=iopath, $
+  index=index, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, outprefix=outprefix, $
+  flambda=flambda, fnu=fnu, nomodels=nomodels, silent=silent
 
     if (n_elements(paramfile) eq 0L) and (n_elements(params) eq 0) then begin
        doc_library, 'isedfit_restore'
