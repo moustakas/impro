@@ -79,7 +79,7 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
 ; additional priors: do not allow dusty, non-star-forming solutions
 ; (note that disallowing models that are too old is built into
 ; ISEDFIT_COMPUTE_CHI2) 
-    prior = bigb100*0+1
+;   prior = bigb100*0+1
 ;   prior = ((bigb100 lt 1D-3) and (bigebv gt 0.0)) eq 0
 ;   ww = where(bigebv gt 0 and bigb100 lt 1D-2)
 ;   djs_plot, bigebv, alog10(bigb100), ps=6, sym=0.1, /xlog
@@ -92,6 +92,11 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
 ; get Monte Carlo draws from the posterior distributions of each
 ; parameter
        if (min(galgrid.chi2) lt 0.9D6) then begin
+;         prior = bigsfr*0+1
+; this prior penalizes very young ages and large stellar masses; the
+; average SFR over the age of the galaxy cannot exceed 200 Msun/yr
+          prior = 1D-9*galgrid.scale*bigmgal/bigage lt 200.0
+;         prior = (bigsfr*galgrid.scale) lt 150.0
           post = prior*exp(-0.5D*(galgrid.chi2-min(galgrid.chi2)))
           if (total(post,/double) eq 0.0) then begin
              splog, 'Chi^2 value too large for object '+strtrim(igal,2)
