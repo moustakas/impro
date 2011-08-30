@@ -54,6 +54,8 @@
 ;   ivarabsmag - inverse variance of absolute magnitude (for
 ;                missing data = 0) in each output band
 ;                [OUT_NBAND,NGAL]  
+;   synth_absmag - absolute magnitudes synthesized from the
+;     best-fitting model [OUT_NBAND,NGAL]   
 ;   clineflux  - continuum flux at the wavelengths of strong emission 
 ;                lines: [OII], H-beta, [OIII], and H-alpha [erg/s/cm2/A] 
 ;   uvflux - continuum flux at 1500 and 2800 A from the best-fitting
@@ -72,8 +74,9 @@
 ;     IM_KCORRECT() 
 ;   jm09aug18ucsd - lots of tweaks
 ;   jm10jan07ucsd - added UVFLUX output
+;   jm11aug29ucsd - added SYNTH_ABSMAG optional output 
 ;
-; Copyright (C) 2009-2010, John Moustakas
+; Copyright (C) 2009-2011, John Moustakas
 ; 
 ; This program is free software; you can redistribute it and/or modify 
 ; it under the terms of the GNU General Public License as published by 
@@ -91,8 +94,8 @@ function im_simple_kcorrect, redshift, maggies, ivarmaggies, in_filterlist, $
   omega0=omega0, omegal0=omegal0, chi2=chi2, scale=scale, obands=obands, $
   bestmaggies=bestmaggies, synth_outmaggies_obs=synth_outmaggies_obs, $
   synth_outmaggies_rest=synth_outmaggies_rest, absmag=absmag, $
-  ivarabsmag=ivarabsmag, clineflux=clineflux, uvflux=uvflux, vega=vega, $
-  silent=silent
+  ivarabsmag=ivarabsmag, synth_absmag=synth_absmag, clineflux=clineflux, $
+  uvflux=uvflux, vega=vega, silent=silent
 
     nredshift = n_elements(redshift)
     in_nband = n_elements(in_filterlist)
@@ -205,12 +208,13 @@ function im_simple_kcorrect, redshift, maggies, ivarmaggies, in_filterlist, $
     endif
 
 ; calculate absolute magnitudes    
-    absmag = fltarr(out_nband,nredshift)
+    synth_absmag = fltarr(out_nband,nredshift)
     ivarabsmag = fltarr(out_nband,nredshift)
-    if (arg_present(absmag)) then begin
+    if arg_present(absmag) or arg_present(synth_absmag) then begin
        for i = 0L, out_nband-1L do $
-         absmag[i,*]=-2.5*alog10(synth_outmaggies_rest[i,*])- $
+         synth_absmag[i,*]=-2.5*alog10(synth_outmaggies_rest[i,*])- $
          lf_distmod(redshift, omega0=omega0, omegal0=omegal0)
+       absmag = synth_absmag
        for j=0L, nredshift-1L do begin
           igood=where(ivarmaggies[obands[*,j],j] gt 0. and $
             maggies[obands[*,j],j] gt 0., ngood)
@@ -242,7 +246,10 @@ function im_simple_kcorrect, redshift, maggies, ivarmaggies, in_filterlist, $
     endif
        
 ; scale everything to h100; note that K-correct *always* uses h100=1
-    if arg_present(absmag) then absmag = absmag - 5.0*alog10(1.0/h100)
+    if arg_present(absmag) or arg_present(synth_absmag) then begin
+       absmag = absmag - 5.0*alog10(1.0/h100)
+       synth_absmag = synth_absmag - 5.0*alog10(1.0/h100)
+    endif
 
 return, kcorrect
 end

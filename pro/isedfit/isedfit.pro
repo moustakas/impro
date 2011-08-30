@@ -231,25 +231,18 @@ pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfi
     if (n_elements(params) eq 0) then params = $
       read_isedfit_paramfile(paramfile)
 
-; SFHGRID and REDCURVE can be vectors; however, if SFHGRID=3 (no
-; reddening) then ignore REDCURVE    
+; SFHGRID can be a vector
     nsfhgrid = n_elements(params.sfhgrid)
-    nredcurve = n_elements(params.redcurve)
-    if (nsfhgrid gt 1) or (nredcurve gt 1) then begin
+    if (nsfhgrid gt 1) then begin
        for ii = 0, nsfhgrid-1 do begin
           newparams1 = struct_trimtags(params,except='sfhgrid')
           newparams1 = struct_addtags(newparams1,{sfhgrid: params.sfhgrid[ii]})
-          if (newparams1.sfhgrid eq 3) then nredcurve = 1
-          for jj = 0, nredcurve-1 do begin
-             newparams2 = struct_trimtags(newparams1,except='redcurve')
-             newparams2 = struct_addtags(newparams2,{redcurve: params.redcurve[jj]})
-             isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfit_post, $
-               params=newparams2, iopath=iopath, nminphot=nminphot, $
-               galchunksize=galchunksize, outprefix=outprefix, index=index, $
-               sfhgrid_paramfile=sfhgrid_paramfile, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
-               allages=allages, clobber=clobber, write_chi2grid=write_chi2grid, $
-               nowrite=nowrite, silent=silent
-          endfor
+          isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfit_post, $
+            params=newparams1, iopath=iopath, nminphot=nminphot, $
+            galchunksize=galchunksize, outprefix=outprefix, index=index, $
+            sfhgrid_paramfile=sfhgrid_paramfile, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
+            allages=allages, clobber=clobber, write_chi2grid=write_chi2grid, $
+            nowrite=nowrite, silent=silent
        endfor
        return
     endif
@@ -321,8 +314,8 @@ pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfi
     maxage = getage(zobj,/gyr)-getage(10.0,/gyr) 
 
 ; initialize the output structure(s)
-    isedfit = init_isedfit(ngal,nfilt,params.sfhgrid,sfhgrid_paramfile=sfhgrid_paramfile,$
-      isedfit_post=isedfit_post)
+    isedfit = init_isedfit(ngal,nfilt,params.sfhgrid,isedfit_post=isedfit_post,$
+      sfhgrid_paramfile=sfhgrid_paramfile)
     isedfit.isedfit_id = lindgen(ngal)
     isedfit.maggies = maggies
     isedfit.ivarmaggies = ivarmaggies

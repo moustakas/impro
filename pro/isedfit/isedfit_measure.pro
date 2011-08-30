@@ -1,5 +1,3 @@
-; DOCUMENTATION IS OUT OF DATE!
-;
 ;+
 ; NAME:
 ;   ISEDFIT_MEASURE
@@ -26,16 +24,7 @@
 ;
 ; OPTIONAL OUTPUTS:
 ;
-; PROCEDURES USED:
-;   CWD(), RED, MRDFITS(), IM_FILTERSPECS(), DLUMINOSITY(),
-;   K_LAMBDA(), GET_ELEMENT, LINTERP, LM_IGMTAU(),
-;   SPECTRAL_INDICES(), K_PROJECT_FILTERS(), MWRFITS,
-;   STRUCT_ADDTAGS(), STRUCT_TRIMTAGS()
-;
 ; COMMENTS:
-;   The cosmological parameters are hard-wired to match
-;   ISEDFIT_MODELS.  
-;
 ;   RESTFILTERFILE can be used to specify the rest-frame
 ;   magnitudes of interest other than the defaults.  The file
 ;   should contain three columns containing the filter name (which
@@ -255,28 +244,3 @@ pro isedfit_measure, paramfile, measure, isedfit, params=params, $
     
 return
 end
-
-;; if a selection filter was specified in the parameter file, then
-;; compute the dumbest possible K-correction in that filter that can be
-;; used in LF_CALC_VMAX, which "undoes" this calculation
-;    if tag_exist(params,'select_filter') then begin
-;       select_filter = strtrim(params.select_filter,2)
-;       select_indx = where(filterlist eq select_filter,nselect_indx)
-;       if (nselect_indx eq 0) then begin
-;          splog, 'Selection filter '+select_filter+'not recognized'
-;       endif else begin
-;          select_kcorr = fltarr(ngal)
-;          good = where(isedfit.chi2 lt 1E6,ngood)
-;          if (ngood ne 0) then begin
-;             for igal = 0L, ngood-1L do select_kcorr[good[igal]] = $
-;               k_project_filters(k_lambda_to_edges(restwave[*,good[igal]]),$
-;               restflux[*,good[igal]],filterlist=select_filter,/silent)/$
-;               k_project_filters(k_lambda_to_edges(model[good[igal]].wave),$
-;               model[good[igal]].flux,filterlist=select_filter,/silent)
-;             select_kcorr[good] = +2.5*alog10(select_kcorr[good])
-;             measure[good].select_absmag = reform(-2.5*alog10(isedfit[good].maggies[select_indx])-$
-;               lf_distmod(isedfit[good].zobj,_extra=extra)-select_kcorr[good]) ; h=1!!!
-;          endif
-;       endelse
-;    endif
-

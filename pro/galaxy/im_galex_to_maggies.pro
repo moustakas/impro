@@ -12,6 +12,9 @@
 ; OPTIONAL INPUTS: 
 ;
 ; KEYWORD PARAMETERS: 
+;   allow_nuv_nondetect - allow photometry of objects not detected in
+;     the NUV, but with measured FUV photometry (in general objects
+;     without solid NUV detections should not be used)
 ;
 ; OUTPUTS: 
 ;   maggies - [2,NGAL] output FUV/NUV maggies 
@@ -27,9 +30,10 @@
 ;
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2010 Apr 30, UCSD - based loosely on
-;     M. Blanton's GALEX_TO_MAGGIES. 
+;     M. Blanton's GALEX_TO_MAGGIES
+;   jm11aug30ucsd - added ALLOW_NUV_NONDETECT keyword
 ;
-; Copyright (C) 2010, John Moustakas
+; Copyright (C) 2010-2011, John Moustakas
 ; 
 ; This program is free software; you can redistribute it and/or modify 
 ; it under the terms of the GNU General Public License as published by 
@@ -42,7 +46,8 @@
 ; General Public License for more details. 
 ;-
 
-pro im_galex_to_maggies, galex, maggies, ivarmaggies, filterlist=filterlist
+pro im_galex_to_maggies, galex, maggies, ivarmaggies, $
+  filterlist=filterlist, allow_nuv_nondetect=allow_nuv_nondetect
 
     ngal = n_elements(galex)
     if (ngal eq 0L) then begin
@@ -77,7 +82,7 @@ pro im_galex_to_maggies, galex, maggies, ivarmaggies, filterlist=filterlist
     nuv_zpt = 20.08
 
 ; convert to maggies; ignore artifacts; require an NUV detection for
-; the FUV photometry
+; the FUV photometry, unless /allow_nuv_nondetect
     obsmaggies = fltarr(2,ngal)-999.0
     obsmaggieserr = fltarr(2,ngal)-999.0
     
@@ -91,6 +96,18 @@ pro im_galex_to_maggies, galex, maggies, ivarmaggies, filterlist=filterlist
        obsmaggieserr[0,good[good_fuv]] =  galex[good[good_fuv]].fuv_ncat_fluxerr*10^(-0.4*23.9)
     endif
 
+    if keyword_set(allow_nuv_nondetect) then begin
+       good = where((galex.nuv_flux_auto lt -90.0) and (galex.fuv_flux_auto gt -90.0),ngood)
+       if (ngood ne 0L) then begin
+          obsmaggies[0,good] = galex[good].fuv_flux_auto*10^(-0.4*fuv_zpt) ; galex flux-->maggies
+          obsmaggieserr[0,good] = galex[good].fuv_fluxerr_auto*10^(-0.4*fuv_zpt)
+
+          good_nuv = where(galex[good].nuv_fcat_flux gt -900.0,ngood_nuv)
+          obsmaggies[1,good[good_nuv]] =  galex[good[good_nuv]].nuv_fcat_flux*10^(-0.4*23.9) ; microJy-->maggies
+          obsmaggieserr[1,good[good_nuv]] =  galex[good[good_nuv]].nuv_fcat_fluxerr*10^(-0.4*23.9)
+       endif
+    endif
+    
 ; now correct for extinction, convert to ivarmaggies, and return
     maggies = dblarr(2,ngal)
     ivarmaggies = dblarr(2,ngal)

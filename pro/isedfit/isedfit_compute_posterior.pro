@@ -91,10 +91,10 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
 ; get Monte Carlo draws from the posterior distributions of each
 ; parameter
        if (min(galgrid.chi2) lt 0.9D6) then begin
-;         prior = bigsfr*0+1
+          prior = bigsfr*0+1
 ; this prior penalizes very young ages and large stellar masses; the
 ; average SFR over the age of the galaxy cannot exceed 200 Msun/yr
-          prior = 1D-9*galgrid.scale*bigmgal/bigage lt 200.0
+;         prior = 1D-9*galgrid.scale*bigmgal/bigage lt 200.0
 ;         prior = (bigsfr*galgrid.scale) lt 150.0
           post = prior*exp(-0.5D*(galgrid.chi2-min(galgrid.chi2)))
           if (total(post,/double) eq 0.0) then begin
@@ -121,10 +121,6 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
 ;         isedfit_post[igal].ebv    = bigebv[allow[these]]
 ;         isedfit_post[igal].mu     = bigmu[allow[these]]
 ;         isedfit_post[igal].b100   = bigb100[allow[these]]
-;         isedfit_post[igal].sfr    = 10.0^isedfit_post[igal].mass*bigsfr[allow[these]]
-;         isedfit_post[igal].sfr100 = 10.0^isedfit_post[igal].mass*bigsfr100[allow[these]]
-
-;         isedfit[igal] = isedfit_packit(isedfit[igal],isedfit_post[igal].mass,type='mass')
 
           logscale = alog10(galgrid[allow[these]].scale)
           isedfit[igal] = isedfit_packit(isedfit[igal],alog10(bigmass[allow[these]])+logscale,type='mass')
@@ -137,11 +133,6 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
           isedfit[igal] = isedfit_packit(isedfit[igal],bigebv[allow[these]],type='ebv')
           isedfit[igal] = isedfit_packit(isedfit[igal],bigmu[allow[these]],type='mu')
           isedfit[igal] = isedfit_packit(isedfit[igal],bigb100[allow[these]],type='b100')
-
-; scale the SFR to the baryonic mass          
-;         sfrfactor = alog10(bigmgal[allow[these]]) + galgrid[allow[these]].mass
-;         isedfit[igal] = isedfit_packit(isedfit[igal],bigsfr[allow[these]]+sfrfactor,type='sfr')
-;         isedfit[igal] = isedfit_packit(isedfit[igal],bigsfr100[allow[these]]+sfrfactor,type='sfr100')
 
           neg = where(isedfit_post[igal].scale le 0)
           if (neg[0] ne -1) then message, 'Negative scale factor!'
@@ -182,6 +173,11 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
 ;         isedfit[igal].sfr = bigsfr[mindx] + isedfit[igal].mass
 ;         isedfit[igal].sfr100 = bigsfr100[mindx] + isedfit[igal].mass
        endif
+
+; some plots       
+;      plot, bigebv, galgrid.chi2, ps=6, /ylog, /xlog, yr=isedfit[igal].chi2*[0.9,3], ysty=3, sym=0.5
+;      plot, bigsfr*galgrid.scale, galgrid.chi2, ps=6, /ylog, /xlog, $
+;        yr=isedfit[igal].chi2*[0.9,3], ysty=3, sym=0.5, xr=[1,1E4]
     endfor 
 
 return, isedfit

@@ -90,7 +90,7 @@ function isedfit_filepaths, params, outprefix=outprefix1, iopath=iopath, $
       outfile = thisprefix+'_'+synthmodels+'_'+imf+'_'+sfhgridstring+suffix else $
       outfile = thisprefix+'_'+synthmodels+'_'+imf+'_'+redcurvestring+'_'+sfhgridstring+suffix
     postfile = outfile+'_post'
-    measurefile = outfile+'_measure'
+    kcorrfile = outfile+'_kcorr'
     psfile = 'qaplot_'+outfile+'.ps'
     chi2grid_psfile = 'qaplot_chi2grid_'+outfile+'.ps'
 
@@ -134,7 +134,7 @@ function isedfit_filepaths, params, outprefix=outprefix1, iopath=iopath, $
       isedfit_models_chunkfiles: isedfit_models_chunkfiles,  $
       isedfit_outfile:           outfile+'.fits',  $
       post_outfile:              postfile+'.fits',  $
-      measure_outfile:           measurefile+'.fits',  $
+      kcorr_outfile:             kcorrfile+'.fits',  $
       qaplot_psfile:             psfile,$
       qaplot_chi2grid_psfile:    chi2grid_psfile}
 
