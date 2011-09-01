@@ -10,6 +10,8 @@
 ;
 ; KEYWORD PARAMETERS:
 ;   chabrier - use the Chabrier+03 IMF (default is the Salpeter+55 IMF) 
+;   lowres - use the low-resolution BC03 models (default is the
+;     high-resolution models)
 ;
 ; OUTPUTS:
 ;   An information structure is written to getenv('ISEDFIT_SSP_DIR')
@@ -33,7 +35,7 @@
 ; General Public License for more details. 
 ;-
 
-pro build_bc03_ssp, chabrier=chabrier
+pro build_bc03_ssp, chabrier=chabrier, lowres=lowres
 
     splog, 'Building the BC03 SSPs'
 
@@ -41,7 +43,15 @@ pro build_bc03_ssp, chabrier=chabrier
     outpath = ssppath+'bc03/'
     bc03path = getenv('bc03_dir')+'/models/Padova1994/'
 
-    resstr = 'hr'
+    if keyword_set(lowres) then begin
+       resstr = 'lr'
+       lsuffix = '_lowres'
+       outpath = ssppath+'bc03_lowres/'
+    endif else begin
+       resstr = 'hr'
+       lsuffix = ''
+    endelse
+
     if keyword_set(chabrier) then begin
        bc03path = bc03path+'chabrier/' 
        imfstr = 'chab'
@@ -62,13 +72,13 @@ pro build_bc03_ssp, chabrier=chabrier
 
 ; input/output file names
     bc03file = 'bc2003_'+resstr+'_'+Zstr+'_'+imfstr+'_ssp.ised'
-    sspfile = 'bc03_'+imfstr+'_'+Z2string(Z)+'.fits'
+    sspfile = 'bc03'+lsuffix+'_'+imfstr+'_'+Z2string(Z)+'.fits'
 
 ; read each SSP in turn, convert to a FITS structure, do some magic,
 ; and then write out
     for iZ = 0, nZ-1 do begin 
        bc03 = im_read_bc03(isedpath=bc03path,isedfile=bc03file[iZ],$
-         bc03_extras=ext,/array_extras,salpeter=salpeter)
+         bc03_extras=ext,/array_extras,salpeter=salpeter,lr=keyword_set(lowres))
 
        nage = n_elements(bc03.age)
        npix = n_elements(bc03.wave)
@@ -93,7 +103,7 @@ pro build_bc03_ssp, chabrier=chabrier
       Z:                      Z,$
       sspfile:          sspfile+'.gz'}
 
-    infofile = ssppath+'info_bc03_'+imfstr+'.fits'
+    infofile = ssppath+'info_bc03'+lsuffix+'_'+imfstr+'.fits'
     im_mwrfits, info, infofile, /clobber
     
 return

@@ -14,6 +14,7 @@
 ;   synthmodels - population synthesis models to use (see the
 ;     corresponding BUILD_*_SSP routine for details)
 ;       bc03 - (default)
+;       bc03_lowres - low-resolution BC03 models
 ;       basti - solar-scaled models
 ;       basti_ae - alpha-enhanced models
 ;       pegase - 
@@ -22,8 +23,9 @@
 ;   imf - initial mass function (default 'chab'=Chabrier); the
 ;     available IMFs depend on which SYNTHMODELS are adopted, but as
 ;     of 2011 Aug 24 they are:
-;       chab = Chabrier (2003): bc03, fsps
-;       salp = Salpeter (1955): bc03, fsps, maraston05, pegase
+;       chab = Chabrier (2003): bc03, bc03_lowres, fsps
+;       salp = Salpeter (1955): bc03, bc03_lowres, fsps, maraston05,
+;         pegase 
 ;       kroupa01 = Kroupa (2001): basti, basti_ae, fsps, maraston05,
 ;         pegase 
 ;

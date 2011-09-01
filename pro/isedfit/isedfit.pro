@@ -139,16 +139,6 @@ function init_isedfit, ngal, nfilt, sfhgrid, sfhgrid_paramfile=sfhgrid_paramfile
       ebv_avg:      -1.0,$
       mu_avg:       -1.0,$
 
-      mass_err:     -1.0,$
-      age_err:      -1.0,$
-      sfr_err:      -1.0,$
-      sfr100_err:   -1.0,$
-      b100_err:     -1.0,$
-      tau_err:      -1.0,$
-      Z_err:        -1.0,$
-      ebv_err:      -1.0,$
-      mu_err:       -1.0,$
-
       mass_50:     -1.0,$
       age_50:      -1.0,$
       sfr_50:      -1.0,$ ; instantaneous
@@ -159,15 +149,25 @@ function init_isedfit, ngal, nfilt, sfhgrid, sfhgrid_paramfile=sfhgrid_paramfile
       ebv_50:      -1.0,$
       mu_50:       -1.0,$
 
-      mass_eff_err:   -1.0,$
-      age_eff_err:    -1.0,$
-      sfr_eff_err:    -1.0,$
-      sfr100_eff_err: -1.0,$
-      b100_eff_err:   -1.0,$
-      tau_eff_err:    -1.0,$
-      Z_eff_err:      -1.0,$
-      ebv_eff_err:    -1.0,$
-      mu_eff_err:     -1.0}
+      mass_err:     -1.0,$
+      age_err:      -1.0,$
+      sfr_err:      -1.0,$
+      sfr100_err:   -1.0,$
+      b100_err:     -1.0,$
+      tau_err:      -1.0,$
+      Z_err:        -1.0,$
+      ebv_err:      -1.0,$
+      mu_err:       -1.0}
+
+;     mass_eff_err:   -1.0,$
+;     age_eff_err:    -1.0,$
+;     sfr_eff_err:    -1.0,$
+;     sfr100_eff_err: -1.0,$
+;     b100_eff_err:   -1.0,$
+;     tau_eff_err:    -1.0,$
+;     Z_eff_err:      -1.0,$
+;     ebv_eff_err:    -1.0,$
+;     mu_eff_err:     -1.0}
 
     isedfit = struct_addtags(struct_addtags(best,qmed),isedfit1)
     isedfit = replicate(temporary(isedfit),ngal)
