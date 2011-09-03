@@ -15,9 +15,12 @@
 ;   minx - minimum value of X to consider [default: min(x)]
 ;   maxx - maximum value of X to consider [default: max(x)]  
 ;   minpts - minimum number of points in each bin (default 3) 
+;   nbins - number of bins to use (default is to calculate the number
+;     of bins from MINX, MAXX, and BINSIZE)
 ;
 ; KEYWORD PARAMETERS:
 ;   verbose - print some of the statistics to STDOUT
+;   keepall - keep all bins, even if no statistics have been measured 
 ;
 ; OUTPUTS:
 ;   result - statistical quantities, in each bin [NBINS]
@@ -26,6 +29,7 @@
 ;     medx -  median of x
 ;     medy -  median of y
 ;     meanx -  mean of x
+;     sigx -  standard deviation of x
 ;     meany -  mean of y
 ;     sigy -  standard deviation of y
 ;     sigymean-  error in MEANY
@@ -46,8 +50,9 @@
 ;     allow optional weights
 ;   jm08mar05nyu - cleaned up the documentation
 ;   jm10aug06ucsd - medium-level rewrite to be smarter and faster 
+;   jm11sep02ucsd - added /KEEPALL keyword
 ;
-; Copyright (C) 2005, 2007-2008, 2010, John Moustakas
+; Copyright (C) 2005, 2007-2008, 2010-2011, John Moustakas
 ; 
 ; This program is free software; you can redistribute it and/or modify 
 ; it under the terms of the GNU General Public License as published by 
@@ -61,7 +66,8 @@
 ;-
 
 function im_medxbin, x, y, binsize, weight=weight1, minx=minx1, $
-  maxx=maxx1, minpts=minpts1, verbose=verbose
+  maxx=maxx1, minpts=minpts1, verbose=verbose, keepall=keepall, $
+  nbins=nbins
 
     ndata = n_elements(x)
     ny = n_elements(y)
@@ -93,60 +99,66 @@ function im_medxbin, x, y, binsize, weight=weight1, minx=minx1, $
        return, -1
     endif
     
-; number of bins    
-    nbins = abs(round((maxx-minx)/float(binsize))+1L)
+; number of bins
+    if (n_elements(nbins) eq 0) then nbins = abs(round((maxx-minx)/float(binsize))+1L)
 
 ; initialize the working data structure    
-    res_template = {$
-      xbin:     -1.0,$ ; bin center
-      npts:       0L,$ ; number of points per bin
-      medx:     -1.0,$ ; running X median
-      meanx:    -1.0,$ ; running X mean
-      medy:     -1.0,$ ; running Y median
-      meany:    -1.0,$ ; running Y mean
-      sigy:     -1.0,$ ; standard deviation
-      sigymean: -1.0,$ ; error in MEANY
-      quant05:  -1.0,$ ; 5% quantile
-      quant25:  -1.0,$ ; 25% quantile
-      quant75:  -1.0,$ ; 75% quantile
-      quant95:  -1.0}   ; 95% quantile
-
+    res = {$
+      xbin:     -999.0,$ ; bin center
+      npts:         0L,$ ; number of points per bin
+      medx:     -999.0,$ ; running X median
+      meanx:    -999.0,$ ; running X mean
+      sigx:     -999.0,$ ; running X standard deviation
+      medy:     -999.0,$ ; running Y median
+      meany:    -999.0,$ ; running Y mean
+      sigy:     -999.0,$ ; standard deviation
+      sigymean: -999.0,$ ; error in MEANY
+      quant05:  -999.0,$ ; 5% quantile
+      quant25:  -999.0,$ ; 25% quantile
+      quant75:  -999.0,$ ; 75% quantile
+      quant95:  -999.0}   ; 95% quantile
+    res = replicate(res,nbins)
+    
     qquant = [0.5,0.05,0.25,0.75,0.95]
     for ibin = 0L, nbins-1 do begin
-       res1 = res_template
        xbin = ibin * binsize + minx + (binsize/2.0)
        inbin = where((x gt xbin - (binsize/2.0)) and $
          (x le xbin + (binsize/2.0)),ninbin)
 
-       if (ninbin lt minpts) then continue
-       res1.xbin = xbin
-       res1.npts = ninbin
-
+       res[ibin].xbin = xbin
+       res[ibin].npts = ninbin
+       if (ninbin gt minpts) then begin
 ; let IM_WEIGHTED_MEAN() handle the weighted and unweighted cases       
-       if (nweight eq 0L) then begin
-          res1.meanx = im_weighted_mean(x[inbin],quant=0.5,wquant=medx)
-          res1.meany = im_weighted_mean(y[inbin],wsigma=sigy,$
-            wmean_err=sigymean,wquant=quanty,quant=qquant)
-       endif else begin
-          res1.meanx = im_weighted_mean(x[inbin],$
-            weights=weight[inbin],quant=0.5,wquant=medx)
-          res1.meany = im_weighted_mean(y[inbin],weights=weight[inbin],$
-            wsigma=sigy,wmean_err=sigymean,wquant=quanty,quant=qquant)
-       endelse
-       res1.medx = medx
-       res1.medy = quanty[0]
-       res1.sigy = sigy
-       res1.sigymean = sigymean
-       res1.quant05 = quanty[1]
-       res1.quant25 = quanty[2]
-       res1.quant75 = quanty[3]
-       res1.quant95 = quanty[4]
-       if (n_elements(res) eq 0L) then res = res1 else res = [temporary(res),res1]
+          if (nweight eq 0L) then begin
+             res[ibin].meanx = im_weighted_mean(x[inbin],quant=0.5,wquant=medx,wsigma=sigx)
+             res[ibin].sigx = sigx
+             res[ibin].meany = im_weighted_mean(y[inbin],wsigma=sigy,$
+               wmean_err=sigymean,wquant=quanty,quant=qquant)
+          endif else begin
+             res[ibin].meanx = im_weighted_mean(x[inbin],$
+               weights=weight[inbin],quant=0.5,wquant=medx,wsigma=sigx)
+             res[ibin].sigx = sigx
+             res[ibin].meany = im_weighted_mean(y[inbin],weights=weight[inbin],$
+               wsigma=sigy,wmean_err=sigymean,wquant=quanty,quant=qquant)
+          endelse
+          res[ibin].medx = medx
+          res[ibin].medy = quanty[0]
+          res[ibin].sigy = sigy
+          res[ibin].sigymean = sigymean
+          res[ibin].quant05 = quanty[1]
+          res[ibin].quant25 = quanty[2]
+          res[ibin].quant75 = quanty[3]
+          res[ibin].quant95 = quanty[4]
+       endif
     endfor
 
-    if (n_elements(res) eq 0L) then begin
-       splog, 'No statistics measured!  Check your MINX and MAXX inputs.'
-       return, -1
+    if (keyword_set(keepall) eq 0) then begin
+       keep = where(res.medx gt -900.0)
+       if (keep[0] eq -1) then begin
+          splog, 'No statistics measured!  Check your MINX and MAXX inputs.'
+          return, -1
+       endif
+       res = res[keep]
     endif
     if keyword_set(verbose) then struct_print, res
     

@@ -39,7 +39,7 @@
 function read_sfhgrid_paramfile, sfhgrid, sfhgrid_paramfile=sfhgrid_paramfile
 
     if (n_elements(sfhgrid_paramfile) eq 0) then sfhgrid_paramfile = $
-      getenv('IMPRO_DIR')+'/isedfit/isedfit_sfhgrid.par'
+      getenv('IMPRO_DIR')+'/pro/isedfit/isedfit_sfhgrid.par'
     if (file_test(sfhgrid_paramfile,/regular) eq 0) then $
       message, 'PARAMFILE '+sfhgrid_paramfile+' not found'
 
