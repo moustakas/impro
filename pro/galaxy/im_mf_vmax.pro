@@ -30,6 +30,7 @@
 ;     nbins - number of mass bins
 ;     number - number of objects in each bin [NBINS]
 ;     neff - effective number of objects in each bin [NBINS]
+;     neff_err - approximate 1-sigma error in NEFF [NBINS]
 ;     weff - effective weight (see Zhu+09, eq 3)
 ;     mass - stellar mass at the center of each mass bin [NBINS]
 ;     phi - number density (h^3 Mpc^-3) [NBINS] 
@@ -103,6 +104,7 @@ function im_mf_vmax, mass, oneovervmax, binsize=binsize, masslimit=masslimit1, $
     number = intarr(nbins)
     weff = fltarr(nbins)
     neff = fltarr(nbins)
+    neff_err = fltarr(nbins)
     phierr_gehrels = fltarr(2,nbins)
     for ii = 0L, nbins-1 do begin
        number[ii] = rev[ii+1]-rev[ii] ; number of objects per bin
@@ -117,9 +119,10 @@ function im_mf_vmax, mass, oneovervmax, binsize=binsize, masslimit=masslimit1, $
             total(oneovervmax[rev[rev[ii]:rev[ii+1]-1]],/double)
           if (weff[ii] le 0) then message, 'This should not happen!'
           neff[ii] = total(oneovervmax[rev[rev[ii]:rev[ii+1]-1]],/double)/weff[ii] ; effective number of objects
-          phierr_gehrels1 = weff[ii]*im_poisson_limits(neff[ii],0.8413)/binsize  ; 1-sigma
-          phierr_gehrels[0,ii] = phi[ii]-phierr_gehrels1[0]                        ; lower
-          phierr_gehrels[1,ii] = phierr_gehrels1[1]-phi[ii]                        ; upper
+          neff_err1 = im_poisson_limits(neff[ii],0.8413) ; 1-sigma
+          neff_err[ii] = (neff_err1[1]-neff_err1[0])/2.0 ; error is asymmetric, but approximate
+          phierr_gehrels[0,ii] = phi[ii]-weff[ii]*neff_err1[0]/binsize ; lower
+          phierr_gehrels[1,ii] = weff[ii]*neff_err1[1]/binsize-phi[ii] ; upper
        endelse
     endfor
 
@@ -134,6 +137,7 @@ function im_mf_vmax, mass, oneovervmax, binsize=binsize, masslimit=masslimit1, $
          nbins:         nbins,$
          number:    fix(null),$
          neff:           null,$
+         neff_err:       null,$
          weff:           null,$
          absmag:         null,$
          phi:            null,$
@@ -151,6 +155,7 @@ function im_mf_vmax, mass, oneovervmax, binsize=binsize, masslimit=masslimit1, $
          nbins:         nbins,$
          number:    fix(null),$
          neff:           null,$
+         neff_err:       null,$
          weff:           null,$
          mass:           null,$
          phi:            null,$
@@ -166,6 +171,7 @@ function im_mf_vmax, mass, oneovervmax, binsize=binsize, masslimit=masslimit1, $
     mf_data.limit[0:nbins-1] = limit
     mf_data.number[0:nbins-1] = number
     mf_data.neff[0:nbins-1] = neff
+    mf_data.neff_err[0:nbins-1] = neff_err
     mf_data.weff[0:nbins-1] = weff
     
     mf_data.phi[0:nbins-1] = phi

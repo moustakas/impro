@@ -72,8 +72,6 @@ function isedfit_filepaths, params, outprefix=outprefix1, iopath=iopath, $
       message, 'CHUNKINFOFILE '+chunkinfofile+' not found!'
 
     modelspath = iopath+sfhgridstring+'/'+redcurvestring+'/'
-    if (file_test(modelspath,/dir) eq 0L) then $
-      spawn, 'mkdir -p '+modelspath
 
 ; needs error checking here to make sure the directories exist    
 

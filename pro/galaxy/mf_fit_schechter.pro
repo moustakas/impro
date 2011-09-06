@@ -31,7 +31,9 @@
 ;
 ; COMMENTS:
 ;   MPFIT() has difficulty getting the errors right if MSTAR
-;   isn't logarithmic. 
+;   isn't logarithmic, hence the convention adopted here.  Also
+;   note that PHIERR is optional, but in that case the formal MPFIT
+;   errors will not be correct.
 ;
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2009 Apr 14, NYU - based largely on
@@ -61,6 +63,17 @@ function mf_fit_schechter, logmass, phi, phierr, parinfo=parinfo, quiet=quiet
        doc_library, 'mf_fit_schechter'
        return, -1
     endif
+
+;   if (n_elements(phierr) eq 0) then begin
+;      zero = where(phi le 0.0)
+;      if zero[0] ne -1 then message, 'PHI contains values that are <=0!'
+;      phiweights = 1.0/phi ; uniform (Poisson) weights
+;   endif else begin
+;      if (n_elements(phierr) ne ngal) then message, 'PHI and PHIERR are incompatible!'
+;      zero = where(phierr le 0.0)
+;      if zero[0] ne -1 then message, 'PHIERR cannot be <=0!'
+;      phiweights = 1.0/phierr
+;   endelse
     
 ; initialize the parameter structure
     if (n_elements(parinfo) eq 0) then begin
@@ -72,8 +85,8 @@ function mf_fit_schechter, logmass, phi, phierr, parinfo=parinfo, quiet=quiet
     endif
 
 ; do the fit 
-    params = mpfitfun('mf_fit_schechter_func',logmass,phi,$
-      phierr,parinfo=parinfo,perror=perror,status=mpstatus,$
+    params = mpfitfun('mf_fit_schechter_func',logmass,phi,phierr,$
+      weight=phiweights,parinfo=parinfo,perror=perror,status=mpstatus,$
       quiet=quiet,bestnorm=chi2,dof=dof,covar=covar)
 
     schechter = {phistar: params[0], logmstar: params[1], $
