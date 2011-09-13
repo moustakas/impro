@@ -341,7 +341,8 @@ pro im_plotconfig, plotnum, position, psfile=psfile, psclose=psclose, $
 ; write out
     if (n_elements(psfile) ne 0) and (keyword_set(psclose) eq 0) then begin
        if (keyword_set(silent) eq 0) then begin
-          splog, 'Writing '+psfile
+          if keyword_set(pdf) then splog, 'Writing '+repstr(repstr(psfile,'.eps','.pdf'),'.ps','.pdf') else $
+            splog, 'Writing '+psfile
        endif
        im_plotfaves, /postscript, keynote=keynote, _extra=extra
 

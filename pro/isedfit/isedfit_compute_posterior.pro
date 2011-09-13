@@ -66,13 +66,13 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
     bigb100 = bigage*0D   ; birthrate parameter
     bigmgal = bigage*0D   ; galaxy mass ignoring mass loss 
     for imod = 0L, nmodel-1 do begin
-       these = lindgen(nage)+imod*nage
-       sfr = isedfit_reconstruct_sfh(modelgrid[imod],outage=bigage[these],$
+       tindx = lindgen(nage)+imod*nage
+       sfr = isedfit_reconstruct_sfh(modelgrid[imod],outage=bigage[tindx],$
          sfr100=sfr100,b100=b100,mgalaxy=mgal)
-       bigsfr[these] = sfr ; alog10(sfr)
-       bigsfr100[these] = sfr100 ; alog10(sfr100) 
-       bigb100[these] = b100
-       bigmgal[these] = mgal
+       bigsfr[tindx] = sfr ; alog10(sfr)
+       bigsfr100[tindx] = sfr100 ; alog10(sfr100) 
+       bigb100[tindx] = b100
+       bigmgal[tindx] = mgal
     endfor
 
 ; additional priors: do not allow dusty, non-star-forming solutions
@@ -109,9 +109,6 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
             total(post[allow],/cumu,/double)],randomu(seed,ndraw))))
           isedfit_post[igal].draws = allow[these]
           isedfit_post[igal].scale = galgrid[allow[these]].scale
-
-;         isedfit_post[igal].mass = galgrid[allow[these]].mass+randomn(seed,ndraw)*$
-;           galgrid[allow[these]].mass_err
 
 ;; no need to store these distributions as we can easily reconstruct
 ;; them from the parent MONTEGRIDS       
@@ -175,9 +172,12 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
        endif
 
 ; some plots       
+;      djs_plot, bigage, galgrid.chi2, ps=6, /ylog, /xlog, yr=isedfit[igal].chi2*[0.9,3], xsty=3, ysty=3, sym=0.5
 ;      plot, bigebv, galgrid.chi2, ps=6, /ylog, /xlog, yr=isedfit[igal].chi2*[0.9,3], ysty=3, sym=0.5
 ;      plot, bigsfr*galgrid.scale, galgrid.chi2, ps=6, /ylog, /xlog, $
 ;        yr=isedfit[igal].chi2*[0.9,3], ysty=3, sym=0.5, xr=[1,1E4]
+;      djs_oplot, bigage[allow[these]], galgrid[allow[these]].chi2, ps=6, sym=0.5, color='green'
+;stop
     endfor 
 
 return, isedfit

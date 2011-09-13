@@ -54,6 +54,7 @@
 ;      jm07dec05nyu - atomic data update: see comments below, Froese
 ;                     Fischer et al. 2004, and
 ;                     http://atoms.vuse.vanderbilt.edu 
+;      j11sep07ucsd - bug fix on P3C energy level diagram (for N_I)
 ;
 ;
 ;
@@ -2000,7 +2001,7 @@ function im_getmatrix, ionstr, tt, cloudy94=cloudy94
           ombyw = reform($
             [[ 0.00 , 6*dxs3, 4*dxs3, 2*pxs3, 4*pxs3]/4. ,$
             [6*dxs3,  0.00 ,  d3d5 ,  p1d5 ,  p3d5 ]/6. ,$
-            [4*xs3,  d3d5 ,  0.00 ,  p1d3 ,  p3d3 ]/4. ,$
+            [4*dxs3,  d3d5 ,  0.00 ,  p1d3 ,  p3d3 ]/4. ,$
             [2*pxs3,  p1d5 ,  p1d3 ,  0.00 ,  p3p1 ]/2. ,$
             [4*pxs3,  p3d5 ,  p3d3 ,  p3p1 ,  0.00 ]/4.], 5, 5)
 ;                    ^       ^       ^       ^       ^     ^
