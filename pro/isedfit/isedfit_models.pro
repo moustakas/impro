@@ -168,8 +168,8 @@ pro isedfit_models, paramfile, params=params, iopath=iopath, $
 
     fp = isedfit_filepaths(params,iopath=iopath,isedfit_sfhgrid_dir=isedfit_sfhgrid_dir)
     if (file_test(fp.modelspath,/dir) eq 0) then begin
-       splog, 'Creating directory '+modelspath
-       spawn, 'mkdir -p '+modelspath, /sh
+       splog, 'Creating directory '+fp.modelspath
+       spawn, 'mkdir -p '+fp.modelspath, /sh
     endif
     
     chunkfile = fp.modelspath+fp.isedfit_models_chunkfiles[0] ; check the first file
