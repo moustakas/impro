@@ -110,7 +110,7 @@ function init_isedfit, ngal, nfilt, sfhgrid, sfhgrid_paramfile=sfhgrid_paramfile
 
       tau:            -1.0,$
       Z:              -1.0,$
-      ebv:            -1.0,$
+      av:             -1.0,$
       mu:             -1.0,$
       nburst:            0,$
       tauburst:        -1D,$ ; burst truncation time scale
@@ -136,7 +136,7 @@ function init_isedfit, ngal, nfilt, sfhgrid, sfhgrid_paramfile=sfhgrid_paramfile
       b100_avg:     -1.0,$
       tau_avg:      -1.0,$
       Z_avg:        -1.0,$
-      ebv_avg:      -1.0,$
+      av_avg:       -1.0,$
       mu_avg:       -1.0,$
 
       mass_50:     -1.0,$
@@ -146,7 +146,7 @@ function init_isedfit, ngal, nfilt, sfhgrid, sfhgrid_paramfile=sfhgrid_paramfile
       b100_50:     -1.0,$
       tau_50:      -1.0,$
       Z_50:        -1.0,$
-      ebv_50:      -1.0,$
+      av_50:       -1.0,$
       mu_50:       -1.0,$
 
       mass_err:     -1.0,$
@@ -156,7 +156,7 @@ function init_isedfit, ngal, nfilt, sfhgrid, sfhgrid_paramfile=sfhgrid_paramfile
       b100_err:     -1.0,$
       tau_err:      -1.0,$
       Z_err:        -1.0,$
-      ebv_err:      -1.0,$
+      av_err:       -1.0,$
       mu_err:       -1.0}
 
 ;     mass_eff_err:   -1.0,$
@@ -166,7 +166,7 @@ function init_isedfit, ngal, nfilt, sfhgrid, sfhgrid_paramfile=sfhgrid_paramfile
 ;     b100_eff_err:   -1.0,$
 ;     tau_eff_err:    -1.0,$
 ;     Z_eff_err:      -1.0,$
-;     ebv_eff_err:    -1.0,$
+;     av_eff_err:     -1.0,$
 ;     mu_eff_err:     -1.0}
 
     isedfit = struct_addtags(struct_addtags(best,qmed),isedfit1)
@@ -302,8 +302,8 @@ pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfi
     nfilt = n_elements(filterlist)
 
     redshift = params.redshift
-    if (min(zobj) lt min(redshift)) or $
-      (max(zobj) gt max(redshift)) then begin
+    if (min(zobj)-min(redshift) lt -1E-3) or $
+      (max(zobj)-max(redshift) gt 1E-3) then begin
        splog, 'Need to rebuild model grids using a wider redshift grid!'
        return
     endif
@@ -311,7 +311,8 @@ pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfi
 
 ; do not allow the galaxy to be older than the age of the universe at
 ; ZOBJ starting from a maximum formation redshift z=10 [Gyr]
-    maxage = getage(zobj,/gyr)-getage(10.0,/gyr) 
+    maxage = getage(zobj,/gyr)
+;   maxage = getage(zobj,/gyr)-getage(10.0,/gyr) 
 
 ; initialize the output structure(s)
     isedfit = init_isedfit(ngal,nfilt,params.sfhgrid,isedfit_post=isedfit_post,$

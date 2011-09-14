@@ -55,7 +55,7 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
     bigmass   = reform(modelgrid.mstar,nallmodel)
     bigtau    = reform(rebin(reform(modelgrid.tau,1,nmodel),nage,nmodel),nallmodel)
     bigZ      = reform(rebin(reform(modelgrid.Z,1,nmodel),nage,nmodel),nallmodel)
-    bigebv    = reform(rebin(reform(modelgrid.ebv,1,nmodel),nage,nmodel),nallmodel)
+    bigav     = reform(rebin(reform(modelgrid.av,1,nmodel),nage,nmodel),nallmodel)
     bigmu     = reform(rebin(reform(modelgrid.mu,1,nmodel),nage,nmodel),nallmodel)
     bignburst = reform(rebin(reform(modelgrid.nburst,1,nmodel),nage,nmodel),nallmodel)
     
@@ -79,10 +79,10 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
 ; (note that disallowing models that are too old is built into
 ; ISEDFIT_COMPUTE_CHI2) 
 ;   prior = bigb100*0+1
-;   prior = ((bigb100 lt 1D-3) and (bigebv gt 0.0)) eq 0
-;   ww = where(bigebv gt 0 and bigb100 lt 1D-2)
-;   djs_plot, bigebv, alog10(bigb100), ps=6, sym=0.1, /xlog
-;   djs_oplot, bigebv[ww], alog10(bigb100[ww]), ps=6, sym=0.1, color='orange'
+;   prior = ((bigb100 lt 1D-3) and (bigav gt 0.0)) eq 0
+;   ww = where(bigav gt 0 and bigb100 lt 1D-2)
+;   djs_plot, bigav, alog10(bigb100), ps=6, sym=0.1, /xlog
+;   djs_oplot, bigav[ww], alog10(bigb100[ww]), ps=6, sym=0.1, color='orange'
 
 ; gotta loop...    
     for igal = 0L, ngal-1 do begin
@@ -115,7 +115,7 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
 ;         isedfit_post[igal].Z      = bigZ[allow[these]]
 ;         isedfit_post[igal].tau    = bigtau[allow[these]]
 ;         isedfit_post[igal].age    = bigage[allow[these]]
-;         isedfit_post[igal].ebv    = bigebv[allow[these]]
+;         isedfit_post[igal].av     = bigav[allow[these]]
 ;         isedfit_post[igal].mu     = bigmu[allow[these]]
 ;         isedfit_post[igal].b100   = bigb100[allow[these]]
 
@@ -127,7 +127,7 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
           isedfit[igal] = isedfit_packit(isedfit[igal],bigage[allow[these]],type='age')
           isedfit[igal] = isedfit_packit(isedfit[igal],bigtau[allow[these]],type='tau')
           isedfit[igal] = isedfit_packit(isedfit[igal],bigZ[allow[these]],type='Z')
-          isedfit[igal] = isedfit_packit(isedfit[igal],bigebv[allow[these]],type='ebv')
+          isedfit[igal] = isedfit_packit(isedfit[igal],bigav[allow[these]],type='av')
           isedfit[igal] = isedfit_packit(isedfit[igal],bigmu[allow[these]],type='mu')
           isedfit[igal] = isedfit_packit(isedfit[igal],bigb100[allow[these]],type='b100')
 
@@ -155,7 +155,7 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
           
           isedfit[igal].tau = bigtau[mindx]
           isedfit[igal].Z = bigZ[mindx]
-          isedfit[igal].ebv = bigebv[mindx]
+          isedfit[igal].av = bigav[mindx]
           isedfit[igal].mu = bigmu[mindx]
           isedfit[igal].age = bigage[mindx]
           isedfit[igal].b100 = bigb100[mindx]
@@ -173,7 +173,7 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
 
 ; some plots       
 ;      djs_plot, bigage, galgrid.chi2, ps=6, /ylog, /xlog, yr=isedfit[igal].chi2*[0.9,3], xsty=3, ysty=3, sym=0.5
-;      plot, bigebv, galgrid.chi2, ps=6, /ylog, /xlog, yr=isedfit[igal].chi2*[0.9,3], ysty=3, sym=0.5
+;      plot, bigav, galgrid.chi2, ps=6, /ylog, /xlog, yr=isedfit[igal].chi2*[0.9,3], ysty=3, sym=0.5
 ;      plot, bigsfr*galgrid.scale, galgrid.chi2, ps=6, /ylog, /xlog, $
 ;        yr=isedfit[igal].chi2*[0.9,3], ysty=3, sym=0.5, xr=[1,1E4]
 ;      djs_oplot, bigage[allow[these]], galgrid[allow[these]].chi2, ps=6, sym=0.5, color='green'

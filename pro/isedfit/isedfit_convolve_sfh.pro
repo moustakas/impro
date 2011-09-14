@@ -19,7 +19,6 @@
 ;     dtburst - burst duration [Gyr]
 ;     fburst - mass fraction of each burst
 ;     tauburst - truncated burst timescale [Gyr]
-;     ebv, mu - (optional) reddening factors
 ;
 ; OPTIONAL INPUTS:
 ;   time - desired output age vector (Gyr)

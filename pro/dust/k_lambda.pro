@@ -198,10 +198,8 @@ function k_lambda, wave, r_v=r_v, calzetti=calzetti, charlot=charlot, $
 ; ---------------------------------------------------------------------------    
     
     if keyword_set(charlot) then begin 
-
        if n_elements(r_v) eq 0L then r_v = 5.9
        k_lambda = r_v*(wave/5500.0)^(-0.7)
-       
     endif
     
 ; ---------------------------------------------------------------------------    

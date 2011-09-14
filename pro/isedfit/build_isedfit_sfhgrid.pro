@@ -105,7 +105,7 @@ function init_montegrid, nmodel, nage, imf=imf, nmaxburst=nmaxburst
       modelindx:                -1L,$
       tau:                     -1.0,$
       Z:                       -1.0,$
-      ebv:                      0.0,$ ; always initialize with zero to accommodate the dust-free models!
+      av:                       0.0,$ ; always initialize with zero to accommodate the dust-free models!
       mu:                       1.0,$ ; always default to 1.0!
       nburst:                     0,$
       tauburst:                 -1D,$ ; burst truncation time scale
@@ -211,24 +211,27 @@ pro build_grid, montegrid, chunkinfo, ssppath=ssppath, $
           if (issp eq 0L) then outinfo = struct_addtags(temporary(outinfo),$
             replicate({mstar: fltarr(params.nage), wave: float(sspfits[0].wave), $
             flux: fltarr(npix,params.nage)},nthese))
-          kl = k_lambda(outinfo[0].wave,charlot=charlot,odonnell=odonnell,$
-            calzetti=calzetti,smc=smc,/silent) ; attenuation curve
-          klam = rebin(reform(kl,npix,1),npix,n_elements(sspfits[0].age)) ; [npix,nage]
+;         kl = k_lambda(outinfo[0].wave,charlot=charlot,odonnell=odonnell,$
+;           calzetti=calzetti,smc=smc,/silent) ; attenuation curve
+;         klam = rebin(reform(kl,npix,1),npix,n_elements(sspfits[0].age)) ; [npix,nage]
           
 ; convolve each model with the specified SFH
-          for jj = 0L, nindx1-1L do begin
+          for jj = 0L, nindx1-1 do begin
              print, format='("Chunk=",I4.4,"/",I4.4,", SSP=",I4.4,"/",I4.4,", '+$
                'Model=",I4.4,"/",I4.4,"   ",A5,$)', ichunk+1, nchunk, issp+1, $
                nssp, jj+1, nindx1, string(13b)
 
-; attenuate with dust
-             if (outinfo[indx1[jj]].ebv gt 0.0) then begin
-                ebv = klam*0.0+outinfo[indx1[jj]].ebv
+; attenuate
+             if (outinfo[indx1[jj]].av gt 0.0) then begin
+                alam = k_lambda(outinfo[indx1[jj]].wave,r_v=outinfo[indx1[jj]].av,charlot=charlot,$
+                  odonnell=odonnell,calzetti=calzetti,smc=smc,/silent)
+                alam = rebin(reform(alam,npix,1),npix,n_elements(sspfits[0].age)) ; [npix,nage]
+;               ebv = klam*0.0+outinfo[indx1[jj]].ebv
                 if keyword_set(charlot) then begin
                    old = where(sspfits[jj].age gt tbc,nold)
-                   if (nold ne 0) then ebv[*,old] = outinfo[indx1[jj]].mu*ebv[*,old]
+                   if (nold ne 0) then alam[*,old] = outinfo[indx1[jj]].mu*alam[*,old]
                 endif
-                sspfits[jj].flux = sspfits[jj].flux*10.0^(-0.4*klam*ebv) ; attenuate
+                sspfits[jj].flux = sspfits[jj].flux*10.0^(-0.4*alam)
              endif 
 
 ; do the convolution; tau=0 and no bursts is a special case
@@ -246,9 +249,6 @@ pro build_grid, montegrid, chunkinfo, ssppath=ssppath, $
                   mstar=sspfits[jj].mstar,cspmstar=outmstar,nsamp=1.0,debug=0)
 ;               test = isedfit_reconstruct_sfh(outinfo[indx1[jj]],outage=outage,/debug,xr=[3.5,8])
              endelse
-             
-; WRONG! divide by the mass in stars + remnants
-;            outflux = outflux/rebin(reform(outmstar,1,params.nage),npix,params.nage)
              inf = where(finite(outflux) eq 0)
              if (inf[0] ne -1) then message, 'Bad bad bad'
              
@@ -364,27 +364,11 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
          nmaxburst = ceil(long(100D*(params.maxage-params.minage)/params.pburstinterval)/100D)
        montegrid = init_montegrid(params.nmonte,params.nage,imf=imf,nmaxburst=nmaxburst)
 
-; tau vector; if the user wants an SSP and/or continuous star
-; formation then replace a random subset of the regular grid with the
-; appropriate values; TAUMAX gives a star formation history that is
-; equivalent to continuous star formaion to within 1% at MAXAGE;
-;      montegrid.tau = randomu(seed,params.nmonte)*(params.tau[1]-params.tau[0])+params.tau[0]
-;      montegrid.tau = 10^(randomu(seed,params.nmonte)*(alog10(params.tau[1])-$
-;        alog10(params.tau[0]))+alog10(params.tau[0]))
-
-       if params.flattau then $
-         montegrid.tau = randomu(seed,params.nmonte)*(params.tau[1]-params.tau[0])+params.tau[0] else $
-           montegrid.tau = randomu(seed,params.nmonte,gamma=1.0)*params.tau[1]+params.tau[0]
+; gamma=1/tau vector
+       gamma = randomu(seed,params.nmonte)*(params.gamma[1]-params.gamma[0])+params.gamma[0]
+       montegrid.tau = 1.0/gamma
 ;      im_plothist, montegrid.tau, bin=0.2
 
-;      nreplace = long(median(histogram(montegrid.tau,bin=params.tau[0])))
-;      if params.addssp then montegrid[random_indices(params.nmonte,nreplace)].tau = 0.0 
-;      if params.addconst then begin
-;         taumax = -1.0*long(params.maxage/alog(0.99))
-;         montegrid[random_indices(params.nmonte,nreplace)].tau = taumax
-;      endif
-;      im_plothist, tau<(params.tau[1]*2), bin=params.tau[0]
-       
 ; metallicity; check to make sure that the prior boundaries do not
 ; exceed the metallicity range available from the chosen SYNTHMODELS
        if (params.Z[0] lt min(sspinfo.Z)) then begin
@@ -408,10 +392,10 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
        for ii = 0L, params.nmonte-1 do montegrid[ii].age = montegrid[ii].age[sort(montegrid[ii].age)]
 
 ; reddening, if desired; exponential prior is the default 
-       if (params.ebv[1] gt 0) then begin
-          if params.flatebv then $
-            montegrid.ebv = randomu(seed,params.nmonte)*(params.ebv[1]-params.ebv[0])+params.ebv[0] else $
-              montegrid.ebv = randomu(seed,params.nmonte,gamma=1.0)*params.ebv[1]+params.ebv[0]
+       if (params.av[1] gt 0) then begin
+          if params.flatav then $
+            montegrid.av = randomu(seed,params.nmonte)*(params.av[1]-params.av[0])+params.av[0] else $
+              montegrid.av = randomu(seed,params.nmonte,gamma=1.0)*params.av[1]+params.av[0]
        endif 
 
 ; "mu" is the Charlot & Fall (2000) factor for evolved stellar
