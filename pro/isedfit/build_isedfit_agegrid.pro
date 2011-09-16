@@ -72,8 +72,8 @@ function build_isedfit_agegrid, info, inage=inage, nage=nage, $
     nb = info.nburst
     if (nb eq 0) then return, inage
 
-    tb = info.tburst[0:nb-1]
-    dtb = info.dtburst[0:nb-1]
+    tb = im_double(info.tburst[0:nb-1])
+    dtb = im_double(info.dtburst[0:nb-1])
 
 ; demand that at least NSAMP points are used to sample the burst, but
 ; (in the limit of lots of bursts) no more than 80% of NAGE
@@ -116,7 +116,7 @@ function build_isedfit_agegrid, info, inage=inage, nage=nage, $
           post = where(outage ge tb[nb-1],npost,comp=pre,ncomp=npre)
           if (npost gt 0) then begin
              npad = 5
-             padage = tb[nb-1]-info.tauburst*alog((1D0-(range(0.1D,1D,npad,/log)-0.1D)))
+             padage = tb[nb-1]-im_double(info.tauburst)*alog((1D0-(range(0.1D,1D,npad,/log)-0.1D)))
              keep = where(padage lt maxage,nkeep) ; could break if TB=MAXAGE
              if (nkeep gt 0) then begin
                 padage = padage[keep]

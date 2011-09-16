@@ -186,7 +186,6 @@ pro isedfit_models, paramfile, params=params, iopath=iopath, $
 
 ; filters and redshift grid
     filterlist = strtrim(params.filterlist,2)
-    filtinfo = im_filterspecs(filterlist=filterlist)
     nfilt = n_elements(filterlist)
 
     splog, 'Synthesizing photometry in '+$
@@ -205,8 +204,9 @@ pro isedfit_models, paramfile, params=params, iopath=iopath, $
        return
     endif
     
-    dist = 10.0*3.085678D18 ; fiducial distance [10 pc in cm]
-    dlum = dluminosity(redshift,/cm) ; luminosity distance [cm]
+    pc10 = 3.085678D19 ; fiducial distance [10 pc in cm]
+    dlum = pc10*10D^(lf_distmod(redshift,omega0=params.omega0,omegal0=params.omegal)/5D)/params.h100 ; [cm]
+;   dlum = dluminosity(redshift,/cm) ; luminosity distance [cm]
 
 ; IGM attenuation    
     if params.igm then begin
@@ -220,15 +220,17 @@ pro isedfit_models, paramfile, params=params, iopath=iopath, $
     nchunk = n_elements(fp.sfhgrid_chunkfiles)
     splog, 'NCHUNK = '+string(nchunk,format='(I0)')
     t1 = systime(1)
-    for ichunk = 0L, nchunk-1L do begin
+    mem1 = memory(/current)
+    for ichunk = 0, nchunk-1 do begin
        t0 = systime(1)
+       mem0 = memory(/current)
        splog, 'Reading '+fp.sfhgrid_chunkfiles[ichunk]
        chunk = mrdfits(fp.sfhgrid_chunkfiles[ichunk],1,/silent)
        ndim = size(chunk.flux,/n_dim)
        sz = size(chunk.flux,/dim)
        npix = sz[0] & nage = sz[1]
        if (ndim eq 2L) then nmodel = 1L else nmodel = sz[2]
-       distfactor = rebin(reform((dist/dlum)^2.0,nredshift,1),nredshift,nmodel)
+       distfactor = rebin(reform((pc10/dlum)^2.0,nredshift,1),nredshift,nmodel)
 ; initialize the output structure
        isedfit_models = struct_trimtags(chunk,except=['WAVE','FLUX'])
        isedfit_models = struct_addtags(temporary(isedfit_models),$
@@ -236,7 +238,7 @@ pro isedfit_models, paramfile, params=params, iopath=iopath, $
 ; build the IGM absorption vector
        if (params.igm eq 1) then begin
           igm = fltarr(npix,nredshift)
-          for iz = 0L, nredshift-1L do begin
+          for iz = 0, nredshift-1 do begin
              zwave = chunk[0].wave*(1.0+redshift[iz])
              windx = findex(igmgrid.wave,zwave)
              zindx = findex(igmgrid.zgrid,redshift[iz])
@@ -247,43 +249,42 @@ pro isedfit_models, paramfile, params=params, iopath=iopath, $
           endfor
        endif
        nwave = n_elements(chunk[0].wave)
-       for iage = 0L, nage-1L do begin
+       wave_edges = k_lambda_to_edges(chunk[0].wave)
+       for iage = 0, nage-1 do begin
           if ((iage mod 5) eq 0) then print, format='("Chunk ",I0,"/",I0,", '+$
-            'Age ",I0,"/",I0,A10,$)', ichunk+1L, nchunk, $
-            iage+1L, nage, string(13b)
+            'Age ",I0,"/",I0,A10,$)', ichunk+1, nchunk, $
+            iage, nage, string(13b)
 ; jm09may16nyu - added IGM attenuation
 ; project the filters onto each SED, including IGM attenuation, and
 ; scale by the distance ratio
           flux = chunk.flux[*,iage]
 ; fast code, but doesn't include IGM attenuation
           if (params.igm eq 0) then begin
-             k_projection_table, rmatrix, flux, k_lambda_to_edges(chunk[0].wave), $
-               redshift, filterlist, /silent
-             for ff = 0L, nfilt-1L do rmatrix[*,*,ff] = rmatrix[*,*,ff]*distfactor
+             k_projection_table, rmatrix, flux, wave_edges, redshift, filterlist, /silent
+             for ff = 0, nfilt-1 do rmatrix[*,*,ff] = rmatrix[*,*,ff]*distfactor
              isedfit_models.modelmaggies[*,iage,*] = $
                reform(transpose(rmatrix,[2,0,1]),nfilt,1,nredshift,nmodel)
           endif else begin
 ; reasonably fast code that includes IGM absorption
 ;            for iz = 207, 207 do begin
-             for iz = 0L, nredshift-1 do begin
+             for iz = 0, nredshift-1 do begin
                 bigigm = rebin(igm[*,iz],nwave,nmodel)
-                k_projection_table, rmatrix1, flux*bigigm, $
-                  k_lambda_to_edges(chunk[0].wave), $
+                k_projection_table, rmatrix1, flux*bigigm, wave_edges, $
                   redshift[iz], filterlist, /silent
                 isedfit_models.modelmaggies[*,iage,iz] = $
-                  reform(transpose(rmatrix1*(dist/dlum[iz])^2.0,[2,0,1]))
+                  reform(transpose(rmatrix1*(pc10/dlum[iz])^2.0,[2,0,1]))
                 endfor
           endelse
 ;; very slow!
-;         for iz = 0L, nredshift-1 do begin
-;            for it = 0L, ngood-1L do begin
+;         for iz = 0, nredshift-1 do begin
+;            for it = 0, ngood-1 do begin
 ;               zwave = chunk[0].wave*(1.0+redshift[iz])
 ;               igm = interpolate(igmgrid.igm,findex(igmgrid.wave,zwave),$
 ;                 findex(igmgrid.zgrid,redshift[iz]),/grid)
 ;               isedfit_models[good[it]].modelmaggies[*,iage,iz] = $
 ;                 k_project_filters(k_lambda_to_edges(zwave),$
 ;                 igm*flux[*,it]/(1.0+redshift[iz]),filterlist=filterlist,$
-;                 /silent)*(dist/dlum[iz])^2.0
+;                 /silent)*(pc10/dlum[iz])^2.0
 ;            endfor
 ;         endfor
 ; test that I'm doing the distance ratio right
@@ -293,16 +294,15 @@ pro isedfit_models, paramfile, params=params, iopath=iopath, $
 ;         mm = k_project_filters(ww,ff,filterlist=filterlist)
 ;         niceprint, mm, rmatrix[zindx,mindx,*]
        endfor 
-       if (ichunk eq 0L) then splog, format='("Total time for CHUNK-001 '+$
-         '= ",G0," minutes")', (systime(1)-t0)/60.0
-
+       if (ichunk eq 0) then begin
+          splog, 'First chunk = '+string((systime(1)-t0)/60.0,format='(G0)')+$
+            ' minutes, '+strtrim(string((memory(/high)-mem0)/1.07374D9,format='(F12.3)'),2)+' GB'
+       endif
        outfile = fp.modelspath+fp.isedfit_models_chunkfiles[ichunk]
-       splog, 'Writing '+outfile
-       mwrfits, isedfit_models, outfile, /create
-       spawn, 'gzip -f '+outfile, /sh
+       im_mwrfits, isedfit_models, outfile, /clobber
     endfor
-    splog, format='("Total time for all models '+$
-         '= ",G0," minutes")', (systime(1)-t1)/60.0    
+    splog, 'All chunks = '+string((systime(1)-t1)/60.0,format='(G0)')+$
+      ' minutes, '+strtrim(string((memory(/high)-mem1)/1.07374D9,format='(F12.3)'),2)+' GB'
 
 return
 end

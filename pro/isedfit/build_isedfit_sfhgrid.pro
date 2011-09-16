@@ -93,27 +93,23 @@ function init_montegrid, nmodel, nage, imf=imf, nmaxburst=nmaxburst
 ; Carlo grid
 
     burstarray1 = -1.0
-    burstarray2 = -1D
-    if (nmaxburst gt 1) then begin
-       burstarray1 = fltarr(nmaxburst)-1.0
-       burstarray2 = dblarr(nmaxburst)-1D
-    endif
+    if (nmaxburst gt 1) then burstarray1 = fltarr(nmaxburst)-1.0
     
     montegrid = {$
-      imf:                      imf,$
+;     imf:                      imf,$
       chunkindx:                 -1,$
-      modelindx:                -1L,$
+      modelindx:                 -1,$
       tau:                     -1.0,$
       Z:                       -1.0,$
       av:                       0.0,$ ; always initialize with zero to accommodate the dust-free models!
       mu:                       1.0,$ ; always default to 1.0!
       nburst:                     0,$
-      tauburst:                 -1D,$ ; burst truncation time scale
-      tburst:           burstarray2,$
-      dtburst:          burstarray2,$ ; 
+      tauburst:                -1.0,$ ; burst truncation time scale
+      tburst:           burstarray1,$
+      dtburst:          burstarray1,$ ; 
       fburst:           burstarray1,$ ; burst mass fraction
 ;     aburst:           burstarray1,$ ; burst amplitude
-      age:             dblarr(nage)}
+      age:             fltarr(nage)}
     montegrid = replicate(montegrid,nmodel)
 
 return, montegrid
@@ -208,37 +204,34 @@ pro build_grid, montegrid, chunkinfo, ssppath=ssppath, $
           npix = n_elements(sspfits[0].wave)
 
 ; initialize the output SED data structure
-          if (issp eq 0L) then outinfo = struct_addtags(temporary(outinfo),$
+          if (issp eq 0) then outinfo = struct_addtags(temporary(outinfo),$
             replicate({mstar: fltarr(params.nage), wave: float(sspfits[0].wave), $
             flux: fltarr(npix,params.nage)},nthese))
-;         kl = k_lambda(outinfo[0].wave,charlot=charlot,odonnell=odonnell,$
-;           calzetti=calzetti,smc=smc,/silent) ; attenuation curve
-;         klam = rebin(reform(kl,npix,1),npix,n_elements(sspfits[0].age)) ; [npix,nage]
+          
+          klam = k_lambda(outinfo[indx1[0]].wave,charlot=charlot,$
+            odonnell=odonnell,calzetti=calzetti,smc=smc,/silent)
+          klam = klam/interpol(klam,outinfo[indx1[0]].wave,5500.0) ; normalize
+          klam = rebin(reform(klam,npix,1),npix,n_elements(sspfits[0].age)) ; [npix,nage]
+;         if keyword_set(charlot) then nsmth = total((sspfits[0].age gt 0.9*tbc) and (sspfits[0].age lt 1.1*tbc))
           
 ; convolve each model with the specified SFH
           for jj = 0L, nindx1-1 do begin
              print, format='("Chunk=",I4.4,"/",I4.4,", SSP=",I4.4,"/",I4.4,", '+$
                'Model=",I4.4,"/",I4.4,"   ",A5,$)', ichunk+1, nchunk, issp+1, $
                nssp, jj+1, nindx1, string(13b)
-
 ; attenuate
-             if (outinfo[indx1[jj]].av gt 0.0) then begin
-                alam = k_lambda(outinfo[indx1[jj]].wave,r_v=outinfo[indx1[jj]].av,charlot=charlot,$
-                  odonnell=odonnell,calzetti=calzetti,smc=smc,/silent)
-                alam = rebin(reform(alam,npix,1),npix,n_elements(sspfits[0].age)) ; [npix,nage]
-;               ebv = klam*0.0+outinfo[indx1[jj]].ebv
-                if keyword_set(charlot) then begin
-                   old = where(sspfits[jj].age gt tbc,nold)
-                   if (nold ne 0) then alam[*,old] = outinfo[indx1[jj]].mu*alam[*,old]
-                endif
-                sspfits[jj].flux = sspfits[jj].flux*10.0^(-0.4*alam)
+             alam = klam*outinfo[indx1[jj]].av
+             if keyword_set(charlot) then begin
+                old = where(sspfits[jj].age gt tbc,nold)
+                if (nold ne 0) then alam[*,old] = outinfo[indx1[jj]].mu*alam[*,old]
              endif 
+             sspfits[jj].flux = sspfits[jj].flux*10.0^(-0.4*alam)
 
 ; do the convolution; tau=0 and no bursts is a special case
              outage = outinfo[indx1[jj]].age
-;            outage = build_isedfit_agegrid(outinfo[indx1[jj]],inage=outinfo[indx1[jj]].age)
              outsfr = isedfit_reconstruct_sfh(outinfo[indx1[jj]],outage=outage,$
-               mgalaxy=outmgal,aburst=aburst,mburst=mburst)
+               mgalaxy=outmgal,aburst=aburst,mburst=mburst,debug=0)
+
              if (outinfo[indx1[jj]].tau eq 0.0) and (outinfo[indx1[jj]].nburst eq 0) then begin ; special case
                 ageindx = findex(sspfits[jj].age,outage*1D9)
                 outflux = interpolate(sspfits[jj].flux,lindgen(npix),ageindx,/grid)
@@ -393,17 +386,28 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
 
 ; reddening, if desired; exponential prior is the default 
        if (params.av[1] gt 0) then begin
-          if params.flatav then $
-            montegrid.av = randomu(seed,params.nmonte)*(params.av[1]-params.av[0])+params.av[0] else $
-              montegrid.av = randomu(seed,params.nmonte,gamma=1.0)*params.av[1]+params.av[0]
+          if params.flatav then begin
+             montegrid.av = randomu(seed,params.nmonte)*(params.av[1]-params.av[0])+params.av[0] 
+          endif else begin
+             montegrid.av = params.av[0]*randomu(seed,params.nmonte,gamma=params.av[1])
+;            montegrid.av = ((10.0^(randomn(seed,params.nmonte)*params.av[1]+alog10(params.av[0]))>0.0
+;            montegrid.av = randomu(seed,params.nmonte,gamma=1.0)*params.av[1]+params.av[0]
+;            montegrid.av = 10.0^(randomn(seed,params.nmonte)*params.av[1]+alog10(params.av[0]))
+          endelse
        endif 
-
+       
 ; "mu" is the Charlot & Fall (2000) factor for evolved stellar
 ; populations; log-normal distribution
        if (redcurvestring eq 'charlot') then begin
-          if (params.mu[1] gt 0) then montegrid.mu = ((10.0^(randomn(seed,params.nmonte)*$
-            params.mu[1]+alog10(params.mu[0])))<1.0)>0.0
+          if params.flatmu then begin
+             montegrid.mu = randomu(seed,params.nmonte)*(params.mu[1]-params.mu[0])+params.mu[0] 
+          endif else begin
+             montegrid.mu = params.mu[0]*randomu(seed,params.nmonte,gamma=params.mu[1])
+;            montegrid.mu = ((10.0^(randomn(seed,params.nmonte)*params.mu[1]+alog10(params.mu[0])))<1.0)>0.0
+          endelse
        endif
+;      im_plothist, montegrid.av, bin=0.02, yr=[0,110]
+;      im_plothist, montegrid.mu*montegrid.av, bin=0.02, /over, color='green'
 
 ; now assign bursts; divide each age vector into NMAXBURST intervals
 ; of width PBURSTINTERVAL [Gyr]; don't let a burst happen on

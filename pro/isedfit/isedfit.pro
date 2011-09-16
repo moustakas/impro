@@ -55,6 +55,8 @@
 ;     parameters 
 ;
 ; COMMENTS:
+;   maggies, ivarmaggies, and zobj are copied into the output
+;   structure and then the variables are deleted from memory
 ;
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2011 Sep 01, UCSD - I began writing iSEDfit in 2005
@@ -88,11 +90,7 @@ function init_isedfit, ngal, nfilt, sfhgrid, sfhgrid_paramfile=sfhgrid_paramfile
       nmaxburst = ceil((params.maxage-params.minage)/params.pburstinterval)
 
     burstarray1 = -1.0
-    burstarray2 = -1.0
-    if (nmaxburst gt 1) then begin
-       burstarray1 = fltarr(nmaxburst)-1.0
-       burstarray2 = dblarr(nmaxburst)-1D
-    endif
+    if (nmaxburst gt 1) then burstarray1 = fltarr(nmaxburst)-1.0
 
     isedfit1 = {$
       isedfit_id:      -1L,$    ; unique ID number
@@ -103,19 +101,19 @@ function init_isedfit, ngal, nfilt, sfhgrid, sfhgrid_paramfile=sfhgrid_paramfile
 
 ; best-fit values (at the chi2 minimum); see BUILD_ISEDFIT_SFHGRID
     best = {$
-      imf:              '',$
+;     imf:              '',$
       chunkindx:        -1,$
-      modelindx:       -1L,$
+      modelindx:        -1,$
       ageindx:          -1,$
 
       tau:            -1.0,$
       Z:              -1.0,$
       av:             -1.0,$
-      mu:             -1.0,$
+;     mu:             -1.0,$
       nburst:            0,$
-      tauburst:        -1D,$ ; burst truncation time scale
-      tburst:    burstarray2,$
-      dtburst:   burstarray2,$
+      tauburst:       -1.0,$ ; burst truncation time scale
+      tburst:    burstarray1,$
+      dtburst:   burstarray1,$
       fburst:    burstarray1,$
 
       scale:          -1.0,$ 
@@ -137,7 +135,7 @@ function init_isedfit, ngal, nfilt, sfhgrid, sfhgrid_paramfile=sfhgrid_paramfile
       tau_avg:      -1.0,$
       Z_avg:        -1.0,$
       av_avg:       -1.0,$
-      mu_avg:       -1.0,$
+;     mu_avg:       -1.0,$
 
       mass_50:     -1.0,$
       age_50:      -1.0,$
@@ -147,7 +145,7 @@ function init_isedfit, ngal, nfilt, sfhgrid, sfhgrid_paramfile=sfhgrid_paramfile
       tau_50:      -1.0,$
       Z_50:        -1.0,$
       av_50:       -1.0,$
-      mu_50:       -1.0,$
+;     mu_50:       -1.0,$
 
       mass_err:     -1.0,$
       age_err:      -1.0,$
@@ -156,8 +154,8 @@ function init_isedfit, ngal, nfilt, sfhgrid, sfhgrid_paramfile=sfhgrid_paramfile
       b100_err:     -1.0,$
       tau_err:      -1.0,$
       Z_err:        -1.0,$
-      av_err:       -1.0,$
-      mu_err:       -1.0}
+      av_err:       -1.0}
+;     mu_err:       -1.0}
 
 ;     mass_eff_err:   -1.0,$
 ;     age_eff_err:    -1.0,$
@@ -169,7 +167,7 @@ function init_isedfit, ngal, nfilt, sfhgrid, sfhgrid_paramfile=sfhgrid_paramfile
 ;     av_eff_err:     -1.0,$
 ;     mu_eff_err:     -1.0}
 
-    isedfit = struct_addtags(struct_addtags(best,qmed),isedfit1)
+    isedfit = struct_addtags(temporary(isedfit1),struct_addtags(best,qmed))
     isedfit = replicate(temporary(isedfit),ngal)
 
 ; initialize the posterior distribution structure
@@ -298,7 +296,6 @@ pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfi
 
 ; filters and redshift grid
     filterlist = strtrim(params.filterlist,2)
-    filtinfo = im_filterspecs(filterlist=filterlist)
     nfilt = n_elements(filterlist)
 
     redshift = params.redshift
@@ -307,12 +304,6 @@ pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfi
        splog, 'Need to rebuild model grids using a wider redshift grid!'
        return
     endif
-    zindx = findex(redshift,zobj) ; used for interpolation
-
-; do not allow the galaxy to be older than the age of the universe at
-; ZOBJ starting from a maximum formation redshift z=10 [Gyr]
-    maxage = getage(zobj,/gyr)
-;   maxage = getage(zobj,/gyr)-getage(10.0,/gyr) 
 
 ; initialize the output structure(s)
     isedfit = init_isedfit(ngal,nfilt,params.sfhgrid,isedfit_post=isedfit_post,$
@@ -322,16 +313,25 @@ pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfi
     isedfit.ivarmaggies = ivarmaggies
     isedfit.zobj = zobj
 
-; loop on each galaxy chunk    
+; loop on each galaxy chunk
     t1 = systime(1)
-    for gchunk = 0L, ngalchunk-1L do begin
+    mem1 = memory(/current)
+    for gchunk = 0L, ngalchunk-1 do begin
        g1 = gchunk*galchunksize
-       g2 = ((gchunk*galchunksize+galchunksize)<ngal)-1L
-       gnthese = g2-g1+1L
+       g2 = ((gchunk*galchunksize+galchunksize)<ngal)-1
+       gnthese = g2-g1+1
        gthese = lindgen(gnthese)+g1
+; do not allow the galaxy to be older than the age of the universe at
+; ZOBJ starting from a maximum formation redshift z=10 [Gyr]
+       maxage = lf_z2t(zobj[gthese],omega0=params.omega0,$ ; [Gyr]
+         omegal0=params.omegal)/params.h100 
+;      maxage = getage(zobj,/gyr)
+;      maxage = getage(zobj,/gyr)-getage(10.0,/gyr) 
+       zindx = findex(redshift,zobj[gthese]) ; used for interpolation
 ; loop on each "chunk" of output from ISEDFIT_MODELS
        nchunk = n_elements(fp.isedfit_models_chunkfiles)
        t0 = systime(1)
+       mem0 = memory(/current)
        for ichunk = 0, nchunk-1 do begin
           chunkfile = fp.modelspath+fp.isedfit_models_chunkfiles[ichunk]+'.gz'
           if (keyword_set(silent) eq 0) then splog, 'Reading '+chunkfile
@@ -339,43 +339,39 @@ pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfi
           nmodel = n_elements(chunkmodels)
 ; compute chi2
           gridchunk = isedfit_compute_chi2(maggies[*,gthese],ivarmaggies[*,gthese],$
-            chunkmodels,maxage[gthese],zindx[gthese],gchunk=gchunk,ngalchunk=ngalchunk,$
-            ichunk=ichunk,nchunk=nchunk,nminphot=nminphot,allages=allages,silent=silent,$
+            chunkmodels,maxage,zindx,gchunk=gchunk,ngalchunk=ngalchunk,ichunk=ichunk,$
+            nchunk=nchunk,nminphot=nminphot,allages=allages,silent=silent,$
             maxold=params.maxold)
           modelgrid1 = struct_trimtags(temporary(chunkmodels),except=['MODELMAGGIES'])
           if (ichunk eq 0) then begin
              fullgrid = temporary(gridchunk)
              modelgrid = temporary(modelgrid1)
-;            nallmodel = temporary(nmodel)
           endif else begin
-;            if ichunk+1 eq 6 then stop
              fullgrid = [[temporary(fullgrid)],[temporary(gridchunk)]]
              modelgrid = [temporary(modelgrid),temporary(modelgrid1)]
-;            nallmodel = nmodel+nallmodel
           endelse
-       endfor ; model chunk
-       if (keyword_set(silent) eq 0) then splog, format='("All ModelChunks = '+$
-         '",G0," minutes          ")', (systime(1)-t0)/60.0
+       endfor ; close ModelChunk
 ; optionally write out the full chi2 grid 
        if keyword_set(write_chi2grid) then begin
-          im_mwrfits, fullgrid, clobber=clobber, $
-            fp.modelspath+fp.chi2grid_gchunkfiles[gchunk]
-;         im_mwrfits, modelgrid, clobber=clobber, $
-;           fp.modelspath+fp.modelgrid_gchunkfiles[gchunk]
+          im_mwrfits, fullgrid, clobber=clobber, fp.modelspath+fp.chi2grid_gchunkfiles[gchunk]
+;         im_mwrfits, modelgrid, clobber=clobber, fp.modelspath+fp.modelgrid_gchunkfiles[gchunk]
        endif
 ; minimize chi2
        if (keyword_set(silent) eq 0) then splog, 'Minimizing chi2...'
-       t0 = systime(1)
        temp_isedfit_post = isedfit_post[gthese]
        isedfit[gthese] = isedfit_compute_posterior(isedfit[gthese],$
          modelgrid,fullgrid,isedfit_post=temp_isedfit_post)
        isedfit_post[gthese] = temporary(temp_isedfit_post) ; pass-by-value
-       if (keyword_set(silent) eq 0) then splog, format='("Time = '+$
-         '",G0," minutes")', (systime(1)-t0)/60.0
+       if (keyword_set(silent) eq 0) and (gchunk eq 0) then begin
+          splog, 'First GalaxyChunk = '+string((systime(1)-t0)/60.0,format='(G0)')+$
+            ' minutes, '+strtrim(string((memory(/high)-mem0)/1.07374D9,format='(F12.3)'),2)+' GB'
+       endif 
     endfor ; close GalaxyChunk
-    if (keyword_set(silent) eq 0) then splog, format='("All GalaxyChunks = '+$
-      '",G0," minutes        ")', (systime(1)-t1)/60.0
-
+    if (keyword_set(silent) eq 0) then begin
+       splog, 'All GalaxyChunks = '+string((systime(1)-t1)/60.0,format='(G0)')+$
+         ' minutes, '+strtrim(string((memory(/high)-mem1)/1.07374D9,format='(F12.3)'),2)+' GB'
+    endif
+    
 ; write out the final structure and the full posterior distributions
     if (keyword_set(nowrite) eq 0) then begin
        im_mwrfits, isedfit, outfile, silent=silent, /clobber

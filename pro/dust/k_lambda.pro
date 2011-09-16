@@ -1,72 +1,72 @@
 ;+
 ; NAME:
-;       K_LAMBDA()
+;   K_LAMBDA()
 ;
 ; PURPOSE:
-;       Return a variety of extinction curves.
+;   Return a variety of extinction curves.
 ;
 ; INPUTS:
-;       wave  - wavelength vector [Angstroms]
+;   wave  - wavelength vector [Angstroms]
 ;
 ; OPTIONAL INPUTS:
-;       r_v   - total to selective extinction ratio (default 3.1, but
-;               poorly known for the LMC and SMC, and inappropriate
-;               for the Calzetti attenuation curve); also hard-wired
-;               to be 3.1 for Li & Draine (2001) since it was only
-;               calibrated for the diffuse MW ISM
+;   r_v   - total to selective extinction ratio (default 3.1, but
+;           poorly known for the LMC and SMC, and inappropriate
+;           for the Calzetti attenuation curve); also hard-wired
+;           to be 3.1 for Li & Draine (2001) since it was only
+;           calibrated for the diffuse MW ISM
 ;
 ; KEYWORD PARAMETERS:
-;       calzetti - Calzetti (2000) continuum attenuation curve for IUE
-;                  starburst galaxies
-;       charlot  - Charlot & Fall (2000) attenuation curve
-;       ccm      - Cardelli, Clayton, & Mathis (1989) [Milky Way]
-;       odonnell - CCM with O'Donnell (1994) coefficients [Milky Way]
-;       fm       - Fitzpatrick (1999) [Milky Way]
-;       avglmc   - average Large Magellanic Cloud from Gordon et
-;                  al. 2003, ApJ, 594, 279; R_V = 3.41+/-0.06
-;       lmc2     - Large Magellanic Cloud Supershell (LMC2) field,
-;                  including 30 Dor from Gordon et al. 2003, ApJ, 594,
-;                  279; R_V = 2.76+/-0.09
-;       smc      - Small Magellanic Cloud Bar region from Gordon et
-;                  al. 2003, ApJ, 594, 279; R_V = 2.74+/-0.13
-;       li       - Li & Draine (2001) Milky Way extinction curve
-;       silent   - suppress warning messages
+;   calzetti - Calzetti (2000) continuum attenuation curve for IUE
+;              starburst galaxies
+;   charlot  - Charlot & Fall (2000) attenuation curve
+;   ccm      - Cardelli, Clayton, & Mathis (1989) [Milky Way]
+;   odonnell - CCM with O'Donnell (1994) coefficients [Milky Way]
+;   fm       - Fitzpatrick (1999) [Milky Way]
+;   avglmc   - average Large Magellanic Cloud from Gordon et
+;              al. 2003, ApJ, 594, 279; R_V = 3.41+/-0.06
+;   lmc2     - Large Magellanic Cloud Supershell (LMC2) field,
+;              including 30 Dor from Gordon et al. 2003, ApJ, 594,
+;              279; R_V = 2.76+/-0.09
+;   smc      - Small Magellanic Cloud Bar region from Gordon et
+;              al. 2003, ApJ, 594, 279; R_V = 2.74+/-0.13
+;   li       - Li & Draine (2001) Milky Way extinction curve
+;   silent   - suppress warning messages
 ; OUTPUTS:
-;       k_lambda - defined as A(lambda)/E(B-V)
+;   k_lambda - defined as A(lambda)/E(B-V)
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
-;       Much of the code for this routine has been excised from the
-;       Goddard routines CCM_UNRED(), FM_UNRED(), and CALZ_UNRED() for
-;       my own nefarious purposes.  
+;   Much of the code for this routine has been excised from the
+;   Goddard routines CCM_UNRED(), FM_UNRED(), and CALZ_UNRED() for
+;   my own nefarious purposes.  
 ;
 ; PROCEDURES USED:
-;       READ_SMC()
+;   READ_SMC()
 ;
 ; EXAMPLE:
-;       Plot the Calzetti and the CCM extinction curves in the
-;       optical and UV.
+;   Plot the Calzetti and the CCM extinction curves in the
+;   optical and UV.
 ;
-;       IDL> wave = findgen(6000)+1000.0 ; Angstrom
-;       IDL> plot, wave, k_lambda(wave,/calzetti), xsty=3, ysty=3
-;       IDL> oplot, wave, k_lambda(wave,/ccm)
+;   IDL> wave = findgen(6000)+1000.0 ; Angstrom
+;   IDL> plot, wave, k_lambda(wave,/calzetti), xsty=3, ysty=3
+;   IDL> oplot, wave, k_lambda(wave,/ccm)
 ;
 ; MODIFICATION HISTORY:
-;       J. Moustakas, 2002 September 19, U of A
-;       jm03mar2uofa - added the Charlot & Fall (2000) curve
-;       jm03sep2uofa - general updates
-;       jm03sep28uofa - added Seaton (1979) extinction curve
-;       jm04jan26uofa - updated SMC, LMC2, and AVGLMC curves from
-;                       Gordon et al. (2003)
-;       jm04apr26uofa - the Charlot & Fall R_V=5.9, not 3.1 
-;       jm06feb24uofa - added SILENT keyword
-;       jm07feb19nyu  - added Li & Draine (2001) extinction curve 
-;       jm09aug19ucsd - ensure that the Calzetti, O'Donnell and
-;         SMC extinction curves behave properly at very long and short 
-;         wavelengths  
-;       jm11aug05ucsd - made READ_GORDON_2003() an internal support
-;         routine 
+;   J. Moustakas, 2002 September 19, U of A
+;   jm03mar2uofa - added the Charlot & Fall (2000) curve
+;   jm03sep2uofa - general updates
+;   jm03sep28uofa - added Seaton (1979) extinction curve
+;   jm04jan26uofa - updated SMC, LMC2, and AVGLMC curves from
+;                   Gordon et al. (2003)
+;   jm04apr26uofa - the Charlot & Fall R_V=5.9, not 3.1 
+;   jm06feb24uofa - added SILENT keyword
+;   jm07feb19nyu  - added Li & Draine (2001) extinction curve 
+;   jm09aug19ucsd - ensure that the Calzetti, O'Donnell and
+;     SMC extinction curves behave properly at very long and short 
+;     wavelengths  
+;   jm11aug05ucsd - made READ_GORDON_2003() an internal support
+;     routine 
 ;
 ; Copyright (C) 2002-2004, 2006-2007, 2009, 2011, John Moustakas
 ; 
@@ -81,7 +81,7 @@
 ; General Public License for more details. 
 ;-
 
-function read_gordon_2003, wave, smc=smc, lmc2=lmc2, avglmc=avglmc
+function read_gordon_2003, wave, smc=smc, lmc2=lmc2, avglmc=avglmc, r_v=r_v
 ; internal support routine for K_LAMBDA()
 ; jm04jan26uofa - written
 ; jm09aug20ucsd - force k(lambda) to be positive at long wavelengths 
@@ -102,19 +102,19 @@ function read_gordon_2003, wave, smc=smc, lmc2=lmc2, avglmc=avglmc
     R_V_avglmc = 3.41
 
     if keyword_set(smc) then begin
-       R_V = R_V_smc
+       if n_elements(r_v) eq 0 then r_v = R_V_smc
        good = where(Al_AV_smc ne -9.999,ngood)
        Al_AV = Al_AV_smc[good]
        l = l[good]
     endif
     if keyword_set(lmc2) then begin
-       R_V = R_V_lmc2
+       if n_elements(r_v) eq 0 then r_v = R_V_lmc2
        good = where(Al_AV_lmc2 ne -9.999,ngood)
        Al_AV = Al_AV_lmc2[good]
        l = l[good]
     endif
     if keyword_set(avglmc) then begin
-       R_V = R_V_avglmc
+       if n_elements(r_v) eq 0 then r_v = R_V_avglmc
        good = where(Al_AV_avglmc ne -9.999,ngood)
        Al_AV = Al_AV_avglmc[good]
        l = l[good]
@@ -147,29 +147,25 @@ function k_lambda, wave, r_v=r_v, calzetti=calzetti, charlot=charlot, $
     endif
     
 ; select the default extinction curve (CCM+O'Donnell coefficients)
-    
     if $
-      (n_elements(calzetti) eq 0L) and $
-      (n_elements(charlot) eq 0L)  and $
-      (n_elements(ccm) eq 0L)      and $
-      (n_elements(odonnell) eq 0L) and $
-      (n_elements(seaton) eq 0L)   and $
-      (n_elements(fm) eq 0L)       and $
-      (n_elements(avglmc) eq 0L)   and $
-      (n_elements(lmc2) eq 0L)     and $
-      (n_elements(li) eq 0L)       and $
-      (n_elements(smc) eq 0L)      then odonnell = 1L ; ccm = 1L
+      (n_elements(calzetti) eq 0) and $
+      (n_elements(charlot) eq 0)  and $
+      (n_elements(ccm) eq 0)      and $
+      (n_elements(odonnell) eq 0) and $
+      (n_elements(seaton) eq 0)   and $
+      (n_elements(fm) eq 0)       and $
+      (n_elements(avglmc) eq 0)   and $
+      (n_elements(lmc2) eq 0)     and $
+      (n_elements(li) eq 0)       and $
+      (n_elements(smc) eq 0)      then odonnell = 1 ; ccm = 1L
 
-    if n_elements(odonnell) ne 0L then ccm = 1L
+    if n_elements(odonnell) ne 0 then ccm = 1
 ;   if (n_elements(avglmc) ne 0L) or (n_elements(lmc2) ne 0L) then fm = 1L
 
 ; ---------------------------------------------------------------------------    
 ; Calzetti et al. (2000)
-; ---------------------------------------------------------------------------    
-    
     if keyword_set(calzetti) then begin 
-
-       if n_elements(r_v) eq 0 then r_v = 4.05
+       r_v_prime = 4.05
        w1 = where((wave ge 6300) and (wave le 22000),c1)
        w2 = where((wave ge  912) and (wave lt  6300),c2)
        x  = 10000.0/wave        ; wavelength in inverse microns
@@ -177,11 +173,11 @@ function k_lambda, wave, r_v=r_v, calzetti=calzetti, charlot=charlot, $
        k_lambda = 0.0*wave
 
        if c1 gt 0 then $
-         k_lambda[w1] = 2.659*(-1.857 + 1.040*x[w1]) + R_V
+         k_lambda[w1] = 2.659*(-1.857 + 1.040*x[w1])+r_v_prime
        if c2 gt 0 then $
-         k_lambda[w2] = 2.659*(poly(x[w2], [-2.156, 1.509d0, -0.198d0, 0.011d0])) + R_V
+         k_lambda[w2] = 2.659*(poly(x[w2], [-2.156, 1.509d0, -0.198d0, 0.011d0])) + r_v_prime
 
-; if necessary, make K_LAMBDA a smooth function by extrapolating
+; if necessary, extrapolate to longer and shorter wavelengths
        inrange = where((wave ge 912.0) and (wave le 22000.0),ninrange)
        lowave = where(wave lt 912.0,nlowave)
        hiwave = where(wave gt 22000.0,nhiwave)
@@ -195,19 +191,14 @@ function k_lambda, wave, r_v=r_v, calzetti=calzetti, charlot=charlot, $
 
 ; ---------------------------------------------------------------------------    
 ; Charlot & Fall (2000)
-; ---------------------------------------------------------------------------    
-    
     if keyword_set(charlot) then begin 
        if n_elements(r_v) eq 0L then r_v = 5.9
        k_lambda = r_v*(wave/5500.0)^(-0.7)
     endif
-    
+
 ; ---------------------------------------------------------------------------    
 ; Cardelli, Clayton, & Mathis (1989)
-; ---------------------------------------------------------------------------    
-
     if keyword_set(ccm) then begin 
-
        if n_elements(r_v) eq 0L then r_v = 3.1
 
        x = 10000./ wave         ; convert to inverse microns 
@@ -292,8 +283,6 @@ function k_lambda, wave, r_v=r_v, calzetti=calzetti, charlot=charlot, $
 
 ; ---------------------------------------------------------------------------    
 ; Seaton (1979) - old Milky Way
-; ---------------------------------------------------------------------------    
-
     if keyword_set(seaton) then begin
 
        if n_elements(r_v) eq 0L then r_v = 3.1
@@ -323,11 +312,9 @@ function k_lambda, wave, r_v=r_v, calzetti=calzetti, charlot=charlot, $
 
 ; ---------------------------------------------------------------------------    
 ; Fitzpatrick (1999) - new Milky Way, AVGLMC, and LMC2
-; ---------------------------------------------------------------------------    
-
     if keyword_set(fm) then begin
 
-       if n_elements(r_v) eq 0L then r_v = 3.1
+       if n_elements(r_v) eq 0 then r_v = 3.1
 
        x = 10000./ wave         ; convert to inverse microns 
        k_lambda = x*0.
@@ -392,33 +379,24 @@ function k_lambda, wave, r_v=r_v, calzetti=calzetti, charlot=charlot, $
        
 ; ---------------------------------------------------------------------------    
 ; Small Magellanic Cloud
-; ---------------------------------------------------------------------------    
-
-    if keyword_set(smc) then k_lambda = read_gordon_2003(wave,/smc)
+    if keyword_set(smc) then k_lambda = read_gordon_2003(wave,/smc,r_v=r_v)
 
 ; ---------------------------------------------------------------------------    
 ; Large Magellanic Cloud
-; ---------------------------------------------------------------------------    
-
-    if keyword_set(lmc2) then k_lambda = read_gordon_2003(wave,/lmc2)
+    if keyword_set(lmc2) then k_lambda = read_gordon_2003(wave,/lmc2,r_v=r_v)
     
 ; ---------------------------------------------------------------------------    
 ; Large Magellanic Cloud Average
-; ---------------------------------------------------------------------------    
-
-    if keyword_set(avglmc) then k_lambda = read_gordon_2003(wave,/avglmc)
+    if keyword_set(avglmc) then k_lambda = read_gordon_2003(wave,/avglmc,r_v=r_v)
 
 ; ---------------------------------------------------------------------------    
 ; Li & Draine (2001)
-; ---------------------------------------------------------------------------    
-    
     if keyword_set(li) then begin 
        path = filepath('',root_dir=getenv('IMPRO_DIR'),subdirectory='etc')
        data = rsex(path+'li_draine01.dat')
-       k_lambda = 3.1*2.146D21*interpol(data.sigma_ext,data.wave*1D4,wave,/spline)
+       if n_elements(r_v) eq 0 then r_v = 3.1
+       k_lambda = r_v*2.146D21*interpol(data.sigma_ext,data.wave*1D4,wave,/spline)
     endif
-    
-; ---------------------------------------------------------------------------    
     
     if n_elements(k_lambda) eq 1 then k_lambda = k_lambda[0]
     

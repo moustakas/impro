@@ -60,7 +60,7 @@ function isedfit_compute_chi2, maggies, ivarmaggies, chunkmodels, maxage, $
     ndim = size(maggies,/n_dim)
     dims = size(maggies,/dim)
     nfilt = dims[0] ; number of filters
-    if (ndim eq 1L) then ngal = 1L else ngal = dims[1] ; number of galaxies
+    if (ndim eq 1) then ngal = 1 else ngal = dims[1] ; number of galaxies
     
     nmodel = n_elements(chunkmodels)
     nage = n_elements(chunkmodels[0].age)
@@ -70,21 +70,23 @@ function isedfit_compute_chi2, maggies, ivarmaggies, chunkmodels, maxage, $
     gridchunk = replicate(gridchunk,nage,nmodel,ngal)
 
 ;   t0 = systime(1)
-    for igal = 0L, ngal-1L do begin
+    for igal = 0L, ngal-1 do begin
        if (keyword_set(silent) eq 0) then begin
           if ((igal mod 50) eq 0) then print, format='("GalaxyChunk ",I0,"/",I0,", '+$
-            'ModelChunk ",I0,"/",I0,", Galaxy ",I0,"/",I0,A10,$)', gchunk+1L, ngalchunk, $
-            ichunk+1L, nchunk, igal+1L, ngal, string(13b)
+            'ModelChunk ",I0,"/",I0,", Galaxy ",I0,"/",I0,A10,$)', gchunk+1, ngalchunk, $
+            ichunk+1, nchunk, igal, ngal, string(13b)
        endif
 ; require detections or upper limits (i.e., non-zero ivar) in at least
 ; NMINPHOT bandpasses, and a non-zero flux and ivar in at least one
 ; bandpass, to set the overall normalization of the SED
        if (total(ivarmaggies[*,igal] gt 0.0) lt nminphot) or $
          (total((maggies[*,igal] gt 0.0) and (ivarmaggies[*,igal] gt 0.0)) eq 0.0) then continue
-       nmaggies = abs(maggies[*,igal]*1.0D) ; need absolute value to deal with negative fluxes correctly
-       nivarmaggies = ivarmaggies[*,igal]*1.0D
+       nmaggies = abs(maggies[*,igal]) ; need absolute value to deal with negative fluxes correctly
+       nivarmaggies = ivarmaggies[*,igal]
+       dof = total(nivarmaggies gt 0)-1.0 ; degrees of freedom
+       if (dof le 0) then message, 'This should not happen!'
 ;      t1 = systime(1)
-       for imodel = 0L, nmodel-1L do begin
+       for imodel = 0L, nmodel-1 do begin
           if keyword_set(maxold) then begin
              agediff = min(abs(chunkmodels[imodel].age-maxage[igal]),these)
              nthese = 1
@@ -100,7 +102,7 @@ function isedfit_compute_chi2, maggies, ivarmaggies, chunkmodels, maxage, $
           if (nthese eq 0) then message, 'Your galaxy is too young!'
 ; interpolate the model photometry at the galaxy redshift
 ;         plot, chunkmodels[imodel].modelmaggies[5,these,*],zindx[igal])*1.0D
-          modelmaggies = interpolate(chunkmodels[imodel].modelmaggies[*,these,*],zindx[igal])*1.0D
+          modelmaggies = interpolate(chunkmodels[imodel].modelmaggies[*,these,*],zindx[igal])
 ; perform acrobatic dimensional juggling to get the maximum likelihood
 ; scale-factor and corresponding chi2 as a function of age; VSCALE is
 ; the maximum likelihood value of SCALE and VSCALE_ERR is the 1-sigma
@@ -128,7 +130,7 @@ function isedfit_compute_chi2, maggies, ivarmaggies, chunkmodels, maxage, $
 ;          endif
 ; store the results
           bestmaggies = rebin(reform(vscale,1,nthese),nfilt,nthese)*vmodelmaggies
-          gridchunk[these,imodel,igal].chi2 = vchi2
+          gridchunk[these,imodel,igal].chi2 = vchi2/dof
           inf = where(finite(vscale) eq 0)
           if inf[0] ne -1 then message, 'Problem here'
           check = where((vscale le 0) or (finite(vscale) eq 0))

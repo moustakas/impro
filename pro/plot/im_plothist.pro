@@ -19,7 +19,7 @@
 ;   fspacing - fill line spacing (see PLOTHIST)
 ;   fpattern - (see PLOTHIST)
 ;   forientation - line orientation anlge(see PLOTHIST)
-;   extra - inputs for IM_HIST1D()
+;   extra - inputs for IM_HIST1D)
 ;
 ; KEYWORD PARAMETERS: 
 ;    cumulative - generate the cumulative distribution function
@@ -74,11 +74,18 @@ pro im_plothist, arr, xhist, yhist, bin=bin, edge=edge, weight=weight, $
        bin = float(abs(bin))
     endelse
 
+; if ARR is an integer and BIN is floating point then histogram()
+; barfs; deal with that here
+    atype = size(arr,/type)
+    btype = size(bin,/type)
+    if ((atype eq 2) or (atype eq 3)) and ((btype eq 4) or (btype eq 5)) then $
+      amult = 1.0 else amult = 1
+
 ;   if (size(bin,/type) ne size(arr,/type)) then begin
 ;      message, 'BIN and ARR datatypes must match!'
 ;   endif
-    
-    yhist = im_hist1d(arr,weight,binsize=bin,obin=xhist,binedge=edge,_extra=extra)
+
+    yhist = im_hist1d(amult*arr,weight,binsize=bin,obin=xhist,binedge=edge,_extra=extra)
     n_hist = n_elements(yhist)
 
     if keyword_set(fraction) then normfactor = total(yhist)

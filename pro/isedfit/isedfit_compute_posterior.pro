@@ -55,8 +55,7 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
     bigmass   = reform(modelgrid.mstar,nallmodel)
     bigtau    = reform(rebin(reform(modelgrid.tau,1,nmodel),nage,nmodel),nallmodel)
     bigZ      = reform(rebin(reform(modelgrid.Z,1,nmodel),nage,nmodel),nallmodel)
-    bigav     = reform(rebin(reform(modelgrid.av,1,nmodel),nage,nmodel),nallmodel)
-    bigmu     = reform(rebin(reform(modelgrid.mu,1,nmodel),nage,nmodel),nallmodel)
+    bigav     = reform(rebin(reform(modelgrid.mu*modelgrid.av,1,nmodel),nage,nmodel),nallmodel)
     bignburst = reform(rebin(reform(modelgrid.nburst,1,nmodel),nage,nmodel),nallmodel)
     
 ; reconstruct the SFH, time-averaged SFR, and birthrate parameter for
@@ -75,15 +74,6 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
        bigmgal[tindx] = mgal
     endfor
 
-; additional priors: do not allow dusty, non-star-forming solutions
-; (note that disallowing models that are too old is built into
-; ISEDFIT_COMPUTE_CHI2) 
-;   prior = bigb100*0+1
-;   prior = ((bigb100 lt 1D-3) and (bigav gt 0.0)) eq 0
-;   ww = where(bigav gt 0 and bigb100 lt 1D-2)
-;   djs_plot, bigav, alog10(bigb100), ps=6, sym=0.1, /xlog
-;   djs_oplot, bigav[ww], alog10(bigb100[ww]), ps=6, sym=0.1, color='orange'
-
 ; gotta loop...    
     for igal = 0L, ngal-1 do begin
        galgrid = reform(fullgrid[*,*,igal],nallmodel)
@@ -91,11 +81,8 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
 ; get Monte Carlo draws from the posterior distributions of each
 ; parameter
        if (min(galgrid.chi2) lt 0.9D6) then begin
+; additional priors
           prior = bigsfr*0+1
-; this prior penalizes very young ages and large stellar masses; the
-; average SFR over the age of the galaxy cannot exceed 200 Msun/yr
-;         prior = 1D-9*galgrid.scale*bigmgal/bigage lt 200.0
-;         prior = (bigsfr*galgrid.scale) lt 150.0
           post = prior*exp(-0.5D*(galgrid.chi2-min(galgrid.chi2)))
           if (total(post,/double) eq 0.0) then begin
              splog, 'Chi^2 value too large for object '+strtrim(igal,2)
@@ -110,16 +97,10 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
           isedfit_post[igal].draws = allow[these]
           isedfit_post[igal].scale = galgrid[allow[these]].scale
 
-;; no need to store these distributions as we can easily reconstruct
-;; them from the parent MONTEGRIDS       
-;         isedfit_post[igal].Z      = bigZ[allow[these]]
-;         isedfit_post[igal].tau    = bigtau[allow[these]]
-;         isedfit_post[igal].age    = bigage[allow[these]]
-;         isedfit_post[igal].av     = bigav[allow[these]]
-;         isedfit_post[igal].mu     = bigmu[allow[these]]
-;         isedfit_post[igal].b100   = bigb100[allow[these]]
-
-          logscale = alog10(galgrid[allow[these]].scale)
+; multiply the stellar masses and SFRs of the models by the scale
+; factor; perturb the scale factor by the Gaussian error to avoid the
+; posterior distribution being infinitely sharp
+          logscale = alog10(galgrid[allow[these]].scale+randomn(seed,nallow)*galgrid[allow[these]].scale_err)
           isedfit[igal] = isedfit_packit(isedfit[igal],alog10(bigmass[allow[these]])+logscale,type='mass')
           isedfit[igal] = isedfit_packit(isedfit[igal],alog10(bigsfr[allow[these]])+logscale,type='sfr')
           isedfit[igal] = isedfit_packit(isedfit[igal],alog10(bigsfr100[allow[these]])+logscale,type='sfr100')
@@ -128,7 +109,6 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
           isedfit[igal] = isedfit_packit(isedfit[igal],bigtau[allow[these]],type='tau')
           isedfit[igal] = isedfit_packit(isedfit[igal],bigZ[allow[these]],type='Z')
           isedfit[igal] = isedfit_packit(isedfit[igal],bigav[allow[these]],type='av')
-          isedfit[igal] = isedfit_packit(isedfit[igal],bigmu[allow[these]],type='mu')
           isedfit[igal] = isedfit_packit(isedfit[igal],bigb100[allow[these]],type='b100')
 
           neg = where(isedfit_post[igal].scale le 0)
@@ -143,7 +123,6 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
           
           allmindx = array_indices([nage,nmodel],mindx,/dim) ; parse the index
           isedfit[igal].ageindx = allmindx[0]
-          isedfit[igal].imf = modelgrid[allmindx[1]].imf
           isedfit[igal].modelindx = modelgrid[allmindx[1]].modelindx
           isedfit[igal].chunkindx = modelgrid[allmindx[1]].chunkindx
           
@@ -156,7 +135,6 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
           isedfit[igal].tau = bigtau[mindx]
           isedfit[igal].Z = bigZ[mindx]
           isedfit[igal].av = bigav[mindx]
-          isedfit[igal].mu = bigmu[mindx]
           isedfit[igal].age = bigage[mindx]
           isedfit[igal].b100 = bigb100[mindx]
           
@@ -165,19 +143,14 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
           isedfit[igal].sfr100 = alog10(bigsfr100[mindx]*isedfit[igal].scale)
 
           isedfit[igal].bestmaggies = galgrid[mindx].bestmaggies
-          
-;         isedfit[igal].mass = galgrid[mindx].mass
-;         isedfit[igal].sfr = bigsfr[mindx] + isedfit[igal].mass
-;         isedfit[igal].sfr100 = bigsfr100[mindx] + isedfit[igal].mass
        endif
 
 ; some plots       
 ;      djs_plot, bigage, galgrid.chi2, ps=6, /ylog, /xlog, yr=isedfit[igal].chi2*[0.9,3], xsty=3, ysty=3, sym=0.5
+;      djs_oplot, bigage[allow[these]], galgrid[allow[these]].chi2, ps=6, sym=0.5, color='green'
 ;      plot, bigav, galgrid.chi2, ps=6, /ylog, /xlog, yr=isedfit[igal].chi2*[0.9,3], ysty=3, sym=0.5
 ;      plot, bigsfr*galgrid.scale, galgrid.chi2, ps=6, /ylog, /xlog, $
 ;        yr=isedfit[igal].chi2*[0.9,3], ysty=3, sym=0.5, xr=[1,1E4]
-;      djs_oplot, bigage[allow[these]], galgrid[allow[these]].chi2, ps=6, sym=0.5, color='green'
-;stop
     endfor 
 
 return, isedfit
