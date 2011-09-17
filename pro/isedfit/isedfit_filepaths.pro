@@ -43,7 +43,7 @@ function isedfit_filepaths, params, outprefix=outprefix1, iopath=iopath, $
     if (n_elements(params) eq 0L) then $
       message, 'PARAMS input required'
     if (n_elements(galchunksize) eq 0L) then $
-      galchunksize = 5000L ; can play with this number
+      galchunksize = 500L ; can play with this number
 
     if (n_elements(isedfit_sfhgrid_dir) eq 0) then isedfit_sfhgrid_dir = $
       '${ISEDFIT_SFHGRID_DIR}/'

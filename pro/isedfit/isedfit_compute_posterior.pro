@@ -110,7 +110,7 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
           isedfit[igal] = isedfit_packit(isedfit[igal],bigZ[allow[these]],type='Z')
           isedfit[igal] = isedfit_packit(isedfit[igal],bigav[allow[these]],type='av')
           isedfit[igal] = isedfit_packit(isedfit[igal],bigb100[allow[these]],type='b100')
-
+          
           neg = where(isedfit_post[igal].scale le 0)
           if (neg[0] ne -1) then message, 'Negative scale factor!'
        
