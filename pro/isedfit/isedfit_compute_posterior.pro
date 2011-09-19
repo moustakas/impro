@@ -100,7 +100,9 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
 ; multiply the stellar masses and SFRs of the models by the scale
 ; factor; perturb the scale factor by the Gaussian error to avoid the
 ; posterior distribution being infinitely sharp
-          logscale = alog10(galgrid[allow[these]].scale+randomn(seed,nallow)*galgrid[allow[these]].scale_err)
+          logscale_err = galgrid[allow[these]].scale_err/galgrid[allow[these]].scale/alog(10)
+          logscale = alog10(galgrid[allow[these]].scale) + randomn(seed,nallow)*logscale_err
+
           isedfit[igal] = isedfit_packit(isedfit[igal],alog10(bigmass[allow[these]])+logscale,type='mass')
           isedfit[igal] = isedfit_packit(isedfit[igal],alog10(bigsfr[allow[these]])+logscale,type='sfr')
           isedfit[igal] = isedfit_packit(isedfit[igal],alog10(bigsfr100[allow[these]])+logscale,type='sfr100')
