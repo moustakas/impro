@@ -109,7 +109,7 @@ function init_isedfit, ngal, nfilt, sfhgrid, sfhgrid_paramfile=sfhgrid_paramfile
       tau:            -1.0,$
       Z:              -1.0,$
       av:             -1.0,$
-;     mu:             -1.0,$
+      mu:             -1.0,$
       nburst:            0,$
       tauburst:       -1.0,$ ; burst truncation time scale
       tburst:    burstarray1,$
@@ -135,7 +135,7 @@ function init_isedfit, ngal, nfilt, sfhgrid, sfhgrid_paramfile=sfhgrid_paramfile
       tau_avg:      -1.0,$
       Z_avg:        -1.0,$
       av_avg:       -1.0,$
-;     mu_avg:       -1.0,$
+      mu_avg:       -1.0,$
 
       mass_50:     -1.0,$
       age_50:      -1.0,$
@@ -145,7 +145,7 @@ function init_isedfit, ngal, nfilt, sfhgrid, sfhgrid_paramfile=sfhgrid_paramfile
       tau_50:      -1.0,$
       Z_50:        -1.0,$
       av_50:       -1.0,$
-;     mu_50:       -1.0,$
+      mu_50:       -1.0,$
 
       mass_err:     -1.0,$
       age_err:      -1.0,$
@@ -154,8 +154,8 @@ function init_isedfit, ngal, nfilt, sfhgrid, sfhgrid_paramfile=sfhgrid_paramfile
       b100_err:     -1.0,$
       tau_err:      -1.0,$
       Z_err:        -1.0,$
-      av_err:       -1.0}
-;     mu_err:       -1.0}
+      av_err:       -1.0,$
+      mu_err:       -1.0}
 
 ;     mass_eff_err:   -1.0,$
 ;     age_eff_err:    -1.0,$

@@ -21,7 +21,7 @@
 ;     different output structures from this routine to be 'stacked'  
 ;
 ; KEYWORD PARAMETERS: 
-;   lf - 
+;   lf - construct the 1/Vmax-weighted luminosity function 
 ;   debug - make a simple plot and wait for a keystroke
 ;
 ; OUTPUTS: 

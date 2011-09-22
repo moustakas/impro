@@ -127,7 +127,8 @@ pro im_galex_to_maggies, galex, maggies, ivarmaggies, $
     endif
     
 ; minimum photometric error from Morrissey+07, plus a little
-    minerr = sqrt([0.052,0.026]^2 + [0.05,0.05]^2)
+    minerr = [0.052,0.026]
+;   minerr = sqrt([0.052,0.026]^2 + [0.05,0.05]^2)
     k_minerror, maggies, ivarmaggies, minerr
 
 return    

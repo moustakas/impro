@@ -45,7 +45,7 @@ function isedfit_reconstruct_sfh, info, outage=outage, mtau=mtau, $
   aburst=aburst, mburst=mburst, mgalaxy=outmgalaxy, sfr100=outsfr100, $
   b100=outb100, notruncate=notruncate, sfhtau=outsfhtau, sfhburst=outsfhburst, $
   nooversample=nooversample, debug=debug, gaussburst=gaussburst, $
-  stepburst=stepburst, _extra=extra
+  stepburst=stepburst, exptruncburst=exptruncburst, _extra=extra
 ; jm10dec22ucsd - given an iSEDfit structure, reconstruct the star
 ; formation history, allowing for multiple bursts
 
@@ -87,6 +87,9 @@ function isedfit_reconstruct_sfh, info, outage=outage, mtau=mtau, $
        nage = 500>n_elements(outage)
     endif else nage = 500
 
+    if (keyword_set(gaussburst) eq 0) and (keyword_set(stepburst) eq 0) and $
+      (keyword_set(exptruncburst) eq 0) then stepburst = 1
+
     if keyword_set(nooversample) then begin
        if (n_elements(outage) eq 0) then message, 'NOOVERSAMPLE '+$
          'keyword requires OUTAGE!'
@@ -114,7 +117,7 @@ function isedfit_reconstruct_sfh, info, outage=outage, mtau=mtau, $
               aburst[ib] = fburst[ib]*mtau*(1.0-exp(-tburst[ib]/info.tau))/(dtburst[ib]*1D9)
 
 ; step-function burst with exponential wings (default)
-          if (keyword_set(gaussburst) eq 0) and (keyword_set(stepburst) eq 0) then begin
+          if keyword_set(exptruncburst) then begin
              during = where((age ge tburst[ib]) and (age le tburst[ib]+dtburst[ib]),nduring)
              before = where(age lt tburst[ib],nbefore)
              after = where(age gt tburst[ib]+dtburst[ib],nafter)

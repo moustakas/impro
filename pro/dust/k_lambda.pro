@@ -165,7 +165,7 @@ function k_lambda, wave, r_v=r_v, calzetti=calzetti, charlot=charlot, $
 ; ---------------------------------------------------------------------------    
 ; Calzetti et al. (2000)
     if keyword_set(calzetti) then begin 
-       r_v_prime = 4.05
+       if n_elements(r_v) eq 0L then r_v = 4.05
        w1 = where((wave ge 6300) and (wave le 22000),c1)
        w2 = where((wave ge  912) and (wave lt  6300),c2)
        x  = 10000.0/wave        ; wavelength in inverse microns
@@ -173,9 +173,9 @@ function k_lambda, wave, r_v=r_v, calzetti=calzetti, charlot=charlot, $
        k_lambda = 0.0*wave
 
        if c1 gt 0 then $
-         k_lambda[w1] = 2.659*(-1.857 + 1.040*x[w1])+r_v_prime
+         k_lambda[w1] = 2.659*(-1.857 + 1.040*x[w1])+r_v
        if c2 gt 0 then $
-         k_lambda[w2] = 2.659*(poly(x[w2], [-2.156, 1.509d0, -0.198d0, 0.011d0])) + r_v_prime
+         k_lambda[w2] = 2.659*(poly(x[w2], [-2.156, 1.509d0, -0.198d0, 0.011d0])) + r_v
 
 ; if necessary, extrapolate to longer and shorter wavelengths
        inrange = where((wave ge 912.0) and (wave le 22000.0),ninrange)
@@ -192,14 +192,14 @@ function k_lambda, wave, r_v=r_v, calzetti=calzetti, charlot=charlot, $
 ; ---------------------------------------------------------------------------    
 ; Charlot & Fall (2000)
     if keyword_set(charlot) then begin 
-       if n_elements(r_v) eq 0L then r_v = 5.9
+       if n_elements(r_v) eq 0 then r_v = 5.9 ; S. Charlot, private communication
        k_lambda = r_v*(wave/5500.0)^(-0.7)
     endif
 
 ; ---------------------------------------------------------------------------    
 ; Cardelli, Clayton, & Mathis (1989)
     if keyword_set(ccm) then begin 
-       if n_elements(r_v) eq 0L then r_v = 3.1
+       if n_elements(r_v) eq 0 then r_v = 3.1
 
        x = 10000./ wave         ; convert to inverse microns 
        npts = n_elements(x)

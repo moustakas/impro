@@ -29,7 +29,11 @@
 ;   sfh - star formation rate at each TIME [NSFH]
 ;   cspmstar - stellar mass of the CSP with time [NSFH]
 ;
-; KEYWORD PARAMETERS: 
+; KEYWORD PARAMETERS:
+;   stepburst - treat each burst as a step function
+;   gaussburst - treat each burst as a Gaussian 
+;   exptruncburst - treat each burst as a step function with
+;     exponential wings
 ;
 ; OUTPUTS: 
 ;   cspflux - time-dependent spectra of the composite stellar
@@ -57,7 +61,8 @@
 ;-
 
 function isedfit_convolve_sfh, ssp, infosfh=infosfh, time=time, $
-  sfh=sfh, mstar=mstar, cspmstar=cspmstar, nsamp=nsamp, debug=debug
+  sfh=sfh, mstar=mstar, cspmstar=cspmstar, nsamp=nsamp, debug=debug, $
+  stepburst=stepburst, gaussburst=gaussburst, exptruncburst=exptruncburst
 
     if (n_elements(ssp) eq 0) or (n_elements(infosfh) eq 0) then begin
        doc_library, 'isedfit_convolve_sfh'
@@ -74,7 +79,8 @@ function isedfit_convolve_sfh, ssp, infosfh=infosfh, time=time, $
     if (n_elements(nsamp) eq 0) then nsamp = 2
 
 ; check for the SFH
-    sfh = isedfit_reconstruct_sfh(infosfh,outage=time)
+    sfh = isedfit_reconstruct_sfh(infosfh,outage=time,stepburst=stepburst,$
+      gaussburst=gaussburst,exptruncburst=exptruncburst)
     nsfh = n_elements(sfh)
 
 ; check for other quantities to convolve
@@ -103,12 +109,15 @@ function isedfit_convolve_sfh, ssp, infosfh=infosfh, time=time, $
        nthistime = n_elements(thistime)
        
 ; interpolate       
-       sspindx = findex(ssp.age,reverse(thistime))
-       isspflux = interpolate(ssp.flux,sspindx,/grid)
-       thissfh = isedfit_reconstruct_sfh(infosfh,outage=thistime/1D9,/nooversample)
+       sspindx = findex(ssp.age,reverse(thistime))>0
+       isspflux = interpolate(ssp.flux,sspindx)
+       thissfh = isedfit_reconstruct_sfh(infosfh,outage=thistime/1D9,/nooversample,$
+         stepburst=stepburst,gaussburst=gaussburst,exptruncburst=exptruncburst)
        if keyword_set(debug) then begin
-          djs_plot, time, sfh, psym=6, xsty=3, ysty=3, /xlog, yrange=[min(sfh),max(sfh)>max(thissfh)];, xrange=[4.5,5.5]
+          djs_plot, time, sfh, psym=6, xsty=3, ysty=3, /xlog, yrange=[min(sfh),max(sfh)>max(thissfh)], xr=[1,3]
           djs_oplot, thistime/1D9, thissfh, psym=6, sym=0.2, color='orange'
+          ww = where(max(thistime)-thistime lt 0.01D9)
+          djs_oplot, thistime[ww]/1D9, thissfh[ww], psym=6, sym=0.6, color='blue'
           nb = infosfh.nburst
           if (nb gt 0) and (max(thistime/1D9) ge infosfh.tburst[0]) then begin
              t1 = findex(thistime/1D9,infosfh.tburst[0:nb-1])

@@ -55,7 +55,9 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
     bigmass   = reform(modelgrid.mstar,nallmodel)
     bigtau    = reform(rebin(reform(modelgrid.tau,1,nmodel),nage,nmodel),nallmodel)
     bigZ      = reform(rebin(reform(modelgrid.Z,1,nmodel),nage,nmodel),nallmodel)
-    bigav     = reform(rebin(reform(modelgrid.mu*modelgrid.av,1,nmodel),nage,nmodel),nallmodel)
+    bigmu     = reform(rebin(reform(modelgrid.mu,1,nmodel),nage,nmodel),nallmodel)
+    bigav     = reform(rebin(reform(modelgrid.av,1,nmodel),nage,nmodel),nallmodel)
+;   bigav     = reform(rebin(reform(modelgrid.mu*modelgrid.av,1,nmodel),nage,nmodel),nallmodel)
     bignburst = reform(rebin(reform(modelgrid.nburst,1,nmodel),nage,nmodel),nallmodel)
     
 ; reconstruct the SFH, time-averaged SFR, and birthrate parameter for
@@ -101,7 +103,7 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
 ; factor; perturb the scale factor by the Gaussian error to avoid the
 ; posterior distribution being infinitely sharp
           logscale_err = galgrid[allow[these]].scale_err/galgrid[allow[these]].scale/alog(10)
-          logscale = alog10(galgrid[allow[these]].scale) + randomn(seed,nallow)*logscale_err
+          logscale = alog10(galgrid[allow[these]].scale)+randomn(seed,ndraw)*logscale_err
 
           isedfit[igal] = isedfit_packit(isedfit[igal],alog10(bigmass[allow[these]])+logscale,type='mass')
           isedfit[igal] = isedfit_packit(isedfit[igal],alog10(bigsfr[allow[these]])+logscale,type='sfr')
@@ -111,8 +113,9 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
           isedfit[igal] = isedfit_packit(isedfit[igal],bigtau[allow[these]],type='tau')
           isedfit[igal] = isedfit_packit(isedfit[igal],bigZ[allow[these]],type='Z')
           isedfit[igal] = isedfit_packit(isedfit[igal],bigav[allow[these]],type='av')
+          isedfit[igal] = isedfit_packit(isedfit[igal],bigmu[allow[these]],type='mu')
           isedfit[igal] = isedfit_packit(isedfit[igal],bigb100[allow[these]],type='b100')
-          
+
           neg = where(isedfit_post[igal].scale le 0)
           if (neg[0] ne -1) then message, 'Negative scale factor!'
        
@@ -137,6 +140,7 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
           isedfit[igal].tau = bigtau[mindx]
           isedfit[igal].Z = bigZ[mindx]
           isedfit[igal].av = bigav[mindx]
+          isedfit[igal].mu = bigmu[mindx]
           isedfit[igal].age = bigage[mindx]
           isedfit[igal].b100 = bigb100[mindx]
           
@@ -150,7 +154,12 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
 ; some plots       
 ;      djs_plot, bigage, galgrid.chi2, ps=6, /ylog, /xlog, yr=isedfit[igal].chi2*[0.9,3], xsty=3, ysty=3, sym=0.5
 ;      djs_oplot, bigage[allow[these]], galgrid[allow[these]].chi2, ps=6, sym=0.5, color='green'
+;
+;      djs_plot, bigmass, galgrid.chi2, ps=6, /ylog, /xlog, yr=isedfit[igal].chi2*[0.9,3], xsty=3, ysty=3, sym=0.5
+;      djs_oplot, bigage[allow[these]], galgrid[allow[these]].chi2, ps=6, sym=0.5, color='green'
+;
 ;      plot, bigav, galgrid.chi2, ps=6, /ylog, /xlog, yr=isedfit[igal].chi2*[0.9,3], ysty=3, sym=0.5
+
 ;      plot, bigsfr*galgrid.scale, galgrid.chi2, ps=6, /ylog, /xlog, $
 ;        yr=isedfit[igal].chi2*[0.9,3], ysty=3, sym=0.5, xr=[1,1E4]
     endfor 

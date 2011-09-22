@@ -54,6 +54,11 @@
 ; 
 ;   debug - make some debugging plots and wait for a keystroke 
 ;
+;   stepburst - treat each burst as a step function (default)
+;   gaussburst - treat each burst as a Gaussian 
+;   exptruncburst - treat each burst as a step function with
+;     exponential wings
+; 
 ; OUTPUTS: 
 ;   The grids get written out in a data model that ISEDFIT
 ;   understands, and which should be transparent to the user. 
@@ -159,7 +164,8 @@ return, fits
 end
 
 pro build_grid, montegrid, chunkinfo, ssppath=ssppath, $
-  sspinfo=sspinfo, redcurve=redcurve, params=params, debug=debug
+  sspinfo=sspinfo, redcurve=redcurve, params=params, debug=debug, $
+  stepburst=stepburst, gaussburst=gaussburst, exptruncburst=exptruncburst
 ; this is the main driver routine for building the grid
 
 ; reddening curves
@@ -207,10 +213,10 @@ pro build_grid, montegrid, chunkinfo, ssppath=ssppath, $
           if (issp eq 0) then outinfo = struct_addtags(temporary(outinfo),$
             replicate({mstar: fltarr(params.nage), wave: float(sspfits[0].wave), $
             flux: fltarr(npix,params.nage)},nthese))
-          
-          klam = k_lambda(outinfo[indx1[0]].wave,charlot=charlot,$
-            odonnell=odonnell,calzetti=calzetti,smc=smc,/silent)
-          klam = klam/interpol(klam,outinfo[indx1[0]].wave,5500.0) ; normalize
+
+          delvarx, rv
+          klam = k_lambda(outinfo[indx1[0]].wave,r_v=rv,charlot=charlot,$
+            calzetti=calzetti,odonnell=odonnell,smc=smc,/silent)
           klam = rebin(reform(klam,npix,1),npix,n_elements(sspfits[0].age)) ; [npix,nage]
 ;         if keyword_set(charlot) then nsmth = total((sspfits[0].age gt 0.9*tbc) and (sspfits[0].age lt 1.1*tbc))
           
@@ -220,7 +226,7 @@ pro build_grid, montegrid, chunkinfo, ssppath=ssppath, $
                'Model=",I4.4,"/",I4.4,"   ",A5,$)', ichunk+1, nchunk, issp+1, $
                nssp, jj+1, nindx1, string(13b)
 ; attenuate
-             alam = klam*outinfo[indx1[jj]].av
+             alam = klam*(outinfo[indx1[jj]].av/rv)
              if keyword_set(charlot) then begin
                 old = where(sspfits[jj].age gt tbc,nold)
                 if (nold ne 0) then alam[*,old] = outinfo[indx1[jj]].mu*alam[*,old]
@@ -230,7 +236,8 @@ pro build_grid, montegrid, chunkinfo, ssppath=ssppath, $
 ; do the convolution; tau=0 and no bursts is a special case
              outage = outinfo[indx1[jj]].age
              outsfr = isedfit_reconstruct_sfh(outinfo[indx1[jj]],outage=outage,$
-               mgalaxy=outmgal,aburst=aburst,mburst=mburst,debug=0)
+               mgalaxy=outmgal,aburst=aburst,mburst=mburst,debug=0,$
+               stepburst=stepburst,gaussburst=gaussburst,exptruncburst=exptruncburst)
 
              if (outinfo[indx1[jj]].tau eq 0.0) and (outinfo[indx1[jj]].nburst eq 0) then begin ; special case
                 ageindx = findex(sspfits[jj].age,outage*1D9)
@@ -239,7 +246,8 @@ pro build_grid, montegrid, chunkinfo, ssppath=ssppath, $
                 outmgal = outmstar*0+1
              endif else begin
                 outflux = isedfit_convolve_sfh(sspfits[jj],info=outinfo[indx1[jj]],time=outage,$
-                  mstar=sspfits[jj].mstar,cspmstar=outmstar,nsamp=1.0,debug=0)
+                  mstar=sspfits[jj].mstar,cspmstar=outmstar,nsamp=1.0,debug=0,stepburst=stepburst,$
+                  gaussburst=gaussburst,exptruncburst=exptruncburst)
 ;               test = isedfit_reconstruct_sfh(outinfo[indx1[jj]],outage=outage,/debug,xr=[3.5,8])
              endelse
              inf = where(finite(outflux) eq 0)
@@ -285,7 +293,8 @@ end
 pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
   redcurve=redcurve, sfhgrid_paramfile=sfhgrid_paramfile, $
   isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, make_montegrid=make_montegrid, $
-  clobber=clobber, debug=debug
+  clobber=clobber, debug=debug, stepburst=stepburst, gaussburst=gaussburst, $
+  exptruncburst=exptruncburst
 
 ; some defaults
     if (n_elements(synthmodels) eq 0) then synthmodels = 'bc03'
@@ -522,7 +531,8 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
 
     t0 = systime(1)
     build_grid, montegrid, chunkinfo, ssppath=ssppath+synthmodels+'/', $
-      sspinfo=sspinfo, redcurve=redcurve, params=params, debug=debug
+      sspinfo=sspinfo, redcurve=redcurve, params=params, debug=debug, $
+      stepburst=stepburst, gaussburst=gaussburst, exptruncburst=exptruncburst
     chunkinfo.chunkfiles = file_basename(chunkinfo.chunkfiles)+'.gz'
     splog, 'Total time (min) = ', (systime(1)-t0)/60.0
  

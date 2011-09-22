@@ -56,7 +56,8 @@
 pro im_plothist, arr, xhist, yhist, bin=bin, edge=edge, weight=weight, $
   psym=psym, cumulative=cumulative, normfactor=normfactor, noplot=noplot, $
   overplot=overplot, fill=fill, fcolor=fcolor, fline=fline, fspacing=fspacing, $
-  fpattern=fpattern, forientation=forientation, fraction=fraction, _extra=extra
+  fpattern=fpattern, forientation=forientation, fraction=fraction, peak=peak, $
+  _extra=extra
 
     ndata = n_elements(arr)
     if (ndata eq 0L) then begin
@@ -90,7 +91,7 @@ pro im_plothist, arr, xhist, yhist, bin=bin, edge=edge, weight=weight, $
 
     if keyword_set(fraction) then normfactor = total(yhist)
     if (n_elements(normfactor) ne 0L) then yhist = yhist/float(normfactor)
-;   if (n_elements(peak) ne 0L) then yhist = yhist*(peak/float(max(yhist)))
+    if keyword_set(peak) then yhist = yhist/max(yhist)
 
     if keyword_set(noplot) then return
 
