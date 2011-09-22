@@ -116,7 +116,7 @@ function isedfit_reconstruct_sfh, info, outage=outage, mtau=mtau, $
             aburst[ib] = fburst[ib]*mtau/(dtburst[ib]*1D9) else $
               aburst[ib] = fburst[ib]*mtau*(1.0-exp(-tburst[ib]/info.tau))/(dtburst[ib]*1D9)
 
-; step-function burst with exponential wings (default)
+; step-function burst with exponential wings
           if keyword_set(exptruncburst) then begin
              during = where((age ge tburst[ib]) and (age le tburst[ib]+dtburst[ib]),nduring)
              before = where(age lt tburst[ib],nbefore)
@@ -126,7 +126,7 @@ function isedfit_reconstruct_sfh, info, outage=outage, mtau=mtau, $
              if (nduring ne 0) then sfhburst1[during,ib] += aburst[ib]
              mburst[ib] = im_integral(age*1D9,sfhburst1[*,ib]) ; [Msun]
           endif
-; step-function burst
+; step-function burst (default)
           if keyword_set(stepburst) then begin
              if (max(age) ge tburst[ib]) then begin
                 t1 = (findex(age,tburst[ib]))>0

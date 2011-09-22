@@ -40,6 +40,8 @@
 ;     population (CSP) [NPIX,NSFH]
 ;
 ; COMMENTS:
+;   Most inputs, especially TIME, should be double-precision for best
+;   results. 
 ;
 ; EXAMPLES:
 ;
@@ -102,7 +104,8 @@ function isedfit_convolve_sfh, ssp, infosfh=infosfh, time=time, $
     for ii = 0, nsfh-1 do begin
 ; build the oversampled time array
        age = time[ii]*1D9 ; [yr]
-       otime = [0D,bigtime<age,(age-bigtime)>0,age]
+       otime = [0D,bigtime<age,(age-bigtime)>0D,age]
+       otime = im_double(otime) ; even though it's double, we still need this...
        otime = otime[uniq(otime,sort(otime))]
        thistime = interpolate(otime,dindgen(nsamp*n_elements(otime)-(nsamp-1))/(nsamp*1D))
        thistime = build_isedfit_agegrid(infosfh,inage=thistime/1D9)*1D9

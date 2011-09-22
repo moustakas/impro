@@ -235,7 +235,7 @@ pro build_grid, montegrid, chunkinfo, ssppath=ssppath, $
 
 ; do the convolution; tau=0 and no bursts is a special case
              outage = outinfo[indx1[jj]].age
-             outsfr = isedfit_reconstruct_sfh(outinfo[indx1[jj]],outage=outage,$
+             outsfr = isedfit_reconstruct_sfh(outinfo[indx1[jj]],outage=im_double(outage),$
                mgalaxy=outmgal,aburst=aburst,mburst=mburst,debug=0,$
                stepburst=stepburst,gaussburst=gaussburst,exptruncburst=exptruncburst)
 
@@ -245,7 +245,7 @@ pro build_grid, montegrid, chunkinfo, ssppath=ssppath, $
                 outmstar = interpolate(sspfits[jj].mstar,ageindx)
                 outmgal = outmstar*0+1
              endif else begin
-                outflux = isedfit_convolve_sfh(sspfits[jj],info=outinfo[indx1[jj]],time=outage,$
+                outflux = isedfit_convolve_sfh(sspfits[jj],info=outinfo[indx1[jj]],time=im_double(outage),$
                   mstar=sspfits[jj].mstar,cspmstar=outmstar,nsamp=1.0,debug=0,stepburst=stepburst,$
                   gaussburst=gaussburst,exptruncburst=exptruncburst)
 ;               test = isedfit_reconstruct_sfh(outinfo[indx1[jj]],outage=outage,/debug,xr=[3.5,8])

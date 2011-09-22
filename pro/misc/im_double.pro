@@ -38,7 +38,7 @@ function im_double, x
        parts = STRSPLIT(x[i], 'e', /extract) ; check for exponential format
 
        xnew = parts[0] + 'd0'
-       if N_ELEMENTS(parts) gt 1L then xnew = xnew + '*10d0^(' + parts[1] + ')' 
+       if N_ELEMENTS(parts) gt 1L then xnew = xnew + '*10d0^(' + parts[1] + 'd)' 
 
        dummy = EXECUTE('xd[i] = ' + xnew)  ; redefine x to be double-precision
        
