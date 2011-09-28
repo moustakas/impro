@@ -321,11 +321,12 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
     redcurvestring = redcurve2string(redcurve)
 
 ; read the SSP information structure    
-    ssppath = getenv('ISEDFIT_SSP_DIR')+'/'
+    ssppath = getenv('ISEDFIT_SSP_DIR')
     if (file_test(ssppath,/dir) eq 0) then begin
        splog, 'Verify that ${ISEDFIT_SSP_DIR} environment variable is defined!'
        return
-    endif
+   endif
+   ssppath=ssppath+'/'
     sspinfofile = ssppath+'info_'+synthmodels+'_'+imf+'.fits.gz'
     if (file_test(sspinfofile) eq 0) then begin
        splog, 'SSP info file '+sspinfofile+' not found!'

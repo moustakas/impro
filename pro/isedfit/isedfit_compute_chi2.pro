@@ -108,9 +108,9 @@ function isedfit_compute_chi2, maggies, ivarmaggies, chunkmodels, maxage, $
 ; the maximum likelihood value of SCALE and VSCALE_ERR is the 1-sigma
 ; error (see pg 84 of
 ; http://www.hep.phy.cam.ac.uk/~thomson/lectures/statistics/FittingHandout.pdf)
-          vmodelmaggies = reform(modelmaggies,nfilt,nthese)
-          vmaggies = rebin(reform(nmaggies,nfilt,1),nfilt,nthese)
-          vivarmaggies = rebin(reform(nivarmaggies,nfilt,1),nfilt,nthese)
+          vmodelmaggies = reform(modelmaggies*1.d,nfilt,nthese)
+          vmaggies = rebin(reform(nmaggies*1.d,nfilt,1),nfilt,nthese)
+          vivarmaggies = rebin(reform(nivarmaggies*1.d,nfilt,1),nfilt,nthese)
           vscale = total(reform((nivarmaggies*nmaggies),1,nfilt)#vmodelmaggies,1,/double)/$
             total(reform(nivarmaggies,1,nfilt)#vmodelmaggies^2,1,/double)
           vscale_err = 1.0/sqrt(total(reform(nivarmaggies,1,nfilt)#vmodelmaggies^2,1,/double))
