@@ -1,0 +1,135 @@
+;+
+; NAME:
+;   ISEDFIT_RECONSTRUCT_POSTERIOR()
+;
+; PURPOSE:
+;   Reconstruct the posterior distribution(s) of the output parameters.
+;
+; INPUTS:
+;   paramfile - iSEDfit parameter file
+;
+; OPTIONAL INPUTS:
+;   params - iSEDfit parameter data structure (over-rides PARAMFILE) 
+;   iopath - I/O path
+;
+; KEYWORD PARAMETERS:
+;   maxold - see ISEDFIT
+;   silent - suppress messages to STDOUT
+;
+; OUTPUTS:
+;   model - data structure array containing the best-fitting spectrum
+;     for each object (the structure will be different depending on
+;     whether or not MAXOLD=1)  
+;
+; OPTIONAL OUTPUTS:
+;   isedfit - ISEDFIT result structure
+;
+; COMMENTS:
+;   The cosmological parameters are hard-wired to match
+;   ISEDFIT_MODELS.  
+;
+;   Floating underflow messages are suppressed.
+;
+;   Note that the best-fitting models are interpolated onto a
+;   common wavelength grid, currently hard-wired between 100 A and
+;   5 microns, with a spacing of 2 A/pixel.
+;
+; EXAMPLES:
+;
+; MODIFICATION HISTORY:
+;   J. Moustakas, 2007 Jun 27, NYU - largely excised from
+;     ISEDFIT_QAPLOT and ISEDFIT_MEASURE
+;
+; Copyright (C) 2007, John Moustakas
+; 
+; This program is free software; you can redistribute it and/or modify 
+; it under the terms of the GNU General Public License as published by 
+; the Free Software Foundation; either version 2 of the License, or
+; (at your option) any later version. 
+; 
+; This program is distributed in the hope that it will be useful, but 
+; WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+; General Public License for more details. 
+;-
+
+function isedfit_reconstruct_posterior, paramfile, post=post, params=params, $
+  iopath=iopath, index=index, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
+  outprefix=outprefix, age=age, tau=tau, Z=Z, av=av, nburst=nburst, sfr0=sfr0, $
+  sfr100=sfr100, b100=b100, mgal=mgal
+  
+    if (n_elements(paramfile) eq 0) and (n_elements(params) eq 0) then begin
+       doc_library, 'isedfit_reconstruct_posterior'
+       return, -1
+    endif
+
+    if (n_elements(iopath) eq 0) then iopath = './'
+    if (n_elements(params) eq 0) then params = $
+      read_isedfit_paramfile(paramfile)
+    fp = isedfit_filepaths(params,outprefix=outprefix,iopath=iopath,$
+      isedfit_sfhgrid_dir=isedfit_sfhgrid_dir)
+
+; restore the POSTERIOR output if not passes
+    if (n_elements(post) eq 0L) then begin
+       if (file_test(fp.iopath+fp.post_outfile+'.gz',/regular) eq 0L) then $
+         message, 'POSTERIOR output not found!'
+       splog, 'Reading '+fp.iopath+fp.post_outfile+'.gz'
+       post = mrdfits(fp.iopath+fp.post_outfile+'.gz',1,/silent,rows=index)
+    endif
+    ngal = n_elements(post)
+
+;   if (n_elements(isedfit) eq 0L) then begin
+;      if (file_test(fp.iopath+fp.isedfit_outfile+'.gz',/regular) eq 0L) then $
+;        message, 'ISEDFIT output not found!'
+;      splog, 'Reading '+fp.iopath+fp.isedfit_outfile+'.gz'
+;      isedfit = mrdfits(fp.iopath+fp.isedfit_outfile+'.gz',1,/silent,rows=index)
+;   endif
+    
+; need all the chunks in memory!
+    nchunk = n_elements(fp.sfhgrid_chunkfiles)
+    for jj = 0, nchunk-1 do begin
+       modelgrid1 = mrdfits(fp.modelspath+fp.isedfit_models_chunkfiles[jj]+'.gz',1,/silent)
+       modelgrid1 = struct_trimtags(temporary(modelgrid1),except='modelmaggies')
+       if (jj eq 0) then modelgrid = temporary(modelgrid1) else $
+         modelgrid = [temporary(modelgrid),temporary(modelgrid1)]
+    endfor
+    nmodel = n_elements(modelgrid)
+    nage = n_elements(modelgrid[0].age)
+    nallmodel = nmodel*nage
+    ndraw = isedfit_ndraw() ; number of random draws
+
+    bigmass = reform(modelgrid.mstar,nallmodel)
+    bigage = reform(modelgrid.age,nallmodel)
+    bigtau = reform(rebin(reform(modelgrid.tau,1,nmodel),nage,nmodel),nallmodel)
+    bigZ = reform(rebin(reform(modelgrid.Z,1,nmodel),nage,nmodel),nallmodel)
+    bigav = reform(rebin(reform(modelgrid.mu*modelgrid.av,1,nmodel),nage,nmodel),nallmodel)
+    bignburst = reform(rebin(reform(modelgrid.nburst,1,nmodel),nage,nmodel),nallmodel)
+
+    if arg_present(sfr0) or arg_present(sfr100) or arg_present(b100) or $
+      arg_present(mgal) then dosfr = 1 else dosfr = 0
+    if dosfr then begin
+       bigsfr = bigage*0D
+       bigsfr100 = bigage*0D    ; average over the previous 100 Myr
+       bigb100 = bigage*0D      ; birthrate parameter
+       bigmgal = bigage*0D      ; galaxy mass ignoring mass loss 
+       for imod = 0L, nmodel-1 do begin
+          tindx = lindgen(nage)+imod*nage
+          sfr = isedfit_reconstruct_sfh(modelgrid[imod],outage=bigage[tindx],$
+            sfr100=sfr100,b100=b100,mgalaxy=mgal)
+          bigsfr[tindx] = sfr    ; alog10(sfr)
+          bigsfr100[tindx] = sfr100 ; alog10(sfr100) 
+          bigb100[tindx] = b100
+          bigmgal[tindx] = mgal
+       endfor
+    endif
+
+    mass = fltarr(ndraw,ngal)
+    for gg = 0L, ngal-1 do begin
+       logscale_err = post[gg].scale_err/post[gg].scale/alog(10)
+       logscale = alog10(post[gg].scale) + randomn(seed,ndraw)*logscale_err
+
+       mass[*,gg] = alog10(bigmass[post[gg].draws])+logscale
+    endfor    
+
+return, mass
+end

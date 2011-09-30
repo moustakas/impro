@@ -81,8 +81,8 @@ function isedfit_compute_chi2, maggies, ivarmaggies, chunkmodels, maxage, $
 ; bandpass, to set the overall normalization of the SED
        if (total(ivarmaggies[*,igal] gt 0.0) lt nminphot) or $
          (total((maggies[*,igal] gt 0.0) and (ivarmaggies[*,igal] gt 0.0)) eq 0.0) then continue
-       nmaggies = abs(maggies[*,igal]) ; need absolute value to deal with negative fluxes correctly
-       nivarmaggies = ivarmaggies[*,igal]
+       nmaggies = 1D*abs(maggies[*,igal]) ; need absolute value to deal with negative fluxes correctly
+       nivarmaggies = 1D*ivarmaggies[*,igal]
        dof = total(nivarmaggies gt 0)-1.0 ; degrees of freedom
        if (dof le 0) then message, 'This should not happen!'
 ;      t1 = systime(1)
@@ -108,9 +108,9 @@ function isedfit_compute_chi2, maggies, ivarmaggies, chunkmodels, maxage, $
 ; the maximum likelihood value of SCALE and VSCALE_ERR is the 1-sigma
 ; error (see pg 84 of
 ; http://www.hep.phy.cam.ac.uk/~thomson/lectures/statistics/FittingHandout.pdf)
-          vmodelmaggies = reform(modelmaggies*1.d,nfilt,nthese)
-          vmaggies = rebin(reform(nmaggies*1.d,nfilt,1),nfilt,nthese)
-          vivarmaggies = rebin(reform(nivarmaggies*1.d,nfilt,1),nfilt,nthese)
+          vmodelmaggies = reform(1D*modelmaggies,nfilt,nthese)
+          vmaggies = rebin(reform(nmaggies,nfilt,1),nfilt,nthese)
+          vivarmaggies = rebin(reform(nivarmaggies,nfilt,1),nfilt,nthese)
           vscale = total(reform((nivarmaggies*nmaggies),1,nfilt)#vmodelmaggies,1,/double)/$
             total(reform(nivarmaggies,1,nfilt)#vmodelmaggies^2,1,/double)
           vscale_err = 1.0/sqrt(total(reform(nivarmaggies,1,nfilt)#vmodelmaggies^2,1,/double))

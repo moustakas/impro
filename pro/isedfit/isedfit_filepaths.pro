@@ -127,6 +127,8 @@ function isedfit_filepaths, params, outprefix=outprefix1, iopath=iopath, $
       sfhgrid:                   sfhgrid,            $
       iopath:                    iopath,             $
       modelspath:                modelspath,         $
+      sfhgrid_dir:               sfhgridpath,        $
+      sfhgrid_chunkinfo:         chunkinfofile,      $ 
       sfhgrid_chunkfiles:        sfhgrid_chunkfiles, $
       chi2grid_gchunkfiles:      chi2grid_gchunkfiles,$
       isedfit_models_chunkfiles: isedfit_models_chunkfiles,  $

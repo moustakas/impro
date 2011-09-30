@@ -300,6 +300,24 @@ pro im_plotconfig, plotnum, position, psfile=psfile, psclose=psclose, $
           if (n_elements(width) eq 0) then width1 = 7.0 else width1 = width
           if (n_elements(height) eq 0) then height1 = 2.0*[1,1,1,1,1] else height1 = height
        end
+       26: begin ; 6x2 landscape
+          nx1 = 6 & ny1 = 2 & landscape1 = 1
+          if (n_elements(xmargin) eq 0) then xmargin1 = [1.1,0.4] else xmargin1 = xmargin
+          if (n_elements(ymargin) eq 0) then ymargin1 = [0.35,1.05] else ymargin1 = ymargin
+          if (n_elements(xspace) eq 0) then xspace1 = 0.0 else xspace1 = xspace
+          if (n_elements(yspace) eq 0) then yspace1 = 0.0 else yspace1 = yspace
+          if (n_elements(width) eq 0) then width1 = replicate(1.6,nx1) else width1 = width
+          if (n_elements(height) eq 0) then height1 = replicate(2.0,ny1) else height1 = height
+       end
+       27: begin ; 3x7 portrait
+          nx1 = 3 & ny1 = 7 & landscape1 = 0
+          if (n_elements(xmargin) eq 0) then xmargin1 = [1.1,0.4] else xmargin1 = xmargin
+          if (n_elements(ymargin) eq 0) then ymargin1 = [0.3,1.1] else ymargin1 = ymargin
+          if (n_elements(xspace) eq 0) then xspace1 = 0.0 else xspace1 = xspace
+          if (n_elements(yspace) eq 0) then yspace1 = 0.0 else yspace1 = yspace
+          if (n_elements(width) eq 0) then width1 = replicate(2.3,nx1) else width1 = width
+          if (n_elements(height) eq 0) then height1 = replicate(1.3,ny1) else height1 = height
+       end
        else: begin
           splog, 'Plot number not recognized - write one!'
           stop
