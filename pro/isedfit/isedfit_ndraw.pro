@@ -1,4 +1,14 @@
+;+
+; NAME:
+;   ISEDFIT_NDRAW()
+; PURPOSE:
+;   Number of random points to draw from the posterior. 
+; COMMENTS:
+;   ISEDFIT support routine.
+; MODIFICATION HISTORY:
+;   J. Moustakas, 2010 Jan 21, UCSD
+;-
+
 function isedfit_ndraw
-; jm10jan21ucsd - number of random draws of the posterior 
 return, 2000L
 end

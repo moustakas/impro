@@ -3,54 +3,49 @@
 ;   ISEDFIT_KCORRECT
 ;
 ; PURPOSE:
-;   Measure various quantities from the best-fitting
-;   star-formation histories derived by ISEDFIT.
+;   Compute K-corrections from the best-fitting iSEDfit model. 
 ;
-; INPUTS/OUTPUTS:
-;   result      - see ISEDFIT
-;   result_info - see ISEDFIT
+; INPUTS:
+;   paramfile - iSEDfit parameter file
 ;
 ; OPTIONAL INPUTS:
-;   datapath       - should match ISEDFIT [default CWD()] 
-;   isedfitprefix  - should match ISEDFIT (default 'isedfit')
-;   restfilterfile - see COMMENTS, below
+;   params - iSEDfit parameter data structure (over-rides PARAMFILE) 
+;   iopath - I/O path
+;   index - zero-indexed list of objects to analyze (default is to
+;     compute K-corrections for everything)
+;   isedfit_sfhgrid_dir - see BUILD_ISEDFIT_SFHGRID
+;   outprefix - optional output prefix string (see ISEDFIT) 
+;   isedfit_sfhgrid_dir - see BUILD_ISEDFIT_SFHGRID
+;   thissfhgrid - if SFHGRID in the parameter is a vector, then use
+;     this optional input to pick one
+;   galchunksize - divide the sample into GALCHUNKSIZE chunks to
+;     minimize the amount of memory used (default 5000L)
+;
+;   out_filterlist - list of output filters in which outputs
+;     (KCORRECT, ABSMAG, etc.) are desired (default SDSS ugriz)
+;     [NFILT] 
+;   band_shift - use band-shifted rest-frame bandpasses (default 0.0) 
 ;
 ; KEYWORD PARAMETERS:
-;   maxold - see ISEDFIT
-;   write  - write out
+;   vega - convert the output absolute magnitudes to Vega (default is
+;     to keep them as AB magnitudes)
 ;
 ; OUTPUTS:
-;   measure - output data structure
+;   kcorrect - derived K-corrections [NFILT,NGAL]
+;   absmag - absolute (rest-frame) magnitudes [NFILT,NGAL]
+;   ivarabsmag - corresponding inverse variance [NFILT,NGAL]
+;   synth_absmag - like ABSMAG, but as synthesized from the
+;     best-fitting model [NFILT,NGAL]
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
-;   RESTFILTERFILE can be used to specify the rest-frame
-;   magnitudes of interest other than the defaults.  The file
-;   should contain three columns containing the filter name (which
-;   must be in the KCORRECT database), the bandpass name (which
-;   will be the output structure tag name), and a Boolean flag
-;   indicating whether the output magnitude should be in Vega (1)
-;   or AB (0).  For example, the file might look like this:
-;
-;     bessell_B.par B       1
-;     bessell_V.par V       1
-;     sdss_g0.par   sdss_g  0
-;     twomass_J.par J       1
-;
-; TODO: 
-;   (1) Compute stellar mass-to-light ratios.
-;   (2) Add more error checking when reading RESTFILTERFILE. 
-;
-; EXAMPLES:
+;   This routine is a glorified wrapper on IM_SIMPLE_KCORRECT. 
 ;
 ; MODIFICATION HISTORY:
-;   J. Moustakas, 2006 March 07, U of A - written
-;   jm06aug02uofa - major re-write
-;   jm07mar21nyu  - further developments; speeded up 
-;   jm07jun28nyu  - updated 
+;   J. Moustakas, 2011 Aug 30, UCSD
 ;
-; Copyright (C) 2006-2007, John Moustakas
+; Copyright (C) 2011, John Moustakas
 ; 
 ; This program is free software; you can redistribute it and/or modify 
 ; it under the terms of the GNU General Public License as published by 
@@ -63,7 +58,7 @@
 ; General Public License for more details. 
 ;-
 
-pro isedfit_kcorrect, paramfile, isedfit, params=params, iopath=iopath, $
+pro isedfit_kcorrect, paramfile, isedfit, params=params, iopath=iopath, index=index, $
   outprefix=outprefix, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, thissfhgrid=thissfhgrid, $
   galchunksize=galchunksize, out_filterlst=out_filterlist, band_shift=band_shift, $
   kcorrect=kcorrect, absmag=absmag, ivarabsmag=ivarabsmag, synth_absmag=synth_absmag, $

@@ -3,7 +3,7 @@
 ;   ISEDFIT_RESTORE()
 ;
 ; PURPOSE:
-;   Function to restore the best-fitting iSEDfit model. 
+;   Restore the best-fitting iSEDfit model. 
 ;
 ; INPUTS:
 ;   paramfile - iSEDfit parameter file
@@ -11,36 +11,34 @@
 ; OPTIONAL INPUTS:
 ;   params - iSEDfit parameter data structure (over-rides PARAMFILE) 
 ;   iopath - I/O path
+;   index - zero-indexed list of objects to restore (default is to
+;     restore all)
+;   isedfit_sfhgrid_dir - see BUILD_ISEDFIT_SFHGRID
+;   outprefix - optional output prefix string (see ISEDFIT) 
 ;
 ; KEYWORD PARAMETERS:
-;   maxold - see ISEDFIT
+;   flambda - convert to F(lambda) (erg/s/cm^2/A) (default is AB mag) 
+;   fnu - convert to F(nu) (erg/s/cm^2/Hz) (default is AB mag) 
+;   nomodels - restore the ISEDFIT structure, but not the model
+;     spectra  
 ;   silent - suppress messages to STDOUT
 ;
 ; OUTPUTS:
-;   model - data structure array containing the best-fitting spectrum
-;     for each object (the structure will be different depending on
-;     whether or not MAXOLD=1)  
+;   model - output data structure array [NGAL]
+;     .WAVE - observed-frame wavelength array (Angstrom)
+;     .FLUX - observed-frame flux array (AB mag)
 ;
 ; OPTIONAL OUTPUTS:
-;   isedfit - ISEDFIT result structure
+;   isedfit - iSEDfit result structure (see ISEDFIT) [NGAL] 
 ;
 ; COMMENTS:
-;   The cosmological parameters are hard-wired to match
-;   ISEDFIT_MODELS.  
-;
-;   Floating underflow messages are suppressed.
-;
-;   Note that the best-fitting models are interpolated onto a
-;   common wavelength grid, currently hard-wired between 100 A and
-;   5 microns, with a spacing of 2 A/pixel.
-;
-; EXAMPLES:
 ;
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2007 Jun 27, NYU - largely excised from
 ;     ISEDFIT_QAPLOT and ISEDFIT_MEASURE
+;   jm11oct01ucsd - documentation cleaned up and updated
 ;
-; Copyright (C) 2007, John Moustakas
+; Copyright (C) 2007, 2011, John Moustakas
 ; 
 ; This program is free software; you can redistribute it and/or modify 
 ; it under the terms of the GNU General Public License as published by 
@@ -89,8 +87,6 @@ function isedfit_restore, paramfile, isedfit, params=params, iopath=iopath, $
 ; read the models; group by chunks; remove objects that were not
 ; fitted
        allchunks = isedfit.chunkindx
-;      crap = where(allchunks eq -1,ncrap)
-;      if (ncrap ne 0) then allchunks[crap] = 0 ; HACK!!
        chunks = allchunks[uniq(allchunks,sort(allchunks))]
        nchunk = n_elements(chunks)
        
