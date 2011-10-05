@@ -18,12 +18,16 @@
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
-;   To change the ages.dat file:
+;   To change the ages.dat file (must be integers!)
 ;      pushd, '$PEGASE_HR_DIR/data/user_defined/'
-;      ages = [0.1D,range(1D,15D3,149,/log)]
+;      ages = round([0D,range(1D,15D3,149,/log)])
+;      ages = ages[uniq(ages)]
 ;      openw, lun, 'ages.dat', /get_lun
 ;      for ii = 0, n_elements(ages)-1 do printf, lun, ages[ii]
 ;      free_lun, lun
+; 
+;   For now do not include nebular emission, but that is on my ToDo
+;   list. 
 ;    
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2011 Mar 29, UCSD
@@ -157,7 +161,7 @@ pro create_pegase_ssps, cosmic_imf=cosmic_imf, dossps=dossps, $
     
           for iZ = 0, nZ-1 do begin ; loop on each metallicity
              sfhfile = 'SSP_'+imfstr[ii]+'_Z'+Zgrid[iZ]+'.fits'
-             if file_test(sfhfile) then spawn, '/bin/rm '+sfhfile, /sh
+             if file_test(sfhfile) then rmfile, sfhfile
              printf, lun, sfhfile ; spectra.f output file name
              printf, lun, Zgrid[iZ]  ; metallicity of the ISM at t=0
              printf, lun, 'n'       ; infall - no
@@ -166,7 +170,7 @@ pro create_pegase_ssps, cosmic_imf=cosmic_imf, dossps=dossps, $
              printf, lun, Zgrid[iZ] ; (fixed!) stellar metallicity
              printf, lun, '0.0'     ; mass fraction of substellar objects formed
              printf, lun, 'n'       ; no galactic winds
-             printf, lun, 'y'       ; include nebular emission
+             printf, lun, 'n'       ; include nebular emission - not for now
              printf, lun, '0'       ; no extinction
 ;            printf, lun, '2'       ; inclination-averaged extinction for a disk geometry
           endfor 

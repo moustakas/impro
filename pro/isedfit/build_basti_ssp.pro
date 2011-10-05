@@ -47,11 +47,13 @@ pro build_basti_ssp, enhanced=enhanced
     ssppath = getenv('ISEDFIT_SSP_DIR')+'/'
     outpath = ssppath+'basti_'+enh+'/'
 
-    dist = 10.0*3.085678D18 ; fiducial distance [10 pc in cm]
+    dist = 3.085678D19 ; fiducial distance [10 pc in cm]
     
 ; read each SSP in turn, convert to a FITS structure, do some magic,
 ; and then write out; do not use the full range of metallicities since
-; the spectra are somewhat incomplete 
+; the spectra are somewhat incomplete; also, cut the models at 14.5
+; Gyr because some 15 Gyr models are missing (e.g., z803,
+; sss_agb.t615000) 
     Zstr = reverse(['z103','z203','z403','z803','z102','zsun','z302','z402'])
     nZ = n_elements(Zstr)
 
@@ -59,14 +61,15 @@ pro build_basti_ssp, enhanced=enhanced
     sspfile = strarr(nZ)
     for iZ = 0, nZ-1 do begin 
        basti = im_read_basti(metallicity=Zstr[iZ],enhanced=enhanced)
-       nage = n_elements(basti.age)
+       keep = where(basti.age lt 15D9,nage)
+;      nage = n_elements(basti.age)
        npix = n_elements(basti.wave)
        ssp = init_isedfit_ssp(nage=nage,npix=npix)
 
-       ssp.age = basti.age
+       ssp.age = basti.age[keep]
+       ssp.mstar = basti.mstar[keep]
        ssp.wave = basti.wave
-       ssp.flux = basti.flux
-       ssp.mstar = basti.mstar
+       ssp.flux = basti.flux[*,keep]
        ssp.Z = basti.Z
 
 ; normalize the spectrum by the stellar mass, put it at a fiducial
