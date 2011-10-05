@@ -1,141 +1,142 @@
 ;+
 ; NAME:
-;       IM_READ_BC03()
+;   IM_READ_BC03()
 ;
 ; PURPOSE:
-;       Read the Bruzual & Charlot (2003) binary format population
-;       synthesis models into a convenient data structure.
+;   Read the Bruzual & Charlot (2003) binary format population
+;   synthesis models into a convenient data structure.
 ;
 ; CALLING SEQUENCE:
-;       bc03 = im_read_bc03(isedfile=,isedpath,metallicity=,$
-;          age=,minwave=,maxwave=,endian=,bc03_extras=,$
-;          /salpeter,/lr,/readzero,/silent,/array_extras,/float)
+;   bc03 = im_read_bc03(isedfile=,isedpath,metallicity=,$
+;      age=,minwave=,maxwave=,endian=,bc03_extras=,$
+;      /salpeter,/lr,/readzero,/silent,/array_extras,/float)
 ;
 ; INPUTS:
-;       None required.  By default this routine reads the high
-;       resolution (hr), solar metallicity (m62), Chabrier SSP
-;       models. 
+;   None required.  By default this routine reads the high
+;   resolution (hr), solar metallicity (m62), Chabrier SSP
+;   models. 
 ;
 ; OPTIONAL INPUTS:
-;       isedfile - read this binary SED rather than the default SSP
-;                  models 
-;       isedpath - full data path (with trailing slash) to ISEDFILE
-;       metallicity - SSP metallicity
-;          0 - Z=0.0001 (m22)
-;          1 - Z=0.0004 (m32)
-;          2 - Z=0.004  (m42)
-;          3 - Z=0.008  (m52)
-;          4 - Z=0.02   (m62) [Solar, default]
-;          5 - Z=0.05   (m72)
-;       age - return the SSP(s) corresponding to this scalar or vector
-;             age(s) [Gyr]
-;       minwave - crop the SSP spectra to this minimum wavelength
-;                 [Angstrom] 
-;       maxwave - crop the SSP spectra to this maximum wavelength
-;                 [Angstrom]
-;       endian  - byte ordering for the binary file; see documentation
-;                 for READ_BINARY(); usually, if the binary files have
-;                 been created on a Linux box then endian='little',
-;                 which is the default; on a SUN, endian='big' is
-;                 appropriate (for example, if you use 'bin_ised'
-;                 provided with BC03 to create binary-format SSP's) 
+;   isedfile - read this binary SED rather than the default SSP
+;              models 
+;   isedpath - full data path (with trailing slash) to ISEDFILE
+;   metallicity - SSP metallicity
+;      0 - Z=0.0001 (m22)
+;      1 - Z=0.0004 (m32)
+;      2 - Z=0.004  (m42)
+;      3 - Z=0.008  (m52)
+;      4 - Z=0.02   (m62) [Solar, default]
+;      5 - Z=0.05   (m72)
+;   age - return the SSP(s) corresponding to this scalar or vector
+;         age(s) [Gyr]
+;   minwave - crop the SSP spectra to this minimum wavelength
+;             [Angstrom] 
+;   maxwave - crop the SSP spectra to this maximum wavelength
+;             [Angstrom]
+;   endian  - byte ordering for the binary file; see documentation
+;             for READ_BINARY(); usually, if the binary files have
+;             been created on a Linux box then endian='little',
+;             which is the default; on a SUN, endian='big' is
+;             appropriate (for example, if you use 'bin_ised'
+;             provided with BC03 to create binary-format SSP's) 
 ;
 ; KEYWORD PARAMETERS:
-;       salpeter - read the Salpeter IMF models (default is to read
-;                  the Chabrier models)
-;       lr       - read the low resolution models (default is to read
-;                  the high resolution models)
-;       readzero - read the zeroth age SSP (has not been tested with
-;                  convolved star-formation histories!)
-;       silent   - do not print any messages to STDOUT
-;       array_extras - return the BC03_EXTRAS structure in a slightly
-;                      different format
-;       float    - read the AGE, WAVE, and FLUX arrays in single (not 
-;                  double) precision
+;   salpeter - read the Salpeter IMF models (default is to read
+;              the Chabrier models)
+;   lr       - read the low resolution models (default is to read
+;              the high resolution models)
+;   readzero - read the zeroth age SSP (has not been tested with
+;              convolved star-formation histories!)
+;   silent   - do not print any messages to STDOUT
+;   array_extras - return the BC03_EXTRAS structure in a slightly
+;                  different format
+;   float    - read the AGE, WAVE, and FLUX arrays in single (not 
+;              double) precision
+;   abmag - convert the output spectra to AB mag at 10 pc
 ;
 ; OUTPUTS:
-;       bc03 - data structure with the following fields:
-;          age  - vector of SSP ages [NAGE] [yr]
-;          wave - wavelength array [NPIX] [Angstrom]
-;          flux - SSP models [NPIX,NAGE] [L_sun/M_sun/A]
+;   bc03 - data structure with the following fields:
+;      age  - vector of SSP ages [NAGE] [yr]
+;      wave - wavelength array [NPIX] [Angstrom]
+;      flux - SSP models [NPIX,NAGE] [L_sun/M_sun/A]
 ;
 ; OPTIONAL OUTPUTS:
-;       bc03_extras - data structure containing the extra parameters
-;                     associated with each SSP (see the BC03
-;                     documentation) 
+;   bc03_extras - data structure containing the extra parameters
+;                 associated with each SSP (see the BC03
+;                 documentation) 
 ;
 ; COMMENTS:
-;       N.B.  The environment variable ${bc03_dir} must be defined in
-;       your '.cshrc' indicating the *root* directory of the BC03
-;       models.  For example, in my '.cshrc' I have
+;   N.B.  The environment variable ${bc03_dir} must be defined in
+;   your '.cshrc' indicating the *root* directory of the BC03
+;   models.  For example, in my '.cshrc' I have
 ;
-;              setenv bc03_dir ${HOME}/synthesis/bc03
+;          setenv bc03_dir ${HOME}/synthesis/bc03
 ;
-;       Note that this routine only works with the Padova (1994)
-;       binary isochrones and not the Pickles isochrones.
-;       Alternatively, you can use the ISEDFILE and ISEDPATH optional
-;       inputs to read in an arbitrary BC03 SED.
+;   Note that this routine only works with the Padova (1994)
+;   binary isochrones and not the Pickles isochrones.
+;   Alternatively, you can use the ISEDFILE and ISEDPATH optional
+;   inputs to read in an arbitrary BC03 SED.
 ;
 ; BUGS:
 ;
 ; INTERNAL SUPPORT ROUTINES:
-;       READ_EXTRAS(), GET_ELEMENT
+;   READ_EXTRAS(), GET_ELEMENT
 ;
 ; PROCEDURES USED:
-;       READFAST, STRUCT_TRIMTAGS(), STRUCT_ADDTAGS(), MATCH,
-;       MRD_STRUCT() 
+;   READFAST, STRUCT_TRIMTAGS(), STRUCT_ADDTAGS(), MATCH,
+;   MRD_STRUCT() 
 ;
 ; EXAMPLES:
-;       [1] Read the high-resolution, Salpeter IMF, Solar metallicity
-;           (Z=0.02) SSP models:
+;   [1] Read the high-resolution, Salpeter IMF, Solar metallicity
+;       (Z=0.02) SSP models:
 ;
-;          IDL> bc03 = im_read_bc03()
-;          IDL> help, bc03, /str
+;      IDL> bc03 = im_read_bc03()
+;      IDL> help, bc03, /str
 ;
-;       [2] Read the low-resolution, Salpeter IMF, LMC metallicity
-;           (Z=0.004) SSP models:
+;   [2] Read the low-resolution, Salpeter IMF, LMC metallicity
+;       (Z=0.004) SSP models:
 ;
-;          IDL> bc03 = im_read_bc03(metallicity=2,/lr,/salpeter)
+;      IDL> bc03 = im_read_bc03(metallicity=2,/lr,/salpeter)
 ;
-;       [3] Read the high-resolution, Chabrier IMF, twice-solar
-;           metallicity (Z=0.05) SSP models and plot the 10 Gyr model: 
+;   [3] Read the high-resolution, Chabrier IMF, twice-solar
+;       metallicity (Z=0.05) SSP models and plot the 10 Gyr model: 
 ;
-;          IDL> bc03 = im_read_bc03(metallicity=5)
-;          IDL> indx = where(bc03.age eq 1E10)
-;          IDL> plot, bc03.wave, bc03.flux[*,indx], /xlog, /ylog
+;      IDL> bc03 = im_read_bc03(metallicity=5)
+;      IDL> indx = where(bc03.age eq 1E10)
+;      IDL> plot, bc03.wave, bc03.flux[*,indx], /xlog, /ylog
 ;
-;       [4] Read the high-resolution, Chabrier IMF, solar metallicity
-;           (Z=0.02) SSP models and extras and plot D4000 versus
-;           H-delta_A:  
+;   [4] Read the high-resolution, Chabrier IMF, solar metallicity
+;       (Z=0.02) SSP models and extras and plot D4000 versus
+;       H-delta_A:  
 ;
-;          IDL> bc03 = im_read_bc03(bc03_extras=bce)
-;          IDL> plot, bce.d_4000_, bce.h_delta_a, xsty=3, ysty=3
+;      IDL> bc03 = im_read_bc03(bc03_extras=bce)
+;      IDL> plot, bce.d_4000_, bce.h_delta_a, xsty=3, ysty=3
 ;
-;       [5] Read a non-SSP SED in my temp subdirectory:
+;   [5] Read a non-SSP SED in my temp subdirectory:
 ;
-;          IDL> bc03 = im_read_bc03(isedfile='mysed.ised',isedpath='temp/')
+;      IDL> bc03 = im_read_bc03(isedfile='mysed.ised',isedpath='temp/')
 ;
-;       [6] Retrieve the 12 Gyr Salpeter IMF, high-resolution SSP
-;           between 3000 and 10000 Angstroms.
+;   [6] Retrieve the 12 Gyr Salpeter IMF, high-resolution SSP
+;       between 3000 and 10000 Angstroms.
 ;
-;          IDL> bc03 = im_read_bc03(/salpeter,age=12.0,minwave=3000,maxwave=1E4)
+;      IDL> bc03 = im_read_bc03(/salpeter,age=12.0,minwave=3000,maxwave=1E4)
 ;
 ; MODIFICATION HISTORY:
-;       J. Moustakas, 2003 October 29, U of A, based in small part on
-;          IDL code originally written by C. Papovich
-;       jm03nov12uofa - added ISEDFILE and ISEDPATH optional inputs
-;                       and various bug fixes
-;       jm04mar01uofa - added AGE, MINWAVE, and MAXWAVE optional
-;                       inputs; changed wave, flux, and age to double
-;                       precision 
-;       jm04sep05uofa - generalized to read non-SSP models; NAGE is no
-;                       longer fixed to be 221 age bins; improved
-;                       error checking when reading the "extras"
-;                       files; do not read AGE=0
-;       jm04oct31uofa - added ENDIAN optional keyword (thanks to
-;                       M. Blanton) 
-;       jm05jul26uofa - added READZERO optional input
-;       jm06feb19uofa - added ARRAY_EXTRAS and FLOAT keywords 
+;   J. Moustakas, 2003 October 29, U of A, based in small part on
+;      IDL code originally written by C. Papovich
+;   jm03nov12uofa - added ISEDFILE and ISEDPATH optional inputs
+;                   and various bug fixes
+;   jm04mar01uofa - added AGE, MINWAVE, and MAXWAVE optional
+;                   inputs; changed wave, flux, and age to double
+;                   precision 
+;   jm04sep05uofa - generalized to read non-SSP models; NAGE is no
+;                   longer fixed to be 221 age bins; improved
+;                   error checking when reading the "extras"
+;                   files; do not read AGE=0
+;   jm04oct31uofa - added ENDIAN optional keyword (thanks to
+;                   M. Blanton) 
+;   jm05jul26uofa - added READZERO optional input
+;   jm06feb19uofa - added ARRAY_EXTRAS and FLOAT keywords 
 ;
 ; Copyright (C) 2003-2005, John Moustakas
 ; 
@@ -240,7 +241,7 @@ end
 function im_read_bc03, isedfile=isedfile, isedpath=isedpath, metallicity=metallicity, $
   age=age, minwave=minwave, maxwave=maxwave, endian=endian, salpeter=salpeter, lr=lr, $
   readzero=readzero, silent=silent, array_extras=array_extras, bc03_extras=bc03_extras, $
-  float=float
+  float=float, abmag=abmag
 
     if n_elements(metallicity) eq 0L then metallicity = 4L
     if n_elements(endian) eq 0L then endian = 'little'
@@ -411,7 +412,7 @@ function im_read_bc03, isedfile=isedfile, isedpath=isedpath, metallicity=metalli
        endif
 
        bc03 = {age: bc03.age[ageindx], wave: bc03.wave, flux: bc03.flux[*,ageindx]}
-;        bolflux: bc03.bolflux[ageindx], stellarmass: bc03.stellarmass[ageindx]}
+;      bolflux: bc03.bolflux[ageindx], stellarmass: bc03.stellarmass[ageindx]}
     
     endif
 
@@ -433,10 +434,20 @@ function im_read_bc03, isedfile=isedfile, isedpath=isedpath, metallicity=metalli
          flux: bc03.flux[(ww[0]-1L)>0L:(ww[1]+1L)<(npix-1L),*]}
     
     endif
-    
-    if arg_present(bc03_extras) then begin
 
+; convert to AB magnitudes, if desired    
+    if keyword_set(abmag) then begin
+       pc10 = 10.0*3.085678D18  ; =10 pc
+       light = 2.99792458D18    ; [Angstrom/s]
+       for ii = 0, nage-1 do begin
+          bc03.flux[*,ii] = 3.826D33*bc03.flux[*,ii]/(4.0*!dpi*pc10^2)*bc03.wave^2/light
+          gd = where(bc03.flux[*,ii] gt 0.0,ngd)
+          if (ngd ne 0) then bc03.flux[gd,ii] = -2.5*alog10(bc03.flux[gd,ii])-48.6
+       endfor
+    endif
+    
 ; read the extra parameters for this SSP
+    if arg_present(bc03_extras) then begin
 
        if (n_elements(isedfile) eq 0L) then $       
          base = 'bc2003_'+resstr+'_'+Zstr+'_'+imfstr+'_ssp.' else $

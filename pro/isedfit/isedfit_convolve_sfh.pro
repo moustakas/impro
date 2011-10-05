@@ -81,8 +81,9 @@ function isedfit_convolve_sfh, ssp, infosfh=infosfh, time=time, $
     if (n_elements(nsamp) eq 0) then nsamp = 2
 
 ; check for the SFH
+    if (n_elements(time) eq 0) then time = ssp.age/1D9
     sfh = isedfit_reconstruct_sfh(infosfh,outage=time,stepburst=stepburst,$
-      gaussburst=gaussburst,exptruncburst=exptruncburst)
+      gaussburst=gaussburst,exptruncburst=exptruncburst,mtau=mtau)
     nsfh = n_elements(sfh)
 
 ; check for other quantities to convolve
@@ -95,7 +96,7 @@ function isedfit_convolve_sfh, ssp, infosfh=infosfh, time=time, $
        cspmstar = fltarr(nsfh)
     endif
     cspflux = fltarr(npix,nsfh)
-    
+
 ; integrate over age
     bigtime = [ssp.age,time*1D9]
     bigtime = bigtime[uniq(bigtime,sort(bigtime))]

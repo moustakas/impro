@@ -1,9 +1,9 @@
 ;+
 ; NAME:
-;   IM_READ_MARASTON05()
+;   IM_READ_MARASTON11()
 ;
 ; PURPOSE:
-;   Read a Maraston+05 SSP into a structure.
+;   Read a Maraston & Stromback (2011) SSPs into a structure. 
 ;
 ; INPUTS:
 ;   None required.
@@ -24,8 +24,6 @@
 ;   kroupa - read the Kroupa IMF files (default is to read the
 ;     Salpeter ones)
 ;   abmag - convert the output spectra to AB mag at 10 pc
-;   flambda - convert the output spectra to F_lambda units (erg/s/cm^2/A) at 10 pc
-;   fnu - convert the output spectra to F_nu units (erg/s/cm^2/Hz) at 10 pc 
 ;
 ; OUTPUTS:
 ;   mara - output data structure
@@ -33,11 +31,11 @@
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
-;   See http://www.icg.port.ac.uk/~maraston/Claudia's_Stellar_Population_Model.html
-;   for additional relevant details.
+;   See http://www.icg.port.ac.uk/~maraston/M11 for additional
+;   relevant details. 
 ;
 ; MODIFICATION HISTORY:
-;   J. Moustakas, 2011 Jan 23, UCSD
+;   J. Moustakas, 2011 Oct 05, UCSD
 ;
 ; Copyright (C) 2011, John Moustakas
 ; 
@@ -52,10 +50,10 @@
 ; General Public License for more details. 
 ;-
 
-function im_read_maraston05, metallicity=metallicity, hbmorph=hbmorph, $
-  kroupa=kroupa, abmag=abmag, flambda=flambda, fnu=fnu
+function im_read_maraston11, metallicity=metallicity, hbmorph=hbmorph, $
+  kroupa=kroupa, abmag=abmag
 
-    ssppath = getenv('IM_DATA_DIR')+'/synthesis/maraston05/'
+    ssppath = getenv('IM_DATA_DIR')+'/synthesis/maraston11/'
 
     if (n_elements(metallicity) eq 0) then metallicity = 'z002'
     case metallicity of
@@ -137,14 +135,10 @@ function im_read_maraston05, metallicity=metallicity, hbmorph=hbmorph, $
        mara.mstar = interpol(allmass[2,mthese],allmass[1,mthese]*1D9,mara.age)
     endfor
 
-; convert the units of the spectra as desired
-    pc10 = 10.0*3.085678D18     ; =10 pc
-    light = 2.99792458D18       ; [Angstrom/s]
-    if keyword_set(flambda) then mara.flux = mara.flux/(4.0*!dpi*pc10^2)
-    if keyword_set(fnu) then for ii = 0, nage-1 do $
-      mara.flux[*,ii] = mara.flux[*,ii]/(4.0*!dpi*pc10^2)*mara.wave^2/light
-       
+; convert to AB magnitudes at 10 pc, if desired    
     if keyword_set(abmag) then begin
+       pc10 = 10.0*3.085678D18  ; =10 pc
+       light = 2.99792458D18    ; [Angstrom/s]
        for ii = 0, nage-1 do begin
           mara.flux[*,ii] = mara.flux[*,ii]/(4.0*!dpi*pc10^2)*mara.wave^2/light
           gd = where(mara.flux[*,ii] gt 0.0,ngd)

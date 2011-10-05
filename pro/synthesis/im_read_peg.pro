@@ -3,7 +3,7 @@
 ;   IM_READ_PEG()
 ;
 ; PURPOSE:
-;   Read the Pegase output data file into a structure.
+;   Read PEGASE.2 or PEGASE-HR style SSPs into a structure. 
 ;
 ; INPUTS:
 ;   pegfile  - name of the Pegase data file
@@ -26,11 +26,11 @@
 ; EXAMPLES:
 ;
 ; MODIFICATION HISTORY:
-;   J. Moustakas, 2005 Oct 18, U of A - based entirely on
-;      K_READ_PEG, originally written by Quintero on 2002 Aug 28 
+;   J. Moustakas, 2005 Oct 18, U of A - based on K_READ_PEG,
+;     originally written by A. Quintero
 ;   jm05nov19uofa - added optional mass normalization
-;   jm10nov04ucsd - major bug correction; MSTAR should be defined as
-;     *all* stars, including remnants, not just *live* stars 
+;   jm10nov04ucsd - MSTAR should be defined as *all* stars, including
+;     remnants, not just *live* stars  
 ;
 ; Copyright (C) 2005, 2010, John Moustakas
 ; 
@@ -87,12 +87,12 @@ function im_read_peg, pegfile, mass=mass
 
     if (n_elements(pegfile) eq 0L) then begin
        doc_library, 'im_read_peg'
-       return, -1L
+       return, -1
     endif
 
     if (file_test(pegfile) eq 0L) then begin
        print, 'Pegase data file '+pegfile+' not found'
-       return, -1L
+       return, -1
     endif
     
     lsun = 3.826D33             ; [erg/s]
@@ -118,7 +118,7 @@ function im_read_peg, pegfile, mass=mass
        lines = mrdfits(pegfile,1,/silent)
        info = mrdfits(pegfile,2,/silent)
 
-       if (next eq 3L) then begin
+       if (next eq 3) then begin
           waveinfo = mrdfits(pegfile,3,/silent)
           wave = waveinfo.bfit
        endif else wave = make_wave(hdr)
@@ -196,11 +196,12 @@ function im_read_peg, pegfile, mass=mass
 
        peg[i].age         = arr1[0]
        peg[i].mgalaxy     = arr1[1]*mass
-       peg[i].mstar       = arr1[2]*mass
        peg[i].mwd         = arr1[3]*mass
        peg[i].mnsbh       = arr1[4]*mass
        peg[i].msubstellar = arr1[5]*mass 
-       peg[i].mallstars   = peg[i].mstar+peg[i].mwd+peg[i].mnsbh+peg[i].substellar
+       peg[i].mstarlive   = arr1[2]*mass
+       peg[i].mstar       = peg[i].mstarlive+peg[i].mwd+peg[i].mnsbh+peg[i].msubstellar
+
        peg[i].mgas        = arr1[6]*mass
        peg[i].Zgas        = arr1[7]
        peg[i].Zstar_mass  = arr1[8]

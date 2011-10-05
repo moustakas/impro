@@ -4,7 +4,7 @@
 ;
 ; PURPOSE:
 ;   Pegase does not come with any SSPs, so build a standard set for a
-;   variety of IMFs.
+;   variety of IMFs.  Use IM_READ_PEGASE() to read these files. 
 ;
 ; INPUTS: 
 ;
@@ -18,21 +18,12 @@
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
-;   To increase the number of ages:
-;
-;      agesfile = hrpath+'ages.dat'
-;      if (file_test(agesfile) eq 0) then begin
-;         splog, 'File ages.dat not found!'
-;         return
-;      endif
-;      readcol, agesfile, ages, format='A', comment='!', /silent
-;      nage = n_elements(ages)
-;      
-;      ages = round(range(1,20000,150,/log))
-;      ages = ages[uniq(ages,sort(ages))]
-;      junk = replicate({ages: 0L},n_elements(ages))
-;      junk.ages = ages
-;      struct_print, junk, file='ages.dat', /no_hea
+;   To change the ages.dat file:
+;      pushd, '$PEGASE_HR_DIR/data/user_defined/'
+;      ages = [0.1D,range(1D,15D3,149,/log)]
+;      openw, lun, 'ages.dat', /get_lun
+;      for ii = 0, n_elements(ages)-1 do printf, lun, ages[ii]
+;      free_lun, lun
 ;    
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2011 Mar 29, UCSD
@@ -50,7 +41,8 @@
 ; General Public License for more details. 
 ;-
 
-pro create_pegase_ssps, cosmic_imf=cosmic_imf, dossps=dossps, doscenarios=doscenarios
+pro create_pegase_ssps, cosmic_imf=cosmic_imf, dossps=dossps, $
+  doscenarios=doscenarios
 
     hrpath = getenv('PEGASE_HR_DIR')+'/data/user_defined/'
     ssppath = getenv('PEGASE_HR_DIR')+'/SSPs/'
@@ -105,12 +97,13 @@ pro create_pegase_ssps, cosmic_imf=cosmic_imf, dossps=dossps, doscenarios=doscen
 ; [2] convolve the stellar models with each IMF with a default set of
 ; optional parameters, if necessary
     if keyword_set(dossps) then begin
+       pushd, ssppath
        for ii = 0, nimf-1 do begin
           splog, 'Working on IMF '+imf[ii]
 ; clean up old files
           allfiles = file_search(ssppath+imf[ii]+'_*.dat',count=nall)
           if (nall ne 0) then rmfile, allfiles
-          sspsfile = ssppath+imf[ii]+'_SSPs.dat'
+          sspsfile = imf[ii]+'_SSPs.dat'
           infile = repstr(sspsfile,'.dat','.input')
           logfile = repstr(sspsfile,'.dat','.log')
           
@@ -132,6 +125,7 @@ pro create_pegase_ssps, cosmic_imf=cosmic_imf, dossps=dossps, doscenarios=doscen
 ;         popd
           splog, format='("Time = ",G0," minutes")', (systime(1)-t0)/60.0
        endfor
+       popd
     endif
 
 ; --------------------------------------------------    
@@ -140,16 +134,17 @@ pro create_pegase_ssps, cosmic_imf=cosmic_imf, dossps=dossps, doscenarios=doscen
 ;      Zgrid = ['0.02']
        Zgrid = ['0.0001','0.0004','0.004','0.008','0.02','0.05','0.1']
        nZ = n_elements(Zgrid)
-       
+
+       pushd, ssppath
        for ii = 0, nimf-1 do begin
-          sspsfile = ssppath+imf[ii]+'_SSPs.dat'
+          sspsfile = imf[ii]+'_SSPs.dat'
           if (file_test(sspsfile) eq 0) then begin
              splog, sspsfile+' not found!'
              splog, 'Rerun with /DOSSPS!'
              continue
           endif
 
-          scenarios_infile = ssppath+'scenarios_'+imf[ii]+'.input'        ; scenarios.f input
+          scenarios_infile = 'scenarios_'+imf[ii]+'.input'        ; scenarios.f input
           scenarios_outfile = repstr(scenarios_infile,'.input','.output') ; scenarios.f output
           scenarios_logfile = repstr(scenarios_infile,'.input','.log')
           spectra_logfile = repstr(scenarios_logfile,'scenarios','spectra')
@@ -161,7 +156,7 @@ pro create_pegase_ssps, cosmic_imf=cosmic_imf, dossps=dossps, doscenarios=doscen
           printf, lun, '1'                       ; Basel stellar library
     
           for iZ = 0, nZ-1 do begin ; loop on each metallicity
-             sfhfile = ssppath+'SSP_'+imfstr[ii]+'_Z'+Zgrid[iZ]+'.fits'
+             sfhfile = 'SSP_'+imfstr[ii]+'_Z'+Zgrid[iZ]+'.fits'
              if file_test(sfhfile) then spawn, '/bin/rm '+sfhfile, /sh
              printf, lun, sfhfile ; spectra.f output file name
              printf, lun, Zgrid[iZ]  ; metallicity of the ISM at t=0

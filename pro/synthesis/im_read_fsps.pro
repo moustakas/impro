@@ -25,9 +25,18 @@
 ;   kroupa - read the Kroupa+01 IMF files (default is to read the 
 ;     Salpeter ones)
 ;   chabrier - read the Chabrier+03 IMF files
+;   abmag - convert the output spectra to AB mag at 10 pc
+;   flambda - convert the output spectra to F_lambda units (erg/s/cm^2/A) at 10 pc
+;   fnu - convert the output spectra to F_nu units (erg/s/cm^2/Hz) at 10 pc 
 ;
 ; OUTPUTS:
 ;   fsps - output data structure
+;     Z - metallicity
+;     age - age vector [NAGE]
+;     mstar - mass in stars [NAGE]
+;     lbol - bolometric luminosity [NAGE]
+;     wave - wavelength vector [NPIX] (Angstrom)
+;     flux - flux vector [NPIX,NAGE] (erg/s/A)
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -54,7 +63,8 @@
 ;-
 
 function im_read_fsps, metallicity=metallicity, basti=basti, $
-  hires=hires, kroupa=kroupa, chabrier=chabrier 
+  hires=hires, kroupa=kroupa, chabrier=chabrier, abmag=abmag, $
+  flambda=flambda, fnu=fnu
 
     ssppath = getenv('IM_DATA_DIR')+'/synthesis/fsps/SSP/'
 
@@ -138,5 +148,20 @@ function im_read_fsps, metallicity=metallicity, basti=basti, $
     endfor
     free_lun,lun
 
+; convert the units of the spectra as desired
+    pc10 = 10.0*3.085678D18     ; =10 pc
+    light = 2.99792458D18       ; [Angstrom/s]
+    if keyword_set(flambda) then fsps.flux = fsps.flux/(4.0*!dpi*pc10^2)
+    if keyword_set(fnu) then for ii = 0, nage-1 do $
+      fsps.flux[*,ii] = fsps.flux[*,ii]/(4.0*!dpi*pc10^2)*fsps.wave^2/light
+       
+    if keyword_set(abmag) then begin
+       for ii = 0, nage-1 do begin
+          fsps.flux[*,ii] = fsps.flux[*,ii]/(4.0*!dpi*pc10^2)*fsps.wave^2/light
+          gd = where(fsps.flux[*,ii] gt 0.0,ngd)
+          if (ngd ne 0) then fsps.flux[gd,ii] = -2.5*alog10(fsps.flux[gd,ii])-48.6
+       endfor
+    endif
+    
 return, fsps
 end
