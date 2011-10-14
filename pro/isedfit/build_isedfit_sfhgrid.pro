@@ -404,18 +404,18 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
 ;            montegrid.av = randomu(seed,params.nmonte,gamma=1.0)*params.av[1]+params.av[0]
 ;            montegrid.av = 10.0^(randomn(seed,params.nmonte)*params.av[1]+alog10(params.av[0]))
           endelse
-       endif 
        
 ; "mu" is the Charlot & Fall (2000) factor for evolved stellar
 ; populations; log-normal distribution
-       if (redcurvestring eq 'charlot') then begin
-          if params.flatmu then begin
-             montegrid.mu = randomu(seed,params.nmonte)*(params.mu[1]-params.mu[0])+params.mu[0] 
-          endif else begin
-             montegrid.mu = params.mu[0]*randomu(seed,params.nmonte,gamma=params.mu[1])
-;            montegrid.mu = ((10.0^(randomn(seed,params.nmonte)*params.mu[1]+alog10(params.mu[0])))<1.0)>0.0
-          endelse
-       endif
+          if (redcurvestring eq 'charlot') then begin
+             if params.flatmu then begin
+                montegrid.mu = randomu(seed,params.nmonte)*(params.mu[1]-params.mu[0])+params.mu[0] 
+             endif else begin
+                montegrid.mu = params.mu[0]*randomu(seed,params.nmonte,gamma=params.mu[1])
+;               montegrid.mu = ((10.0^(randomn(seed,params.nmonte)*params.mu[1]+alog10(params.mu[0])))<1.0)>0.0
+             endelse
+          endif
+       endif 
 ;      im_plothist, montegrid.av, bin=0.02, yr=[0,110]
 ;      im_plothist, montegrid.mu*montegrid.av, bin=0.02, /over, color='green'
 
