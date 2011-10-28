@@ -215,7 +215,7 @@ pro isedfit_qaplot, paramfile, isedfit, params=params, iopath=iopath, $
             'log (M/M'+sunsymbol()+') = '+strtrim(string(isedfit[igal].mass,format='(F12.2)'),2)+$
             ' ('+strtrim(string(isedfit[igal].mass_50,format='(F12.2)'),2)+')',$
             'A_{V} = '+strtrim(string(isedfit[igal].av*isedfit[igal].mu,format='(F12.3)'),2)+$
-            ' ('+strtrim(string(isedfit[igal].av_50*isedfit[igal].av_50,format='(F12.3)'),2)+')',$
+            ' ('+strtrim(string(isedfit[igal].av_50*isedfit[igal].mu_50,format='(F12.3)'),2)+')',$
             'Z/Z'+sunsymbol()+' = '+strtrim(string(isedfit[igal].Z/0.02,format='(F12.2)'),2)+$
             ' ('+strtrim(string(isedfit[igal].Z_50/0.02,format='(F12.2)'),2)+')',$
             '\tau = '+strtrim(string(isedfit[igal].tau,format='(F12.1)'),2)+$

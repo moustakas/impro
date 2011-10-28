@@ -150,7 +150,6 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
 
           isedfit[igal].bestmaggies = galgrid[mindx].bestmaggies
        endif
-
 ; some plots       
 ;      djs_plot, bigage, galgrid.chi2, ps=6, /ylog, /xlog, yr=isedfit[igal].chi2*[0.9,3], xsty=3, ysty=3, sym=0.5
 ;      djs_oplot, bigage[allow[these]], galgrid[allow[these]].chi2, ps=6, sym=0.5, color='green'

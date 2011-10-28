@@ -16,12 +16,11 @@
 ;     IDL> ssp = im_read_fsps(metallicity='Z')
 ;
 ; KEYWORD PARAMETERS:
-;   basti - read the BaSTI isochrones (default is to use Padova) 
-;   hires - read the MILES+BaSeL stellar library, which is
-;     high-resolution in the optical (default is to use just the 
-;     low-resolution BaSeL stellar library), but note that the
-;     MILES+BaSeL library is incomplete at low metallicity and at
-;     young ages (see Vazdekis+10).
+;   basti - read the BaSTI isochrones (default is to use Padova) (not
+;     supported as of v2.3 of FSPS!)
+;   miles - read the MILES stellar library (available just in the
+;     optical) (default is to use just the low-resolution BaSeL
+;     stellar library, which has much broader wavelength coverage) 
 ;   kroupa - read the Kroupa+01 IMF files (default is to read the 
 ;     Salpeter ones)
 ;   chabrier - read the Chabrier+03 IMF files
@@ -63,14 +62,20 @@
 ;-
 
 function im_read_fsps, metallicity=metallicity, basti=basti, $
-  hires=hires, kroupa=kroupa, chabrier=chabrier, abmag=abmag, $
+  miles=miles, kroupa=kroupa, chabrier=chabrier, abmag=abmag, $
   flambda=flambda, fnu=fnu
 
-    ssppath = getenv('IM_DATA_DIR')+'/synthesis/fsps/SSP/'
+    fspspath = getenv('IM_DATA_DIR')+'/synthesis/fsps/'
+    ssppath = fspspath+'SSP/'
 
 ; defaults
-    if keyword_set(hires) then lib = 'MILES+BaSeL' else lib = 'BaSeL' ; stellar library
-    if keyword_set(basti) then iso = 'BaSTI' else iso = 'Padova' ; isochrones
+    if keyword_set(miles) then lib = 'MILES' else lib = 'BaSeL' ; stellar library
+    if keyword_set(basti) then begin
+       iso = 'BaSTI' 
+       splog, 'The BaSTI isochrones are not supported as of FSPS v2.3!!'
+       return, -1
+    endif
+    iso = 'Padova' ; isochrones
 
     imf = 'Salpeter'
     if keyword_set(kroupa) then imf = 'Kroupa'
@@ -80,7 +85,7 @@ function im_read_fsps, metallicity=metallicity, basti=basti, $
     case strlowcase(iso) of
        'padova': begin
           if (n_elements(metallicity) eq 0) then metallicity = 'Z0.0190'
-          if keyword_set(lowres) then begin ; BaSeL+MILES
+          if keyword_set(miles) then begin ; MILES
              allZ = ['Z0.0008','Z0.0031','Z0.0096','Z0.0190','Z0.0300']
           endif else begin ; BaSeL
              allZ = ['Z0.0002','Z0.0003','Z0.0004','Z0.0005','Z0.0006',$
@@ -91,7 +96,7 @@ function im_read_fsps, metallicity=metallicity, basti=basti, $
        end
        'basti': begin
           if (n_elements(metallicity) eq 0) then metallicity = 'Z0.0200'
-          if keyword_set(hires) then begin ; BaSeL+MILES
+          if keyword_set(hires) then begin ; MILES
              allZ = ['Z0.0006','Z0.0040','Z0.0100','Z0.0200','Z0.0300']
           endif else begin ; BaSeL
              allZ = ['Z0.0003','Z0.0006','Z0.0010','Z0.0020','Z0.0040',$
@@ -114,23 +119,32 @@ function im_read_fsps, metallicity=metallicity, basti=basti, $
        return, -1
     endif
 
-; read the wavelength array
-    wavefile = ssppath+strlowcase(lib)+'.lambda'
-    if (file_test(wavefile) eq 0) then begin
-       splog, 'Wavelength file '+wavfile+' not found!'
-       return, -1
-    endif
-    splog, 'Reading '+wavefile
-    readcol, wavefile, wave, format='F', /silent
-    npix = n_elements(wave)
-    
-; read the SSP using Conroy's code READ_SPEC
+;; read the wavelength array - only for v2.2 and earlier!
+;    if strlowcase(lib) eq 'miles' then $
+;      wavepath = fspspath+'SPECTRA/MILES/' else $
+;        wavepath = fspspath+'SPECTRA/BaSeL3.1/'
+;    wavefile = wavepath+strlowcase(lib)+'.lambda'
+;    if (file_test(wavefile) eq 0) then begin
+;       splog, 'Wavelength file '+wavefile+' not found!'
+;       return, -1
+;    endif
+;    splog, 'Reading '+wavefile
+;    readcol, wavefile, wave, format='F', /silent
+;    npix = n_elements(wave)
+
+; read the SSP -- see Conroy's code READ_SPEC
     splog, 'Reading '+sspfile
     openr, lun, sspfile, /get_lun
     char = '#' ; burn the header
     while (strmid(char,0,1) eq '#') do readf, lun, char
+    char = strsplit(char,' ',/extr)
 
-    nage = long(char)
+    nage = long(char[0])
+    npix = long(char[1])
+
+    wave = fltarr(npix)
+    readf, lun, wave
+    
     fsps = {Z: zz, age: dblarr(nage), mstar: fltarr(nage), $
       lbol: fltarr(nage), wave: wave, $
       flux: fltarr(npix,nage)}

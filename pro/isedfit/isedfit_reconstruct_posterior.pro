@@ -55,8 +55,8 @@
 
 function isedfit_reconstruct_posterior, paramfile, post=post, params=params, $
   iopath=iopath, index=index, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
-  outprefix=outprefix, age=age, tau=tau, Z=Z, av=av, nburst=nburst, sfr0=sfr0, $
-  sfr100=sfr100, b100=b100, mgal=mgal
+  outprefix=outprefix, age=age, tau=tau, Z=Z, av=av, nburst=nburst, $
+  sfr0=sfr0, sfr100=sfr100, b100=b100, mgal=mgal
   
     if (n_elements(paramfile) eq 0) and (n_elements(params) eq 0) then begin
        doc_library, 'isedfit_reconstruct_posterior'
@@ -114,22 +114,39 @@ function isedfit_reconstruct_posterior, paramfile, post=post, params=params, $
        bigmgal = bigage*0D      ; galaxy mass ignoring mass loss 
        for imod = 0L, nmodel-1 do begin
           tindx = lindgen(nage)+imod*nage
-          sfr = isedfit_reconstruct_sfh(modelgrid[imod],outage=bigage[tindx],$
-            sfr100=sfr100,b100=b100,mgalaxy=mgal)
-          bigsfr[tindx] = sfr    ; alog10(sfr)
-          bigsfr100[tindx] = sfr100 ; alog10(sfr100) 
-          bigb100[tindx] = b100
-          bigmgal[tindx] = mgal
+          modelsfr = isedfit_reconstruct_sfh(modelgrid[imod],outage=bigage[tindx],$
+            sfr100=modelsfr100,b100=modelb100,mgalaxy=modelmgal)
+          bigsfr[tindx] = modelsfr    ; alog10(sfr)
+          bigsfr100[tindx] = modelsfr100 ; alog10(sfr100) 
+          bigb100[tindx] = modelb100
+          bigmgal[tindx] = modelmgal
        endfor
+; apply the scale factor
+       b100 = fltarr(ndraw,ngal)
+       sfr0 = fltarr(ndraw,ngal)
+       sfr100 = fltarr(ndraw,ngal)
+;      mgal = fltarr(ndraw,ngal)
+       for gg = 0L, ngal-1 do begin
+          logscale_err = post[gg].scale_err/post[gg].scale/alog(10)
+          logscale = alog10(post[gg].scale) + randomn(seed,ndraw)*logscale_err
+          b100[*,gg] = alog10(bigb100[post[gg].draws])
+          sfr0[*,gg] = alog10(bigsfr[post[gg].draws])+logscale
+          sfr100[*,gg] = alog10(bigsfr100[post[gg].draws])+logscale
+;         mgal[*,gg] = bigmgal[post[gg].draws]
+       endfor    
     endif
 
     mass = fltarr(ndraw,ngal)
     for gg = 0L, ngal-1 do begin
        logscale_err = post[gg].scale_err/post[gg].scale/alog(10)
        logscale = alog10(post[gg].scale) + randomn(seed,ndraw)*logscale_err
-
        mass[*,gg] = alog10(bigmass[post[gg].draws])+logscale
     endfor    
 
+    if arg_present(age) then age = bigage[post.draws]
+    if arg_present(tau) then tau = bigtau[post.draws]
+    if arg_present(Z) then Z = bigZ[post.draws]
+    if arg_present(av) then av = bigav[post.draws]
+        
 return, mass
 end

@@ -54,7 +54,9 @@ pro im_manyd_scatterplot, weight,point,psfilename,nsig=nsig, $
                             xnpix=xnpix,ynpix=ynpix, $
                             nodata=nodata,manyd=manyd,title=title, $
                             extrafun=extrafun,meanweight=meanweight, $
-                            _EXTRA=KeywordsForHoggScatterplot
+                            _EXTRA=KeywordsForHoggScatterplot, $
+  ccolor=ccolor, outcolor=outcolor, keynote=keynote, upper_triangle=upper_triangle, $
+  in_nticks=in_nticks
 
 if(n_params() lt 2) then begin
     print,'Syntax - hogg_manyd_scatterplot, weight, point [, psfilename, '
@@ -64,6 +66,10 @@ if(n_params() lt 2) then begin
     print,'(also takes keywords associated with hogg_scatterplot)'
     return
 endif
+
+if keyword_set(keynote) then keycolor = 'white' else keycolor = 'black'
+if n_elements(ccolor) eq 0 then ccolor = keycolor
+if n_elements(outcolor) eq 0 then outcolor = keycolor
 
 ; check dimensions
 ndata= n_elements(weight)                    ; N
@@ -75,6 +81,18 @@ if NOT keyword_set(label) then $
   label= 'x!d'+strcompress(string(lindgen(dimen)),/remove_all)
 if NOT keyword_set(nsig) then nsig= 5d
 if NOT keyword_set(axis_char_scale) then axis_char_scale= 1.75
+
+; only plot the upper triangle
+if keyword_set(upper_triangle) then begin
+   xdims = lonarr(dimen,dimen)-1
+   ydims = lonarr(dimen,dimen)-1
+   arr = lindgen(dimen)
+   for iy = 0, dimen-1 do xdims[*,iy] = arr*(arr lt (iy+1))+(arr ge (iy+1))*(-1)
+   for ix = 0, dimen-1 do ydims[ix,*] = arr*(arr ge ix)+(arr lt ix)*(-1)
+endif
+
+;print, [[0,-1,-1],[0,1,-1],[0,1,2]]
+;print, [[0,-1,-1],[1,1,-1],[2,2,2]]
 
 ; which dimensions should we look at?
 if(n_elements(xdims) eq 0 ) then xdims=lindgen(dimen)
@@ -112,18 +130,24 @@ if NOT keyword_set(range) then begin
     for d1= 0,dimen-1 do range[*,d1]= mean1[d1]+[-nsig,nsig]*sqrt(var1[d1,d1])
 endif
 
-;; save system plotting parameters for later restoration
+; save system plotting parameters for later restoration
 bangP= !P
 bangX= !X
 bangY= !Y
 
 ; setup postscript file
-;xsize= 7.5 & ysize= 7.5
+xsize = 7.5 & ysize= 7.0
 if keyword_set(psfilename) then begin
-   im_plotconfig, 0, psfile=psfilename
-;  set_plot, "PS"
+;  im_plotconfig, 0, psfile=psfilename, keynote=keynote
+   set_plot, 'PS'
+   device, file=psfilename, /portrait, xsize=xsize, ysize=ysize, $
+     xoff=0.5, yoff=0.5+(10-ysize), /inch, encap=encap, /color, bits=8
+
+;  dfpsplot, psfilename, /color, bits=8, xsize=xsize, ysize=ysize
+;   set_plot, "PS"
 ;   device, file=psfilename,/inches,xsize=xsize,ysize=ysize, $
-;     xoffset=(8.5-xsize)/2.0,yoffset=(11.0-ysize)/2.0,/color, bits=8
+;     xoffset=0,yoffset=0.5+(10-ysize),/color, bits=8
+;;    xoffset=(8.5-xsize)/2.0,yoffset=(11.0-ysize)/2.0,/color, bits=8
 endif
 
 hogg_plot_defaults, axis_char_scale=axis_char_scale
@@ -131,14 +155,16 @@ tiny= 1.d-4
 !X.CHARSIZE= tiny
 !Y.CHARSIZE= !X.CHARSIZE
 !P.MULTI= [xdimen*ydimen,xdimen,ydimen]
+if keyword_set(keynote) then !p.charthick=5.0 else !p.charthick=3.0
 xyouts, 0,0,default_font
+
+if n_elements(in_nticks) eq 0 then in_nticks = 4
 
 ; loop over all pairs of dimensions
 for id2=ydimen-1L,0L,-1 do begin
 ;  if keyword_set(upper_triangle) then xdimen_end = id2+1 else xdimen_end = xdimen
-;   for id1=0L,xdimen_end-1 do begin
+;  for id1=0L,xdimen_end-1 do begin
     for id1=0L,xdimen-1 do begin
-;      print, id1, id2
         if(NOT keyword_set(explicit)) then begin
             d1=xdims[id1]
             d2=ydims[id2]
@@ -157,7 +183,8 @@ for id2=ydimen-1L,0L,-1 do begin
             !Y.TITLE= ''
 
 ; set plot range
-            nticks=6/axis_char_scale
+            nticks=in_nticks/axis_char_scale
+;           nticks=6/axis_char_scale
             !X.TICKINTERVAL= hogg_interval(range[*,d1],nticks=nticks)
             !Y.TICKINTERVAL= hogg_interval(range[*,d2],nticks=nticks)
 
@@ -174,13 +201,14 @@ for id2=ydimen-1L,0L,-1 do begin
                 if(id1 lt xdimen-1L) then $
                   if(xdims[id1+1,id2] eq -1) then $
                   xnextblank=1
-                if(id2 gt 0) then $
-                  if(xdims[id1,id2-1] eq -1) then $
-                  yprevblank=1
-                if(id2 lt ydimen-1L) then $
-                  if(xdims[id1,id2+1] eq -1) then $
-                  ynextblank=1
-            endif else begin
+                if keyword_set(upper_triangle) then begin
+                   if(id2 lt ydimen-1L) then if(xdims[id1,id2+1] eq -1) then yprevblank=1
+                   if(id2 gt 0) then if(xdims[id1,id2-1] eq -1) then ynextblank=1
+                endif else begin
+                   if(id2 gt 0) then if(xdims[id1,id2-1] eq -1) then yprevblank=1
+                   if(id2 lt ydimen-1L) then if(xdims[id1,id2+1] eq -1) then ynextblank=1
+                endelse
+             endif else begin
                 if (id1 gt 0) then $
                   if (xdims[id1-1] eq -1) then xprevblank=1
                 if (id1 lt xdimen-1) then $
@@ -204,20 +232,22 @@ for id2=ydimen-1L,0L,-1 do begin
             bottomside= 0B
             if (floor(float(!P.MULTI[0]-1)/xdimen) EQ 0 OR $
                 ynextblank eq 1) then bottomside= 1B
-
+;if id1 eq 3 and id2 eq 4 then stop
 ; plot
             if d1 NE d2 then begin
                 if keyword_set(nodata) then begin
                     plot, [0],[0], $
                       xrange=range[*,d1],yrange=range[*,d2], $
-                      /nodata
+                      /nodata, color=im_color(keycolor)
                 endif else begin
                     hogg_scatterplot, point[d1,*],point[d2,*], $
                       weight=weight, $
                       xrange=range[*,d1],yrange=range[*,d2], $
                       xnpix=xnpix,ynpix=ynpix, grid=grid, $
                       internal_weight=internal_weight,meanweight=meanweight, $
-                      _EXTRA=KeywordsForHoggScatterplot
+                      _EXTRA=KeywordsForHoggScatterplot, $
+                      color=im_color(keycolor), ccolor=im_color(ccolor), $
+                      outcolor=im_color(ccolor), cthick=!p.charthick
                     if(n_elements(manyd) ne xnpix*ynpix*xdimen*ydimen) then $
                       manyd=dblarr(xnpix,ynpix,xdimen,ydimen)
                     manyd[*,*,id1,id2]=grid
@@ -230,26 +260,27 @@ for id2=ydimen-1L,0L,-1 do begin
                 endif else begin
                     hogg_plothist, point[d1,*],weight=weight, $
                       xrange=range[*,d1],npix=xnpix,yticklen=1d-10, $
-                      meanweight=meanweight
+                      meanweight=meanweight, thick=!p.charthick, color=im_color(keycolor)
                 endelse
             endelse
+;           print, id1, id2, bottomside, topside, leftside, rightside
 
 ; make axis labels afterwards
             if bottomside then begin
                 axis,!X.CRANGE[0],!Y.CRANGE[0],xaxis=0, $
-                  xtitle=label[d1],xcharsize=axis_char_scale
+                  xtitle=label[d1],xcharsize=axis_char_scale*1.1, color=im_color(keycolor)
             endif
             if topside then begin
                 axis,!X.CRANGE[0],!Y.CRANGE[1],xaxis=1, $
-                  xtitle=label[d1],xcharsize=axis_char_scale
+                  xtitle=label[d1],xcharsize=axis_char_scale*1.1, color=im_color(keycolor)
             endif
             if leftside AND (d1 NE d2) then begin
                 axis,!X.CRANGE[0],!Y.CRANGE[0],yaxis=0, $
-                  ytitle=label[d2],ycharsize=axis_char_scale
+                  ytitle=label[d2],ycharsize=axis_char_scale*1.1, color=im_color(keycolor)
             endif
             if rightside AND (d1 NE d2) then begin
                 axis,!X.CRANGE[1],!Y.CRANGE[0],yaxis=1, $
-                  ytitle=label[d2],ycharsize=axis_char_scale
+                  ytitle=label[d2],ycharsize=axis_char_scale*1.1, color=im_color(keycolor)
             endif
 
             if(keyword_set(extrafun)) then begin
@@ -258,7 +289,7 @@ for id2=ydimen-1L,0L,-1 do begin
 
 ; end loops and close file
         endelse 
-    endfor
+     endfor 
 endfor
 
 if(keyword_set(title)) then begin
@@ -272,10 +303,11 @@ if(keyword_set(title)) then begin
     xyouts,0.5,1.05,title,align=0.5
 endif
 
+;if keyword_set(psfilename) then dfpsclose
 ;if keyword_set(psfilename) then device, /close
-if keyword_set(psfilename) then im_plotconfig, /psclose
+if keyword_set(psfilename) then im_plotconfig, /psclose, keynote=keynote, psfile=psfilename
 
-;; restore system plotting parameters
+; restore system plotting parameters
 !P= bangP
 !X= bangX
 !Y= bangY
