@@ -58,7 +58,8 @@
 
 pro isedfit_qaplot, paramfile, isedfit, params=params, iopath=iopath, $
   galaxy=galaxy1, outprefix=outprefix, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
-  sfhgrid=sfhgrid, psfile=psfile1, index=index, clobber=clobber
+  sfhgrid=sfhgrid, psfile=psfile1, index=index, clobber=clobber, $
+  xrange=xrange1, yrange=yrange, xlog=xlog
 
     light = 2.99792458D18       ; speed of light [A/s]
 
@@ -84,7 +85,8 @@ pro isedfit_qaplot, paramfile, isedfit, params=params, iopath=iopath, $
              newparams2 = struct_addtags(newparams2,{redcurve: params.redcurve[jj]})
              isedfit_qaplot, params=newparams2, iopath=iopath, galaxy=galaxy1, $
                outprefix=outprefix, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
-               psfile=psfile1, index=index, clobber=clobber
+               psfile=psfile1, index=index, clobber=clobber, xrange=xrange1, $
+               yrange=yrange, xlog=xlog
           endfor
        endfor 
        return
@@ -162,26 +164,30 @@ pro isedfit_qaplot, paramfile, isedfit, params=params, iopath=iopath, $
           label = [strtrim(galaxy[igal],2),'z = '+string(zobj,format='(F6.4)')]
           legend, label, /right, /bottom, box=0, spacing=1.5, charsize=1.6
        endif else begin
-          xrange1 = [min(filtinfo.weff-1.3*filtinfo.fwhm),$
-            max(filtinfo.weff+2*filtinfo.fwhm)]
-          xrange1[0] = xrange1[0]>(700.0*(1+zobj))
-          xrange1[1] = xrange1[1]<max(wave)
-          get_element, wave, xrange1, xx
-
+          if (n_elements(xrange1) ne 2) then begin
+             xrange1 = [min(filtinfo.weff-1.3*filtinfo.fwhm),$
+               max(filtinfo.weff+2*filtinfo.fwhm)]
+             xrange1[0] = xrange1[0]>(700.0*(1+zobj))
+             xrange1[1] = xrange1[1]<max(wave)
+             get_element, wave, xrange1, xx
+          endif
           xrange2 = xrange1/(1.0+zobj)
           
           weff = filtinfo.weff
           hwhm = filtinfo.fwhm/2.0
           bestmab = -2.5*alog10(isedfit[igal].bestmaggies)
 
-          yrange = fltarr(2)
-          yrange[0] = ((max(bestmab)>max(flux[xx[0]:xx[1]]))*1.05)<30.0
-          yrange[1] = (min(bestmab)<min(flux[xx[0]:xx[1]]))*0.93
+          if (n_elements(yrange) ne 2) then begin
+             yrange = fltarr(2)
+             yrange[0] = ((max(bestmab)>max(flux[xx[0]:xx[1]]))*1.05)<30.0
+             yrange[1] = (min(bestmab)<min(flux[xx[0]:xx[1]]))*0.93
+          endif
 
           djs_plot, [0], [0], /nodata, xrange=xrange1, yrange=yrange, $
-            xsty=9, ysty=1, xtitle=xtitle1, ytitle=ytitle1, /xlog, $
-            xtickinterval=1000, position=pos;ymargin=[4,3], 
-          axis, /xaxis, xsty=1, xtitle=textoidl(xtitle2), xrange=xrange2, /xlog
+            xsty=9, ysty=1, xtitle=xtitle1, ytitle=ytitle1, xlog=xlog, $
+            xtickinterval=2000, position=pos, xtickformat='(I0)'
+          axis, /xaxis, xsty=1, xtitle=textoidl(xtitle2), xrange=xrange2, $
+            xlog=xlog
 
           djs_oplot, wave, flux, line=0, color='grey'
           djs_oplot, weff, bestmab, psym=symcat(6,thick=6), symsize=2.5
@@ -194,6 +200,8 @@ pro isedfit_qaplot, paramfile, isedfit, params=params, iopath=iopath, $
             (isedfit[igal].ivarmaggies eq 0.0),nnotused)
           nodata = where((isedfit[igal].maggies eq 0.0) and $ ; no measurement
             (isedfit[igal].ivarmaggies eq 0.0),nnodata)
+          upper = where((isedfit[igal].maggies le 0.0) and $ ; upper limit
+            (isedfit[igal].ivarmaggies gt 0.0),nupper)
 
           if (nused ne 0L) then begin
              mab = maggies2mag(isedfit[igal].maggies[used],$
@@ -208,6 +216,13 @@ pro isedfit_qaplot, paramfile, isedfit, params=params, iopath=iopath, $
              oploterror, weff[notused], mab, hwhm[notused], mab*0.0, $
                psym=symcat(4,thick=6.0), symsize=3.0, color=djs_icolor('red'), $
                errcolor=djs_icolor('red'), errthick=!p.thick
+          endif
+
+          if (nupper ne 0) then begin
+             mab = maggies2mag(1.0/sqrt(isedfit[igal].ivarmaggies[upper]))
+             oploterror, weff[upper], mab, hwhm[upper], mab*0.0, psym=symcat(18), $
+               symsize=3.0, color=djs_icolor('blue'), $
+               errcolor=djs_icolor('blue'), errthick=!p.thick
           endif
 
 ; legend

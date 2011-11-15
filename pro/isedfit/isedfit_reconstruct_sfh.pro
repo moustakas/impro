@@ -101,10 +101,15 @@ function isedfit_reconstruct_sfh, info, outage=outage, mtau=mtau, $
     if (n_elements(outage) eq 0) then outage = age
     nage = n_elements(age)
 
-; deal with the simple tau model and with bursty SFHs    
+; deal with the simple tau model, including delayed tau models, and
+; with bursty SFHs     
     if (n_elements(mtau) eq 0) then mtau = 1D ; normalization
-    if (info.tau eq 0.0) then sfhtau = dblarr(nage) else $
-      sfhtau = mtau*exp(-age/info.tau)/(info.tau*1D9) 
+    if (info.tau eq 0.0) then sfhtau = dblarr(nage) else begin
+       if tag_exist(info,'delayed') eq 0 then delayed = 0 else $
+         delayed = info.delayed
+       if delayed then sfhtau = mtau*age*1D9*exp(-age/info.tau)/(info.tau*1D9)^2 else $
+         sfhtau = mtau*exp(-age/info.tau)/(info.tau*1D9)
+    endelse
 
     if (nb gt 0) then begin
        sfhburst1 = reform(dblarr(nage,nb),nage,nb)

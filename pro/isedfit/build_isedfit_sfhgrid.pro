@@ -104,6 +104,7 @@ function init_montegrid, nmodel, nage, imf=imf, nmaxburst=nmaxburst
 ;     imf:                      imf,$
       chunkindx:                 -1,$
       modelindx:                 -1,$
+      delayed:                    0,$ ; delayed tau model?
       tau:                     -1.0,$
       Z:                       -1.0,$
       av:                       0.0,$ ; always initialize with zero to accommodate the dust-free models!
@@ -367,6 +368,9 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
          nmaxburst = ceil(long(100D*(params.maxage-params.minage)/params.pburstinterval)/100D)
        montegrid = init_montegrid(params.nmonte,params.nage,imf=imf,nmaxburst=nmaxburst)
 
+; delayed SFH?       
+       montegrid.delayed = params.delayed
+       
 ; gamma=1/tau vector
        gamma = randomu(seed,params.nmonte)*(params.gamma[1]-params.gamma[0])+params.gamma[0]
        montegrid.tau = 1.0/gamma

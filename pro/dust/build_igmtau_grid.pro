@@ -40,11 +40,11 @@
 ; General Public License for more details. 
 ;-
 
-pro build_igmtau_grid
+pro build_igmtau_grid, clobber=clobber
 
-    dz = 0.05
+    dz = 0.03 ; 0.05
     zmin = dz
-    zmax = 6.0
+    zmax = 10.0 ; 6.0
     zgrid = findgen((zmax-zmin)/dz+1)*dz+zmin
     nz = n_elements(zgrid)
 
@@ -58,7 +58,7 @@ pro build_igmtau_grid
     for iz = 0L, nz-1L do grid.igm[*,iz] = exp(-lm_igmtau(wave,zgrid[iz]))
 
     outfile = getenv('IMPRO_DIR')+'/etc/igmtau_grid.fits'
-    im_mwrfits, grid, outfile
+    im_mwrfits, grid, outfile, clobber=clobber
 
 return
 end

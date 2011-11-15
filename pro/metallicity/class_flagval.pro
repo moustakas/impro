@@ -50,7 +50,7 @@ function class_flagval, flagprefix, inlabel, check=check
 ; (After that, store this info in a common block.)
 
     maskfile = filepath('class_maskbits.par',root_dir=getenv('IMPRO_DIR'),$
-      subdirectory='spectral_analysis')
+      subdirectory='etc')
     if (file_test(maskfile,/regular) eq 0L) then $
       message, 'File with mask bits not found'
     yanny_read, maskfile, pdat
