@@ -368,12 +368,17 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
          nmaxburst = ceil(long(100D*(params.maxage-params.minage)/params.pburstinterval)/100D)
        montegrid = init_montegrid(params.nmonte,params.nage,imf=imf,nmaxburst=nmaxburst)
 
-; delayed SFH?       
-       montegrid.delayed = params.delayed
+       montegrid.delayed = params.delayed ; delayed SFH?
+
+; draw uniformly from linear TAU, or 1/TAU?
+       if params.oneovertau then begin
+          tau = 1D/(randomu(seed,params.nmonte)*(1D/params.tau[0]-1D/params.tau[1])+1D/params.tau[1])
+       endif else begin
+          tau = randomu(seed,params.nmonte)*(params.tau[1]-params.tau[0])+params.tau[0]
+       endelse
+       montegrid.tau = tau
        
-; gamma=1/tau vector
-       gamma = randomu(seed,params.nmonte)*(params.gamma[1]-params.gamma[0])+params.gamma[0]
-       montegrid.tau = 1.0/gamma
+;      montegrid.tau = randomu(seed,params.nmonte)*(params.gamma[1]-params.gamma[0])+params.gamma[0]
 ;      im_plothist, montegrid.tau, bin=0.2
 
 ; metallicity; check to make sure that the prior boundaries do not
