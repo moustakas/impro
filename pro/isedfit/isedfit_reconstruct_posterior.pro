@@ -55,7 +55,7 @@
 
 function isedfit_reconstruct_posterior, paramfile, post=post, params=params, $
   iopath=iopath, index=index, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
-  outprefix=outprefix, age=age, tau=tau, Z=Z, av=av, nburst=nburst, $
+  outprefix=outprefix, age=age, sfrage=sfrage, tau=tau, Z=Z, av=av, nburst=nburst, $
   sfr0=sfr0, sfr100=sfr100, b100=b100, mgal=mgal
   
     if (n_elements(paramfile) eq 0) and (n_elements(params) eq 0) then begin
@@ -106,25 +106,29 @@ function isedfit_reconstruct_posterior, paramfile, post=post, params=params, $
     bignburst = reform(rebin(reform(modelgrid.nburst,1,nmodel),nage,nmodel),nallmodel)
 
     if arg_present(sfr0) or arg_present(sfr100) or arg_present(b100) or $
-      arg_present(mgal) then dosfr = 1 else dosfr = 0
+      arg_present(mgal) or arg_present(sfrage) then dosfr = 1 else dosfr = 0
     if dosfr then begin
        bigsfr = bigage*0D
        bigsfr100 = bigage*0D    ; average over the previous 100 Myr
        bigb100 = bigage*0D      ; birthrate parameter
        bigmgal = bigage*0D      ; galaxy mass ignoring mass loss 
+       bigsfrage = bigage*0D    ; SFR-weighted age
        for imod = 0L, nmodel-1 do begin
           tindx = lindgen(nage)+imod*nage
           modelsfr = isedfit_reconstruct_sfh(modelgrid[imod],outage=bigage[tindx],$
-            sfr100=modelsfr100,b100=modelb100,mgalaxy=modelmgal)
-          bigsfr[tindx] = modelsfr    ; alog10(sfr)
+            sfr100=modelsfr100,b100=modelb100,mgalaxy=modelmgal,sfrage=modelsfrage)
+
+          bigsfr[tindx] = modelsfr       ; alog10(sfr)
           bigsfr100[tindx] = modelsfr100 ; alog10(sfr100) 
           bigb100[tindx] = modelb100
           bigmgal[tindx] = modelmgal
+          bigsfrage[tindx] = modelsfrage
        endfor
 ; apply the scale factor
        b100 = fltarr(ndraw,ngal)
        sfr0 = fltarr(ndraw,ngal)
        sfr100 = fltarr(ndraw,ngal)
+       sfrage = fltarr(ndraw,ngal)
 ;      mgal = fltarr(ndraw,ngal)
        for gg = 0L, ngal-1 do begin
           logscale_err = post[gg].scale_err/post[gg].scale/alog(10)
@@ -132,10 +136,12 @@ function isedfit_reconstruct_posterior, paramfile, post=post, params=params, $
           b100[*,gg] = alog10(bigb100[post[gg].draws])
           sfr0[*,gg] = alog10(bigsfr[post[gg].draws])+logscale
           sfr100[*,gg] = alog10(bigsfr100[post[gg].draws])+logscale
+          sfrage[*,gg] = bigsfrage[post[gg].draws]
 ;         mgal[*,gg] = bigmgal[post[gg].draws]
        endfor    
     endif
-
+    
+; now get the remaining parameters    
     mass = fltarr(ndraw,ngal)
     for gg = 0L, ngal-1 do begin
        logscale_err = post[gg].scale_err/post[gg].scale/alog(10)

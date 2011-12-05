@@ -21,6 +21,7 @@
 ;   fnu - convert to F(nu) (erg/s/cm^2/Hz) (default is AB mag) 
 ;   nomodels - restore the ISEDFIT structure, but not the model
 ;     spectra  
+;   noigm - do not convolve with the IGM
 ;   silent - suppress messages to STDOUT
 ;
 ; OUTPUTS:
@@ -53,7 +54,7 @@
 
 function isedfit_restore, paramfile, isedfit, params=params, iopath=iopath, $
   index=index, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, outprefix=outprefix, $
-  flambda=flambda, fnu=fnu, nomodels=nomodels, silent=silent
+  flambda=flambda, fnu=fnu, nomodels=nomodels, noigm=noigm, silent=silent
 
     if (n_elements(paramfile) eq 0L) and (n_elements(params) eq 0) then begin
        doc_library, 'isedfit_restore'
@@ -116,7 +117,7 @@ function isedfit_restore, paramfile, isedfit, params=params, iopath=iopath, $
        endfor
 
 ; read the IGM absorption table
-       if params.igm then begin
+       if params.igm and (keyword_set(noigm) eq 0) then begin
           splog, 'Reading IGM attenuation lookup table'
           igmgrid = mrdfits(getenv('IMPRO_DIR')+'/etc/igmtau_grid.fits.gz',1)
        endif
@@ -128,7 +129,7 @@ function isedfit_restore, paramfile, isedfit, params=params, iopath=iopath, $
              zwave = model[igal].wave*(1+zobj)
              zflux_flam = isedfit[igal].scale*model[igal].flux*$ ; [erg/s/cm2/A]
                (dist/dlum[igal])^2.0/(1.0+zobj)
-             if params.igm then begin
+             if params.igm and (keyword_set(noigm) eq 0) then begin
                 windx = findex(igmgrid.wave,zwave)
                 zindx = findex(igmgrid.zgrid,zobj)
                 igm = interpolate(igmgrid.igm,windx,zindx,/grid,missing=1.0)

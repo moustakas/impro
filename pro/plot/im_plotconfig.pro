@@ -352,7 +352,7 @@ pro im_plotconfig, plotnum, position, psfile=psfile, psclose=psclose, $
              if (n_elements(psfile) eq 0) then begin
                 splog, 'You must pass PSFILE to generate a PDF!' 
              endif else begin
-                pdffile = repstr(repstr(psfile,'.ps','.pdf'),'.ps','.pdf')
+                pdffile = repstr(repstr(psfile,'.eps','.pdf'),'.ps','.pdf')
                 spawn, 'ps2pdf13 '+psfile+' '+pdffile, /sh
                 if (keyword_set(pskeep) eq 0) then rmfile, psfile
              endelse

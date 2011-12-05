@@ -220,7 +220,7 @@ pro build_grid, montegrid, chunkinfo, ssppath=ssppath, $
             calzetti=calzetti,odonnell=odonnell,smc=smc,/silent)
           klam = rebin(reform(klam,npix,1),npix,n_elements(sspfits[0].age)) ; [npix,nage]
 ;         if keyword_set(charlot) then nsmth = total((sspfits[0].age gt 0.9*tbc) and (sspfits[0].age lt 1.1*tbc))
-          
+
 ; convolve each model with the specified SFH
           for jj = 0L, nindx1-1 do begin
              print, format='("Chunk=",I4.4,"/",I4.4,", SSP=",I4.4,"/",I4.4,", '+$

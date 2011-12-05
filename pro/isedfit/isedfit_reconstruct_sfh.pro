@@ -44,7 +44,7 @@
 function isedfit_reconstruct_sfh, info, outage=outage, mtau=mtau, $
   aburst=aburst, mburst=mburst, mgalaxy=outmgalaxy, sfr100=outsfr100, $
   b100=outb100, notruncate=notruncate, sfhtau=outsfhtau, sfhburst=outsfhburst, $
-  nooversample=nooversample, debug=debug, gaussburst=gaussburst, $
+  sfrage=outsfrage, nooversample=nooversample, debug=debug, gaussburst=gaussburst, $
   stepburst=stepburst, exptruncburst=exptruncburst, _extra=extra
 ; jm10dec22ucsd - given an iSEDfit structure, reconstruct the star
 ; formation history, allowing for multiple bursts
@@ -178,14 +178,15 @@ function isedfit_reconstruct_sfh, info, outage=outage, mtau=mtau, $
        endif
     endif
 
-; if requested, compute the <SFR> over the previous 100 Myr and the
-; birthrate parameter
+; if requested, compute the <SFR> over the previous 100 Myr, the
+; birthrate parameter, and the SFH-weighted age
     if arg_present(outmgalaxy) or arg_present(outsfr100) or $
-      arg_present(outb100) then begin
+      arg_present(outb100) or arg_present(outsfrage) then begin
        dt = 0.1D ; [100 Myr]
        mgalaxy = sfh*0D
        sfr100 = sfh*0D
        b100 = sfh*0D
+       sfrage = sfh*0D
        for iage = 0, nage-1 do begin
 ; if the SFH has been truncated then do the integrals, otherwise
 ; calculate the burst masses with integrals and the tau-model
@@ -212,6 +213,13 @@ function isedfit_reconstruct_sfh, info, outage=outage, mtau=mtau, $
           sfr100[iage] = mtot100/(dt*1D9)
           b100[iage] = sfr100[iage]/(mgalaxy[iage]/(1D9*age[iage]))
 
+; compute the SFR-weighted age
+          norm = im_integral(age*1D9,sfh,0D,1D9*age[iage])
+          if (norm eq 0D) then sfrage[iage] = age[iage] else $
+            sfrage[iage] = im_integral(age*1D9,age*1D9*sfh,0D,1D9*age[iage])/norm
+;         print, im_integral(age*1D9,age*1D9*sfh,0D,1D9*age[iage]), norm, sfrage[iage]
+;         if iage eq 200 then stop
+          
 ;         print, age[iage], mtot100, mtot100/(dt*1D9), sfh[iage]
 ;         plot, age, sfhburst, xr=[1.4,2.4], psym=-6, xsty=3, ysty=3
 ;         djs_oplot, age[iage]*[1,1], !y.crange, color='red'
@@ -229,6 +237,7 @@ function isedfit_reconstruct_sfh, info, outage=outage, mtau=mtau, $
     if arg_present(outmgalaxy) then outmgalaxy = interpolate(mgalaxy,findx)
     if arg_present(outsfr100) then outsfr100 = interpolate(sfr100,findx)
     if arg_present(outb100) then outb100 = interpolate(b100,findx)
+    if arg_present(outsfrage) then outsfrage = interpolate(sfrage,findx)/1D9 ; [Gyr]
 
 ; QAplot    
     if keyword_set(debug) then begin

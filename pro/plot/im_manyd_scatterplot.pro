@@ -141,7 +141,8 @@ if keyword_set(psfilename) then begin
 ;  im_plotconfig, 0, psfile=psfilename, keynote=keynote
    set_plot, 'PS'
    device, file=psfilename, /portrait, xsize=xsize, ysize=ysize, $
-     xoff=0.5, yoff=0.5+(10-ysize), /inch, encap=encap, /color, bits=8
+     xoffset=0.5, yoff=0.5+(10-ysize), /inch, encap=encap, /color, $
+     bits=8
 
 ;  dfpsplot, psfilename, /color, bits=8, xsize=xsize, ysize=ysize
 ;   set_plot, "PS"
@@ -300,7 +301,7 @@ if(keyword_set(title)) then begin
     !Y.CRANGE=[0,1]
     !X.S=[0,1]
     !Y.S=[0,1]
-    xyouts,0.5,1.05,title,align=0.5
+    xyouts,0.5,1.03,title,align=0.5
 endif
 
 ;if keyword_set(psfilename) then dfpsclose
