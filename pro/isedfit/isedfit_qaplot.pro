@@ -145,16 +145,16 @@ pro isedfit_qaplot, paramfile, isedfit, params=params, iopath=iopath, $
     im_plotconfig, 8, pos, psfile=psfile, ymargin=[1.0,1.1]
 ;   for igal = 54, ngal-1L do begin
     for igal = 0L, ngal-1L do begin
-       if ((igal mod 10) eq 0) then print, igal+1L, ngal, string(13b), $
+       if ((igal mod 10) eq 0) then print, igal, ngal, string(13b), $
          format='("Building QAplot for galaxy ",I0,"/",I0,A10,$)'
 
 ; redshift and best-fit model
-; ToDo: add IGM absorption!!       
        zobj = isedfit[igal].zobj
        wave = model[igal].wave    ; [A]
        flux = model[igal].flux    ; [AB]
 
 ; make the plot       
+       delvarx, yrange
        if (isedfit[igal].chi2 ge 1E6) then begin
           djs_plot, [0], [0], /nodata, xsty=1, ysty=1, yrange=yrange, $
             xtitle=xtitle1, ytitle=ytitle1, ytickname=replicate(' ',10), $

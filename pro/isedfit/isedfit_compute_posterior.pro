@@ -70,8 +70,8 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
        tindx = lindgen(nage)+imod*nage
        sfr = isedfit_reconstruct_sfh(modelgrid[imod],outage=bigage[tindx],$
          sfr100=sfr100,b100=b100,mgalaxy=mgal)
-       bigsfr[tindx] = sfr ; alog10(sfr)
-       bigsfr100[tindx] = sfr100 ; alog10(sfr100) 
+       bigsfr[tindx] = sfr>1D-30 ; avoid SFR=0, which leads to an inf when we take the log, below 
+       bigsfr100[tindx] = sfr100>1D-30
        bigb100[tindx] = b100
        bigmgal[tindx] = mgal
     endfor

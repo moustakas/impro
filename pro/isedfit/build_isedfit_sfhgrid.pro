@@ -371,11 +371,8 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
        montegrid.delayed = params.delayed ; delayed SFH?
 
 ; draw uniformly from linear TAU, or 1/TAU?
-       if params.oneovertau then begin
-          tau = 1D/(randomu(seed,params.nmonte)*(1D/params.tau[0]-1D/params.tau[1])+1D/params.tau[1])
-       endif else begin
-          tau = randomu(seed,params.nmonte)*(params.tau[1]-params.tau[0])+params.tau[0]
-       endelse
+       tau = randomu(seed,params.nmonte)*(params.tau[1]-params.tau[0])+params.tau[0]
+       if params.oneovertau then tau = 1D/tau
        montegrid.tau = tau
        
 ;      montegrid.tau = randomu(seed,params.nmonte)*(params.gamma[1]-params.gamma[0])+params.gamma[0]
