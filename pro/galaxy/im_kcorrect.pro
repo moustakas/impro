@@ -304,7 +304,7 @@ function im_kcorrect, redshift, maggies, ivarmaggies, in_filterlist, $
 ; if requested, build a QAplot    
     if (n_elements(psfile) ne 0) then begin
        str = replicate({z: 0.0, chi2: 0.0, mass: 0.0, coeffs: fltarr(5), $
-         in_filterlist: in_filterlist, maggies: fltarr(in_nband), $
+         maggies: fltarr(in_nband), $
          ivarmaggies: fltarr(in_nband), bestmaggies: fltarr(in_nband), $
          out_filterlist: out_filterlist, synth_outmaggies_obs: fltarr(out_nband)},nredshift)
        str.z = redshift
@@ -315,9 +315,8 @@ function im_kcorrect, redshift, maggies, ivarmaggies, in_filterlist, $
        str.ivarmaggies = ivarmaggies
        str.bestmaggies = bestmaggies
        str.synth_outmaggies_obs = synth_outmaggies_obs
-       str.in_filterlist = in_filterlist
        str.out_filterlist = out_filterlist
-       kcorrect_qaplot, str[0:100<(nredshift-1L)], $
+       kcorrect_qaplot, str[0:100<(nredshift-1L)], in_filterlist=in_filterlist, $
          vname=vname, psfile=psfile, /clobber
     endif
     
