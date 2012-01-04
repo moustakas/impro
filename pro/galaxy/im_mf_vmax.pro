@@ -62,7 +62,7 @@
 ;-
 
 function im_mf_vmax, mass, oneovervmax, binsize=binsize, masslimit=masslimit1, $
-  minmass=minmass, maxmass=maxmass, noutbins=noutbins, lf=lf, debug=debug
+  minmass=minmass, maxmass=maxmass, noutbins=noutbins, rev=rev, lf=lf, debug=debug
 
     ngal = n_elements(mass)
     if (ngal eq 0L) then begin
