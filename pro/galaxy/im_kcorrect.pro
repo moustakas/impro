@@ -17,23 +17,24 @@
 ;                    [IN_NBAND] 
 ;   out_filterlist - list of output filters [OUT_NBAND]
 ;
-; OPTIONAL INPUTS: 
+; OPTIONAL INPUTS:
+;   use_coeffs - use *these* coefficients (do not recompute
+;     K-corrections and therefore COEFFS); 
 ;   band_shift - blueshift of output bandpasses (to get ^{z}b type
-;                bands) (default 0.0) 
-;   vname      - name of fit to use (defaults to 'default') 
-;   h100       - Hubble constant divided by 100; the stellar mass
-;                estimates and absolute magnitudes are scaled to this
-;                value (default 0.7)
-;   omega0     - Omega_matter (default 0.3)
-;   omegal0    - Omega_Lambda (default 0.7)
-;   extra      - additional keywords for KCORRECT
+;     bands) (default 0.0)  
+;   vname - name of fit to use (defaults to 'default')  
+;   h100 - Hubble constant divided by 100; the stellar mass estimates
+;     and absolute magnitudes are scaled to this value (default 0.7) 
+;   omega0 - Omega_matter (default 0.3) 
+;   omegal0 - Omega_Lambda (default 0.7)
+;   extra - additional keywords for KCORRECT
 ;
 ; KEYWORD PARAMETERS: 
-;   vega        - convert the output magnitudes to Vega (default is AB)  
+;   vega - convert the output magnitudes to Vega (default is AB)   
 ;   not_closest - disable the default, which is to compute the
-;                 K-correction using the closest input bandpass to the
-;                 desired output bandpass 
-;   silent      - do not print messages to STDOUT
+;     K-correction using the closest input bandpass to the desired
+;     output bandpass  
+;   silent - do not print messages to STDOUT
 ;
 ; OUTPUTS: 
 ;   kcorrect - K-corrections satisfying based on the best fit sum of
@@ -46,7 +47,6 @@
 ;   mass - total current stellar mass from model [NGAL]
 ;   mtol - mass-to-light ratios from model in each output band
 ;     [OUT_NBAND,NGAL]  
-;   intsfh - total integrated star formation history [NGAL] 
 ;   obands - which input bands the K-corrections refer to
 ;     [IN_NBAND,NGAL]  
 ;   bestmaggies - synthesized *observed-frame* maggies corresponding
@@ -101,16 +101,15 @@
 ;-
 
 function im_kcorrect, redshift, maggies, ivarmaggies, in_filterlist, $
-  new_out_filterlist, band_shift=in_band_shift, vname=in_vname, h100=h100, $
-  omega0=omega0, omegal0=omegal0, chi2=chi2, coeffs=coeffs, mass=mass, $
+  new_out_filterlist, use_coeffs=use_coeffs, band_shift=in_band_shift, vname=in_vname, $
+  h100=h100, omega0=omega0, omegal0=omegal0, chi2=chi2, coeffs=coeffs, mass=mass, $
   mtol=mtol, intsfh=intsfh, obands=obands, bestmaggies=bestmaggies, $
   synth_outmaggies_obs=synth_outmaggies_obs, synth_outmaggies_rest=synth_outmaggies_rest, $
   absmag=absmag, ivarabsmag=ivarabsmag, synth_absmag=synth_absmag, clineflux=clineflux, $
   uvflux=uvflux, vega=vega, not_closest=not_closest, silent=silent, reset_rmatrix=reset_rmatrix, $
   psfile=psfile, _extra=extra
 
-    common com_im_kcorrect, out_rmatrix, out_zvals, $
-      out_filterlist, band_shift, vname
+    common com_im_kcorrect, out_rmatrix, out_zvals, out_filterlist, band_shift, vname
 
     nredshift = n_elements(redshift)
     in_nband = n_elements(in_filterlist)
@@ -130,7 +129,10 @@ function im_kcorrect, redshift, maggies, ivarmaggies, in_filterlist, $
     if (n_elements(omegal0) eq 0L) then omegal0 = 0.7
     if (n_elements(h100) eq 0L) then h100 = 0.7
     
-; need to reset rmatrix if vname or band_shift change
+; need to reset rmatrix if vname or band_shift change or if USE_COEFFS
+; was passed
+    if (n_elements(use_coeffs) ne 0) then rmatrix = 0
+    
     if (n_elements(in_vname) gt 0) then begin
        use_vname=in_vname
     endif else begin
@@ -177,14 +179,28 @@ function im_kcorrect, redshift, maggies, ivarmaggies, in_filterlist, $
        out_zvals = 0
     endif
 
-; call kcorrect; force kcorrect to recalculate RMATRIX and ZVALS every time
-    kcorrect, maggies, ivarmaggies, redshift, kcdum, band_shift=band_shift, $
-      coeffs=coeffs, rmaggies=bestmaggies, vname=vname, mass=mass, $
-      mtol=mtol, absmag=absmag, amivar=ivarabsmag, filterlist=in_filterlist, $
-      silent=silent, intsfh=intsfh, chi2=chi2, _extra=extra;, rmatrix=im_rmatrix, $
-;     zvals=im_zvals
+; call kcorrect unless USE_COEFFS was passed
+    if (n_elements(use_coeffs) eq 0) then begin
+       kcorrect, maggies, ivarmaggies, redshift, kcdum, band_shift=band_shift, $
+         coeffs=coeffs, rmaggies=bestmaggies, vname=vname, mass=mass, $
+         mtol=mtol, absmag=absmag, amivar=ivarabsmag, filterlist=in_filterlist, $
+         silent=silent, chi2=chi2, _extra=extra;, rmatrix=im_rmatrix, $
+;        zvals=im_zvals
+    endif else begin
+       dim = size(use_coeffs,/dim)
+       if (dim[0] ne 5) or (dim[1] ne nredshift) then $
+         message, 'USE_COEFFS must be a [5,NGAL] array!'
+       coeffs = use_coeffs
 
-; calculate the preliminaries
+       k_load_vmatrix, vm, lam, vfile=vfile, lfile=lfile, vpath=vpath, vname=vname
+       k_projection_table, in_rmatrix, vm, lam, in_zvals, $
+         in_filterlist, /silent
+       k_reconstruct_maggies, coeffs, redshift, bestmaggies, $
+         rmatrix=in_rmatrix, zvals=in_zvals, /silent
+    endelse
+
+; calculate the preliminaries; force kcorrect to recalculate RMATRIX
+; and ZVALS every time
     if (keyword_set(out_rmatrix) eq 0) or (keyword_set(out_zvals) eq 0) then begin
        if (keyword_set(vmatrix) eq 0) or (keyword_set(lambda) eq 0) then begin
           k_load_vmatrix, vmatrix, lambda, vfile=vfile, $
@@ -294,8 +310,7 @@ function im_kcorrect, redshift, maggies, ivarmaggies, in_filterlist, $
 ;   rmatrix = out_rmatrix
 
 ; scale everything to h100; note that K-correct *always* uses h100=1
-    mass = mass/h100^2.0
-    intsfh = intsfh/h100^2.0
+    if arg_present(mass) then mass = mass/h100^2.0
     if arg_present(absmag) or arg_present(synth_absmag) then begin
        absmag = absmag - 5.0*alog10(1.0/h100)
        synth_absmag = synth_absmag - 5.0*alog10(1.0/h100)

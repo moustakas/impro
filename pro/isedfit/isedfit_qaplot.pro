@@ -59,7 +59,7 @@
 pro isedfit_qaplot, paramfile, isedfit, params=params, iopath=iopath, $
   galaxy=galaxy1, outprefix=outprefix, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
   sfhgrid=sfhgrid, psfile=psfile1, index=index, clobber=clobber, $
-  xrange=xrange1, yrange=yrange, xlog=xlog
+  xrange=in_xrange, yrange=in_yrange, xlog=xlog
 
     light = 2.99792458D18       ; speed of light [A/s]
 
@@ -154,7 +154,6 @@ pro isedfit_qaplot, paramfile, isedfit, params=params, iopath=iopath, $
        flux = model[igal].flux    ; [AB]
 
 ; make the plot       
-       delvarx, yrange
        if (isedfit[igal].chi2 ge 1E6) then begin
           djs_plot, [0], [0], /nodata, xsty=1, ysty=1, yrange=yrange, $
             xtitle=xtitle1, ytitle=ytitle1, ytickname=replicate(' ',10), $
@@ -164,24 +163,26 @@ pro isedfit_qaplot, paramfile, isedfit, params=params, iopath=iopath, $
           label = [strtrim(galaxy[igal],2),'z = '+string(zobj,format='(F6.4)')]
           legend, label, /right, /bottom, box=0, spacing=1.5, charsize=1.6
        endif else begin
-          if (n_elements(xrange1) ne 2) then begin
+          if (n_elements(in_xrange) eq 2) then xrange1 = in_xrange else begin
              xrange1 = [min(filtinfo.weff-1.3*filtinfo.fwhm),$
                max(filtinfo.weff+2*filtinfo.fwhm)]
              xrange1[0] = xrange1[0]>(700.0*(1+zobj))
              xrange1[1] = xrange1[1]<max(wave)
              get_element, wave, xrange1, xx
-          endif
+          endelse
           xrange2 = xrange1/(1.0+zobj)
-          
+
           weff = filtinfo.weff
           hwhm = filtinfo.fwhm/2.0
-          bestmab = -2.5*alog10(isedfit[igal].bestmaggies)
 
-          if (n_elements(yrange) ne 2) then begin
+          notzero = where(isedfit[igal].bestmaggies gt 0.0)
+          bestmab = -2.5*alog10(isedfit[igal].bestmaggies[notzero])
+
+          if (n_elements(in_yrange) eq 2) then yrange = in_yrange else begin
              yrange = fltarr(2)
              yrange[0] = ((max(bestmab)>max(flux[xx[0]:xx[1]]))*1.05)<30.0
              yrange[1] = (min(bestmab)<min(flux[xx[0]:xx[1]]))*0.93
-          endif
+          endelse
 
           djs_plot, [0], [0], /nodata, xrange=xrange1, yrange=yrange, $
             xsty=9, ysty=1, xtitle=xtitle1, ytitle=ytitle1, xlog=xlog, $
@@ -190,7 +191,7 @@ pro isedfit_qaplot, paramfile, isedfit, params=params, iopath=iopath, $
             xlog=xlog
 
           djs_oplot, wave, flux, line=0, color='grey'
-          djs_oplot, weff, bestmab, psym=symcat(6,thick=6), symsize=2.5
+          djs_oplot, weff[notzero], bestmab, psym=symcat(6,thick=6), symsize=2.5
 
 ; overplot the data; distinguish between three different cases, based
 ; on the input photometry
@@ -220,7 +221,7 @@ pro isedfit_qaplot, paramfile, isedfit, params=params, iopath=iopath, $
 
           if (nupper ne 0) then begin
              mab = maggies2mag(1.0/sqrt(isedfit[igal].ivarmaggies[upper]))
-             oploterror, weff[upper], mab, hwhm[upper], mab*0.0, psym=symcat(18), $
+             oploterror, weff[upper], mab, hwhm[upper], mab*0.0, psym=symcat(11,thick=4), $
                symsize=3.0, color=djs_icolor('blue'), $
                errcolor=djs_icolor('blue'), errthick=!p.thick
           endif
