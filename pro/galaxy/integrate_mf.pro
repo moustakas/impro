@@ -68,7 +68,8 @@ function integrate_mf, mf_vmax, minmass=minmass1, maxmass=maxmass1, $
 ; the model, if provided, to extrapolate to from log(M)=[5,15]; get
 ; the errors by Monte Carlo
     if (n_elements(mf_vmax) ne 0) then begin
-       gd = where(mf_vmax.limit eq 1,ngd)
+       gd = where(mf_vmax.limit eq 1 and mf_vmax.number gt 3,ngd)
+;      gd = where(mf_vmax.limit eq 1,ngd)
        minmass_data = min(mf_vmax.mass[gd])
        maxmass_data = max(mf_vmax.mass[gd])
        result.minmass_data = minmass_data
@@ -81,31 +82,38 @@ function integrate_mf, mf_vmax, minmass=minmass1, maxmass=maxmass1, $
           result.maxmass = maxmass
           
           these = where((mf_vmax.limit eq 1) and (mf_vmax.mass ge minmass) and $
-            (mf_vmax.mass le maxmass),nthese)
-          if (nthese gt 1) then begin ; need at least two points
-             mass = mf_vmax.mass[these]
-             phi = mf_vmax.phi[these]
-             phierr = mf_vmax.phierr[these]
-
-             result.rho = im_integral(mass,10D^mass*phi,minmass,maxmass) ; [Msun Mpc^-3]
-             result.num = im_integral(mass,phi,minmass,maxmass)          ; [Mpc^-3]
-
-             nbin = n_elements(mass)
-             rhomonte = fltarr(nmonte)
-             nummonte = fltarr(nmonte)
-             phimonte = randomn(seed,nbin,nmonte)*rebin(reform(phierr,nbin,1),nbin,nmonte)+$
-               rebin(reform(phi,nbin,1),nbin,nmonte)
-             for ii = 0L, nmonte-1 do begin
-                rhomonte[ii] = im_integral(mass,10D^mass*phimonte[*,ii],minmass,maxmass)
-                nummonte[ii] = im_integral(mass,phimonte[*,ii],minmass,maxmass)
-             endfor
-             result.rhoerr = djsig(rhomonte)
-             result.numerr = djsig(nummonte)
+            (mf_vmax.mass le maxmass) and (mf_vmax.number gt 3),nthese)
+          if (nthese eq 0) then begin ; special case
+             result.rho = 0D
+             result.num = 0D
+             result.rhoerr = 0D
+             result.numerr = 0D
           endif else begin
-             result.rho = 10D^mf_vmax.mass[these]*mf_vmax.phi[these]*mf_vmax.binsize
-             result.num = mf_vmax.phi[these]*mf_vmax.binsize
-             result.rhoerr = 10D^mf_vmax.mass[these]*mf_vmax.phierr[these]*mf_vmax.binsize
-             result.numerr = mf_vmax.phierr[these]*mf_vmax.binsize
+             if (nthese gt 1) then begin ; need at least two points
+                mass = mf_vmax.mass[these]
+                phi = mf_vmax.phi[these]
+                phierr = mf_vmax.phierr[these]
+
+                result.rho = im_integral(mass,10D^mass*phi,minmass,maxmass) ; [Msun Mpc^-3]
+                result.num = im_integral(mass,phi,minmass,maxmass)          ; [Mpc^-3]
+
+                nbin = n_elements(mass)
+                rhomonte = fltarr(nmonte)
+                nummonte = fltarr(nmonte)
+                phimonte = randomn(seed,nbin,nmonte)*rebin(reform(phierr,nbin,1),nbin,nmonte)+$
+                  rebin(reform(phi,nbin,1),nbin,nmonte)
+                for ii = 0L, nmonte-1 do begin
+                   rhomonte[ii] = im_integral(mass,10D^mass*phimonte[*,ii],minmass,maxmass)
+                   nummonte[ii] = im_integral(mass,phimonte[*,ii],minmass,maxmass)
+                endfor
+                result.rhoerr = djsig(rhomonte)
+                result.numerr = djsig(nummonte)
+             endif else begin
+                result.rho = 10D^mf_vmax.mass[these]*mf_vmax.phi[these]*mf_vmax.binsize
+                result.num = mf_vmax.phi[these]*mf_vmax.binsize
+                result.rhoerr = 10D^mf_vmax.mass[these]*mf_vmax.phierr[these]*mf_vmax.binsize
+                result.numerr = mf_vmax.phierr[these]*mf_vmax.binsize
+             endelse
           endelse
 ; if necessary, "correct" the measured mass densities and number
 ; densities using the model to extrapolate to MAXMASS
@@ -120,7 +128,7 @@ function integrate_mf, mf_vmax, minmass=minmass1, maxmass=maxmass1, $
              rho_add = im_integral(modelmass,10D^modelmass*modelphi,result.maxmass_data,maxmass1)
              num_add = im_integral(modelmass,modelphi,result.maxmass_data,maxmass1)
              
-             if (result.rho le 0) then message, 'Tenemos problema, chico!'
+             if (result.rho lt 0) or (result.num lt 0) then message, 'Tenemos problema, chico!'
              result.rho_cor = result.rho + rho_add
              result.num_cor = result.num + num_add
           endif

@@ -10,6 +10,11 @@
 ;   flux - input vector (of any kind, not necessarily flux)
 ;   ferr - error on FLUX
 ;
+; OPTIONAL INPUTS: 
+;   sigfigs - if the uncertainty is identically zero (e.g., a tied
+;     parameter) then format FLUX to have SIGFIGS significant digits
+;     (e.g., 10.65362 with SIGFIGS=4 becomes '10.65') (default 4)
+;
 ; OUTPUTS: 
 ;   newflux - string output with correct number of significant digits 
 ;   newferr - corresponding string error on NEWFLUX
@@ -21,6 +26,7 @@
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2004 Apr 22, U of A
 ;   jm05jul26uofa - vectorized
+;   jm12jan12ucsd - added SIGFIGS optional input
 ;
 ; Copyright (C) 2004-2005, John Moustakas
 ; 
@@ -35,7 +41,7 @@
 ; General Public License for more details. 
 ;-
 
-pro format_flux_error, flux, ferr, newflux, newferr
+pro format_flux_error, flux, ferr, newflux, newferr, sigfigs=sigfigs
 
     nflux = n_elements(flux)
     if (nflux gt 1L) then begin
@@ -43,11 +49,19 @@ pro format_flux_error, flux, ferr, newflux, newferr
        newferr = strarr(nflux)
        for iflux = 0L, nflux-1 do begin
           delvarx, newflux1, newferr1
-          format_flux_error, flux[iflux], ferr[iflux], newflux1, newferr1
+          format_flux_error, flux[iflux], ferr[iflux], newflux1, $
+            newferr1, sigfigs=sigfigs
           newflux[iflux] = newflux1
           newferr[iflux] = newferr1
        endfor
        return
+    endif
+
+    if n_elements(sigfigs) eq 0 then sigfigs = 4
+
+    if (ferr eq 0.0) then begin
+       newferr = ''
+       newflux = im_sigfigs(flux,sigfigs)
     endif
     
     if (flux ge 0.0001) and (flux lt 0.001) then begin
@@ -84,6 +98,10 @@ pro format_flux_error, flux, ferr, newflux, newferr
        if (ferr ge 0.01) and (ferr lt 0.1) then begin
           newflux = string(im_sigfigs(flux,3),format='(F12.3)')
           newferr = string(im_sigfigs(ferr,3),format='(F12.3)')
+       endif
+       if (ferr ge 0.1) and (ferr lt 1) then begin
+          newflux = string(im_sigfigs(flux,2),format='(F12.2)')
+          newferr = string(im_sigfigs(ferr,2),format='(F12.2)')
        endif
     endif
     

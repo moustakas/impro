@@ -112,8 +112,8 @@ function im_mf_vmax, mass, oneovervmax, binsize=binsize, masslimit=masslimit1, $
           limit[ii] = 0 ; no galaxies
        endif else begin
           if keyword_set(lf) then $
-            limit[ii] = (binmass[ii]-binsize/2.0) lt min(masslimit[rev[rev[ii]:rev[ii+1]-1]]) else $
-              limit[ii] = (binmass[ii]-binsize/2.0) gt min(masslimit[rev[rev[ii]:rev[ii+1]-1]])
+            limit[ii] = (binmass[ii]-binsize/2.0) le min(masslimit[rev[rev[ii]:rev[ii+1]-1]]) else $
+              limit[ii] = (binmass[ii]-binsize/2.0) ge min(masslimit[rev[rev[ii]:rev[ii+1]-1]])
 ;         limit[ii] = total(mass[rev[rev[ii]:rev[ii+1]-1]] lt masslimit) eq 0.0
           weff[ii] = total(oneovervmax[rev[rev[ii]:rev[ii+1]-1]]^2,/double)/$ ; effective weight
             total(oneovervmax[rev[rev[ii]:rev[ii+1]-1]],/double)
