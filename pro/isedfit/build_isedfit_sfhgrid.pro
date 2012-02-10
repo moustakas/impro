@@ -366,8 +366,8 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
 ; compute the maximum number of bursts, if any
        if (params.pburst le 0.0) then nmaxburst = 0 else $
          nmaxburst = ceil(long(100D*(params.maxage-params.minage)/params.pburstinterval)/100D)
-       montegrid = init_montegrid(params.nmonte,params.nage,imf=imf,nmaxburst=nmaxburst)
 
+       montegrid = init_montegrid(params.nmonte,params.nage,imf=imf,nmaxburst=nmaxburst)
        montegrid.delayed = params.delayed ; delayed SFH?
 
 ; draw uniformly from linear TAU, or 1/TAU?
@@ -497,9 +497,10 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
 
 ; allow a FRACTRUNC fraction of the models with bursts to have
 ; truncated bursts 
-          if (params.fractrunc gt 0.0) then begin
+          if (params.fractrunc gt 0D) then begin
              ntrunc = long(params.fractrunc*nhasburst)
-             trunc = random_indices(nhasburst,ntrunc)
+             if params.fractrunc eq 1D then trunc = lindgen(ntrunc) else $
+               trunc = random_indices(nhasburst,ntrunc)
           endif else begin
              trunc = hasburst
              ntrunc = nhasburst

@@ -86,7 +86,7 @@ function init_isedfit, ngal, nfilt, sfhgrid, sfhgrid_paramfile=sfhgrid_paramfile
     ndraw = isedfit_ndraw() ; number of random draws
 
 ; compute the maximum number of bursts, if any
-    if (params.pburst le 0.0) then nmaxburst = 0 else $
+    if (params.pburst le 0D) then nmaxburst = 0 else $
       nmaxburst = ceil((params.maxage-params.minage)/params.pburstinterval)
 
     burstarray1 = -1.0

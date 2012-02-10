@@ -51,10 +51,10 @@ function kcorrect_restore, info, vname=vname
     wave = k_lambda_to_centers(lambda)
     model = {wave: wave, flux: wave*0.0}
     model = replicate(temporary(model),ngal)
-    model.flux = vmatrix#info.coeffs
+    model.flux = vmatrix#info.k_coeffs
     for igal = 0L, ngal-1L do begin
-       model[igal].wave = wave*(1.0+info[igal].z) ; [A]
-       model[igal].flux = model[igal].flux/(1.0+info[igal].z)
+       model[igal].wave = wave*(1.0+info[igal].k_zobj) ; [A]
+       model[igal].flux = model[igal].flux/(1.0+info[igal].k_zobj)
     endfor
 
     model.flux = model.flux*model.wave^2/light ; observed frame
@@ -104,13 +104,13 @@ pro kcorrect_qaplot, info, psfile=psfile, vname=vname, $
        endif
     endif
 
-    im_plotconfig, 1, pos, psfile=psfile
+    im_plotconfig, 8, pos, psfile=psfile, ymargin=[1.1,1.1]
     for igal = 0L, ngal-1L do begin
        if ((igal mod 10) eq 0) then print, igal+1L, ngal, string(13b), $
          format='("Building QAplot for galaxy ",I0,"/",I0,A10,$)'
        
 ; redshift and best-fit model
-       zobj = info[igal].z
+       zobj = info[igal].k_zobj
        wave = model[igal].wave    ; [A]
        flux = model[igal].flux    ; [AB]
 
@@ -126,12 +126,11 @@ pro kcorrect_qaplot, info, psfile=psfile, vname=vname, $
        xrange1[0] = xrange1[0]>(500.0*(1+zobj))
        xrange1[1] = xrange1[1]<max(wave)
 
-       if (info[igal].chi2 eq -999.0) then begin
+       if (info[igal].k_chi2 eq -999.0) then begin
           xrange2 = xrange1/(1.0+zobj)
           djs_plot, [0], [0], /nodata, xsty=9, ysty=1, xrange=xrange1, $
             yrange=yrange, /xlog, xtitle=xtitle1, ytitle=ytitle1, $
-            ytickname=replicate(' ',10), ymargin=[4,3];, $
-;           position=pos        ;, xtickinterval=1000
+            ytickname=replicate(' ',10), position=pos        ;, xtickinterval=1000
           axis, /xaxis, xsty=1, xtitle=textoidl(xtitle2), xrange=xrange2, /xlog
           legend, ['No mass estimate available'], /left, /top, $
             box=0, spacing=1.5, charsize=1.6
@@ -141,7 +140,7 @@ pro kcorrect_qaplot, info, psfile=psfile, vname=vname, $
        endif else begin
           get_element, wave, xrange1, xx
 
-          bestmab = -2.5*alog10(info[igal].bestmaggies)
+          bestmab = -2.5*alog10(info[igal].k_bestmaggies)
 
           yrange = fltarr(2)
           yrange[0] = (max(bestmab)>max(flux[xx[0]:xx[1]]))*1.05
@@ -149,7 +148,7 @@ pro kcorrect_qaplot, info, psfile=psfile, vname=vname, $
 
           djs_plot, [0], [0], /nodata, xrange=xrange1, yrange=yrange, $
             xsty=9, ysty=1, xtitle=xtitle1, ytitle=ytitle1, /xlog, $
-            ymargin=[4,3];, position=pos;, xtickinterval=1000
+            position=pos        ;, xtickinterval=1000
           axis, /xaxis, xsty=1, xtitle=textoidl(xtitle2), xrange=xrange2, /xlog
 
           djs_oplot, wave, flux, line=0, color='grey'
@@ -158,23 +157,23 @@ pro kcorrect_qaplot, info, psfile=psfile, vname=vname, $
 
 ; overplot the data; distinguish between three different cases, based
 ; on the input photometry
-          used = where((info[igal].maggies gt 0.0) and $ ; used in the fitting
-            (info[igal].ivarmaggies gt 0.0),nused)
-          notused = where((info[igal].maggies gt 0.0) and $ ; not used in the fitting
-            (info[igal].ivarmaggies eq 0.0),nnotused)
-          nodata = where((info[igal].maggies eq 0.0) and $ ; no measurement
-            (info[igal].ivarmaggies eq 0.0),nnodata)
+          used = where((info[igal].k_maggies gt 0.0) and $ ; used in the fitting
+            (info[igal].k_ivarmaggies gt 0.0),nused)
+          notused = where((info[igal].k_maggies gt 0.0) and $ ; not used in the fitting
+            (info[igal].k_ivarmaggies eq 0.0),nnotused)
+          nodata = where((info[igal].k_maggies eq 0.0) and $ ; no measurement
+            (info[igal].k_ivarmaggies eq 0.0),nnodata)
 
           if (nused ne 0L) then begin
-             mab = maggies2mag(info[igal].maggies[used],$
-               ivar=info[igal].ivarmaggies[used],magerr=mab_err)
+             mab = maggies2mag(info[igal].k_maggies[used],$
+               ivar=info[igal].k_ivarmaggies[used],magerr=mab_err)
              oploterror, in_filtinfo[used].weff, mab, in_filtinfo[used].fwhm/2.0, $
                mab_err, psym=symcat(16), symsize=2.0, color=djs_icolor('dark green'), $
                errcolor=djs_icolor('dark green'), errthick=!p.thick
           endif
 
           if (nnotused ne 0L) then begin
-             mab = maggies2mag(info[igal].maggies[notused])
+             mab = maggies2mag(info[igal].k_maggies[notused])
              oploterror, in_filtinfo[notused].weff, mab, in_filtinfo[notused].fwhm/2.0, $
                mab*0.0, psym=symcat(4,thick=6.0), symsize=3.0, color=djs_icolor('red'), $
                errcolor=djs_icolor('red'), errthick=!p.thick
@@ -202,9 +201,9 @@ pro kcorrect_qaplot, info, psfile=psfile, vname=vname, $
 ;         legend, textoidl(label), /left, /top, box=0, spacing=1.7, charsize=1.6
           label = textoidl([strtrim(repstr(galaxy[igal],'_',' '),2),$
             'z = '+string(zobj,format='(F6.4)'),'\chi^{2} = '+$
-            strtrim(string(abs(info[igal].chi2),format='(F12.2)'),2),$
+            strtrim(string(abs(info[igal].k_chi2),format='(F12.2)'),2),$
             'log (M/M'+sunsymbol()+') = '+$
-            strtrim(string(info[igal].mass,format='(F12.2)'),2)])
+            strtrim(string(info[igal].k_mass,format='(F12.2)'),2)])
           legend, label, /left, /top, box=0, spacing=1.5, charsize=1.4
 
 ;         mylabel = ['SDSS/ugriz','Model/ugriz','NDWFS/BwRI','Model/BwRI']
