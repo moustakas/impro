@@ -374,7 +374,7 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
        tau = randomu(seed,params.nmonte)*(params.tau[1]-params.tau[0])+params.tau[0]
        if params.oneovertau then tau = 1D/tau
        montegrid.tau = tau
-       
+
 ;      montegrid.tau = randomu(seed,params.nmonte)*(params.gamma[1]-params.gamma[0])+params.gamma[0]
 ;      im_plothist, montegrid.tau, bin=0.2
 

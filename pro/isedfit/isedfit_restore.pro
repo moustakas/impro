@@ -15,6 +15,8 @@
 ;     restore all)
 ;   isedfit_sfhgrid_dir - see BUILD_ISEDFIT_SFHGRID
 ;   outprefix - optional output prefix string (see ISEDFIT) 
+;   in_isedfit - like ISEDFIT, but as an input; needed to enable some
+;     of the fancy plotting I've done for papers
 ;
 ; KEYWORD PARAMETERS:
 ;   flambda - convert to F(lambda) (erg/s/cm^2/A) (default is AB mag) 
@@ -54,7 +56,8 @@
 
 function isedfit_restore, paramfile, isedfit, params=params, iopath=iopath, $
   index=index, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, outprefix=outprefix, $
-  flambda=flambda, fnu=fnu, nomodels=nomodels, noigm=noigm, silent=silent
+  flambda=flambda, fnu=fnu, nomodels=nomodels, noigm=noigm, silent=silent, $
+  in_isedfit=in_isedfit
 
     if (n_elements(paramfile) eq 0L) and (n_elements(params) eq 0) then begin
        doc_library, 'isedfit_restore'
@@ -67,15 +70,18 @@ function isedfit_restore, paramfile, isedfit, params=params, iopath=iopath, $
     fp = isedfit_filepaths(params,outprefix=outprefix,iopath=iopath,$
       isedfit_sfhgrid_dir=isedfit_sfhgrid_dir)
 
-; restore the ISEDFIT output
-    if (file_test(fp.iopath+fp.isedfit_outfile+'.gz',/regular) eq 0L) then $
-      message, 'ISEDFIT output not found!'
-    splog, 'Reading '+fp.iopath+fp.isedfit_outfile+'.gz'
-    isedfit1 = mrdfits(fp.iopath+fp.isedfit_outfile+'.gz',1,/silent)
+; restore the ISEDFIT output; optionally take ISEDFIT as an input
+; structure
+    if (n_elements(in_isedfit) eq 0L) then begin
+       if (file_test(fp.iopath+fp.isedfit_outfile+'.gz',/regular) eq 0L) then $
+         message, 'ISEDFIT output not found!'
+       splog, 'Reading '+fp.iopath+fp.isedfit_outfile+'.gz'
+       isedfit1 = mrdfits(fp.iopath+fp.isedfit_outfile+'.gz',1,/silent)
 
 ; only restore a subset of the objects    
-    if (n_elements(index) eq 0L) then isedfit = isedfit1 else $
-      isedfit = isedfit1[index]
+       if (n_elements(index) eq 0L) then isedfit = isedfit1 else $
+         isedfit = isedfit1[index]
+    endif else isedfit = in_isedfit
     ngal = n_elements(isedfit)
 
     if keyword_set(nomodels) then begin

@@ -56,7 +56,8 @@
 function isedfit_reconstruct_posterior, paramfile, post=post, params=params, $
   iopath=iopath, index=index, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
   outprefix=outprefix, age=age, sfrage=sfrage, tau=tau, Z=Z, av=av, nburst=nburst, $
-  sfr0=sfr0, sfr100=sfr100, b100=b100, mgal=mgal
+  sfr0=sfr0, sfr100=sfr100, b100=b100, mgal=mgal, chunkindx=chunkindx, $
+  modelindx=modelindx, indxage=ageindx
   
     if (n_elements(paramfile) eq 0) and (n_elements(params) eq 0) then begin
        doc_library, 'isedfit_reconstruct_posterior'
@@ -105,6 +106,11 @@ function isedfit_reconstruct_posterior, paramfile, post=post, params=params, $
     bigav = reform(rebin(reform(modelgrid.mu*modelgrid.av,1,nmodel),nage,nmodel),nallmodel)
     bignburst = reform(rebin(reform(modelgrid.nburst,1,nmodel),nage,nmodel),nallmodel)
 
+; for restoring the posterior on the models    
+    bigchunkindx = reform(rebin(reform(modelgrid.chunkindx,1,nmodel),nage,nmodel),nallmodel)
+    bigmodelindx = reform(rebin(reform(modelgrid.modelindx,1,nmodel),nage,nmodel),nallmodel)
+    bigageindx = reform(rebin(reform(lindgen(nage),nage,1),nage,nmodel),nallmodel)
+
     if arg_present(sfr0) or arg_present(sfr100) or arg_present(b100) or $
       arg_present(mgal) or arg_present(sfrage) then dosfr = 1 else dosfr = 0
     if dosfr then begin
@@ -147,12 +153,15 @@ function isedfit_reconstruct_posterior, paramfile, post=post, params=params, $
        logscale_err = post[gg].scale_err/post[gg].scale/alog(10)
        logscale = alog10(post[gg].scale) + randomn(seed,ndraw)*logscale_err
        mass[*,gg] = alog10(bigmass[post[gg].draws])+logscale
-    endfor    
+    endfor
 
     if arg_present(age) then age = bigage[post.draws]
     if arg_present(tau) then tau = bigtau[post.draws]
     if arg_present(Z) then Z = bigZ[post.draws]
     if arg_present(av) then av = bigav[post.draws]
+    if arg_present(chunkindx) then chunkindx = bigchunkindx[post.draws]
+    if arg_present(modelindx) then modelindx = bigmodelindx[post.draws]
+    if arg_present(ageindx) then ageindx = bigageindx[post.draws]
         
 return, mass
 end

@@ -98,6 +98,8 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
             total(post[allow],/cumu,/double)],randomu(seed,ndraw))))
           isedfit_post[igal].draws = allow[these]
           isedfit_post[igal].scale = galgrid[allow[these]].scale
+          isedfit_post[igal].scale_err = galgrid[allow[these]].scale_err
+          isedfit_post[igal].chi2 = galgrid[allow[these]].chi2
 
 ; multiply the stellar masses and SFRs of the models by the scale
 ; factor; perturb the scale factor by the Gaussian error to avoid the

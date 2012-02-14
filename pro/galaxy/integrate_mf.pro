@@ -117,20 +117,25 @@ function integrate_mf, mf_vmax, minmass=minmass1, maxmass=maxmass1, $
           endelse
 ; if necessary, "correct" the measured mass densities and number
 ; densities using the model to extrapolate to MAXMASS
-          if (n_elements(schechter) ne 0) and (result.maxmass_data lt maxmass1) then begin
-             modelmass = range(result.maxmass_data,maxmass1,500)
-             if (keyword_set(double) eq 0) and (keyword_set(plus) eq 0) then begin
-                modelphi = mf_schechter(modelmass,schechter=schechter)
+          if (n_elements(schechter) ne 0) then begin
+             if (result.maxmass_data lt maxmass1) then begin
+                modelmass = range(result.maxmass_data,maxmass1,500)
+                if (keyword_set(double) eq 0) and (keyword_set(plus) eq 0) then begin
+                   modelphi = mf_schechter(modelmass,schechter=schechter)
+                endif else begin
+                   if keyword_set(double) then modelphi = mf_double_schechter(modelmass,schechter=schechter)
+                   if keyword_set(plus) then modelphi = mf_schechter_plus(modelmass,schechter=schechter)
+                endelse
+                rho_add = im_integral(modelmass,10D^modelmass*modelphi,result.maxmass_data,maxmass1)
+                num_add = im_integral(modelmass,modelphi,result.maxmass_data,maxmass1)
+                
+                if (result.rho lt 0) or (result.num lt 0) then message, 'Tenemos problema, chico!'
+                result.rho_cor = result.rho + rho_add
+                result.num_cor = result.num + num_add
              endif else begin
-                if keyword_set(double) then modelphi = mf_double_schechter(modelmass,schechter=schechter)
-                if keyword_set(plus) then modelphi = mf_schechter_plus(modelmass,schechter=schechter)
+                result.rho_cor = result.rho
+                result.num_cor = result.num
              endelse
-             rho_add = im_integral(modelmass,10D^modelmass*modelphi,result.maxmass_data,maxmass1)
-             num_add = im_integral(modelmass,modelphi,result.maxmass_data,maxmass1)
-             
-             if (result.rho lt 0) or (result.num lt 0) then message, 'Tenemos problema, chico!'
-             result.rho_cor = result.rho + rho_add
-             result.num_cor = result.num + num_add
           endif
        endif
     endif 

@@ -173,6 +173,7 @@ function init_isedfit, ngal, nfilt, sfhgrid, sfhgrid_paramfile=sfhgrid_paramfile
 ; initialize the posterior distribution structure
     isedfit_post = {$
       draws:     lonarr(ndraw)-1,$
+      chi2:      fltarr(ndraw)-1,$
       scale:     fltarr(ndraw)-1,$
       scale_err: fltarr(ndraw)-1}
     isedfit_post = replicate(temporary(isedfit_post),ngal)
