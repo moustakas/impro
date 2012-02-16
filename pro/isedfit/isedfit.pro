@@ -105,13 +105,15 @@ function init_isedfit, ngal, nfilt, sfhgrid, sfhgrid_paramfile=sfhgrid_paramfile
       chunkindx:        -1,$
       modelindx:        -1,$
       ageindx:          -1,$
+      delayed:           0,$
+      bursttype:         0,$
 
       tau:            -1.0,$
       Z:              -1.0,$
       av:             -1.0,$
       mu:             -1.0,$
       nburst:            0,$
-      tauburst:       -1.0,$ ; burst truncation time scale
+      tautrunc:       -1.0,$ ; burst truncation time scale
       tburst:    burstarray1,$
       dtburst:   burstarray1,$
       fburst:    burstarray1,$
@@ -358,7 +360,7 @@ pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfi
 ;         im_mwrfits, modelgrid, clobber=clobber, fp.modelspath+fp.modelgrid_gchunkfiles[gchunk]
        endif
 ; minimize chi2
-       if (keyword_set(silent) eq 0) then splog, 'Minimizing chi2...'
+       if (keyword_set(silent) eq 0) then splog, 'Building the posterior distributions...'
        temp_isedfit_post = isedfit_post[gthese]
        isedfit[gthese] = isedfit_compute_posterior(isedfit[gthese],$
          modelgrid,fullgrid,isedfit_post=temp_isedfit_post)

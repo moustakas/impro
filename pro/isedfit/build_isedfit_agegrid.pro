@@ -96,43 +96,50 @@ function build_isedfit_agegrid, info, inage=inage1, nage=nage, $
              endif
           endif
        endfor
-
+       
 ; now get rid of NBURSTAGE random ages from the old age vector
        ntoss = n_elements(burstage)
        if (ntoss ne 0) then begin
-          these = cmset_op(inage,'and',/not2,burstage,/index) ; remove TB from INAGE
+; remove TB from INAGE, but put them back in below
+          these = cmset_op(im_double(inage),'and',/not2,im_double(burstage),/index) 
           nthese = n_elements(these)
           if (nage-ntoss eq nthese) then keep = lindgen(nthese) else $
             keep = random_indices(nthese,nage-ntoss)
           outage = [inage[these[keep]],burstage]
+;         outage = [inage[these[keep]],[minage,maxage,burstage]]
        endif else outage = inage
        outage = outage[sort(outage)]
+;      check = where(long(findex(outage,tb)) lt 0)
+;      if check[0] ne -1 then message, 'Probably should not happen'
     endif else outage = inage
 
     if (n_elements(outage) ne nage) then message, 'Bad bad bad!'
     
 ; truncate the last burst?  require at least 5 age samplings of the
-; exponential tail 
-    if tag_exist(info,'tauburst') then begin
-       if (info.tauburst gt 0.0) then begin
-          post = where(outage ge tb[nb-1],npost,comp=pre,ncomp=npre)
-          if (npost gt 0) then begin
-             npad = 5
-             padage = tb[nb-1]-im_double(info.tauburst)*alog((1D0-(range(0.1D,1D,npad,/log)-0.1D)))
-             keep = where(padage lt maxage,nkeep) ; could break if TB=MAXAGE
-             if (nkeep gt 0) then begin
-                padage = padage[keep]
-                these = where(outage gt max(padage),nthese)
-                if (nthese gt 0) then padage = [padage,outage[these]]
+; exponential tail
+    if (info.tautrunc gt 0.0) then begin
+       if info.bursttype eq 1 then $
+         post = where(outage ge tb[nb-1],npost,comp=pre,ncomp=npre) else $ ; after the peak of the burst
+           post = where(outage ge tb[nb-1]+dtb[nb-1],npost,comp=pre,ncomp=npre) ; after the full width of the burst
+       if (npost gt 0) then begin
+          npad = 5
+          if info.bursttype eq 1 then $
+            padage = tb[nb-1]-im_double(info.tautrunc)*alog((1D0-(range(0.1D,1D,npad,/log)-0.1D))) else $
+              padage = (tb[nb-1]+dtb[nb-1])-im_double(info.tautrunc)*alog((1D0-(range(0.001D,1D,npad,/log)-0.001D)))
+
+          keep = where(padage lt maxage,nkeep) ; could break if TB=MAXAGE
+          if (nkeep gt 0) then begin
+             padage = padage[keep]
+             these = where(outage gt max(padage),nthese)
+             if (nthese gt 0) then padage = [padage,outage[these]]
 ;  get rid of the "spare" ages from before the exponential
-                if (n_elements(padage) gt npost) then begin
-                   ran = random_indices(npre,npre-(n_elements(padage)-npost))
-                   outage = [outage[pre[ran]],padage]
-                   outage = outage[sort(outage)]
-                endif
+             if (n_elements(padage) gt npost) then begin
+                ran = random_indices(npre,npre-(n_elements(padage)-npost))
+                outage = [outage[pre[ran]],padage]
+                outage = outage[sort(outage)]
              endif
           endif
-       endif 
+       endif
     endif 
     
     if keyword_set(debug) then begin
@@ -141,7 +148,7 @@ function build_isedfit_agegrid, info, inage=inage1, nage=nage, $
        cc = get_kbrd(1)
     endif
 
-    uu = uniq(outage,sort(outage))
+    uu = uniq(im_double(outage),sort(im_double(outage)))
     if (n_elements(uu) lt n_elements(outage)) then message, 'Bad bad'
     
 return, outage

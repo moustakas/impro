@@ -18,7 +18,6 @@
 ;     tburst - time each burst begins [Gyr]
 ;     dtburst - burst duration [Gyr]
 ;     fburst - mass fraction of each burst
-;     tauburst - truncated burst timescale [Gyr]
 ;
 ; OPTIONAL INPUTS:
 ;   time - desired output age vector (Gyr)
@@ -30,10 +29,6 @@
 ;   cspmstar - stellar mass of the CSP with time [NSFH]
 ;
 ; KEYWORD PARAMETERS:
-;   stepburst - treat each burst as a step function
-;   gaussburst - treat each burst as a Gaussian 
-;   exptruncburst - treat each burst as a step function with
-;     exponential wings
 ;
 ; OUTPUTS: 
 ;   cspflux - time-dependent spectra of the composite stellar
@@ -64,7 +59,7 @@
 
 function isedfit_convolve_sfh, ssp, infosfh=infosfh, time=time, $
   sfh=sfh, mstar=mstar, cspmstar=cspmstar, nsamp=nsamp, debug=debug, $
-  stepburst=stepburst, gaussburst=gaussburst, exptruncburst=exptruncburst
+  bigdebug=bigdebug, _extra=extra
 
     if (n_elements(ssp) eq 0) or (n_elements(infosfh) eq 0) then begin
        doc_library, 'isedfit_convolve_sfh'
@@ -82,8 +77,8 @@ function isedfit_convolve_sfh, ssp, infosfh=infosfh, time=time, $
 
 ; check for the SFH
     if (n_elements(time) eq 0) then time = ssp.age/1D9
-    sfh = isedfit_reconstruct_sfh(infosfh,outage=time,stepburst=stepburst,$
-      gaussburst=gaussburst,exptruncburst=exptruncburst,mtau=mtau)
+    sfh = isedfit_reconstruct_sfh(infosfh,outage=time,$
+      debug=debug,_extra=extra)
     nsfh = n_elements(sfh)
 
 ; check for other quantities to convolve
@@ -115,10 +110,11 @@ function isedfit_convolve_sfh, ssp, infosfh=infosfh, time=time, $
 ; interpolate       
        sspindx = findex(ssp.age,reverse(thistime))>0
        isspflux = interpolate(ssp.flux,sspindx)
-       thissfh = isedfit_reconstruct_sfh(infosfh,outage=thistime/1D9,/nooversample,$
-         stepburst=stepburst,gaussburst=gaussburst,exptruncburst=exptruncburst)
-       if keyword_set(debug) then begin
-          djs_plot, time, sfh, psym=6, xsty=3, ysty=3, /xlog, yrange=[min(sfh),max(sfh)>max(thissfh)], xr=[1,3]
+       thissfh = isedfit_reconstruct_sfh(infosfh,outage=thistime/1D9,/nooversample)
+
+       if keyword_set(bigdebug) then begin
+          djs_plot, time, sfh, psym=6, xsty=3, ysty=3, /xlog, /ylog, $
+            yrange=[min(sfh),max(sfh)>max(thissfh)], xr=[5,10]
           djs_oplot, thistime/1D9, thissfh, psym=6, sym=0.2, color='orange'
           ww = where(max(thistime)-thistime lt 0.01D9)
           djs_oplot, thistime[ww]/1D9, thissfh[ww], psym=6, sym=0.6, color='blue'
@@ -126,10 +122,12 @@ function isedfit_convolve_sfh, ssp, infosfh=infosfh, time=time, $
           if (nb gt 0) and (max(thistime/1D9) ge infosfh.tburst[0]) then begin
              t1 = findex(thistime/1D9,infosfh.tburst[0:nb-1])
              t2 = findex(thistime/1D9,infosfh.tburst[0:nb-1]+infosfh.dtburst[0:nb-1])
-             niceprint, t1, t2
-             cc = get_kbrd(1)
+;            niceprint, t1, t2
+;            cc = get_kbrd(1)
           endif
-;         print, ii, nthistime & cc = get_kbrd(1)
+;         if ii eq nsfh-25 then stop          
+;         print, ii, nthistime
+;         cc = get_kbrd(1)
        endif
 
 ; do the convolution integral       

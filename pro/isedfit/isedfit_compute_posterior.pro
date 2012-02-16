@@ -58,7 +58,12 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
     bigmu     = reform(rebin(reform(modelgrid.mu,1,nmodel),nage,nmodel),nallmodel)
     bigav     = reform(rebin(reform(modelgrid.av,1,nmodel),nage,nmodel),nallmodel)
 ;   bigav     = reform(rebin(reform(modelgrid.mu*modelgrid.av,1,nmodel),nage,nmodel),nallmodel)
-    bignburst = reform(rebin(reform(modelgrid.nburst,1,nmodel),nage,nmodel),nallmodel)
+
+;   bigfburst   = reform(rebin(reform(modelgrid.fburst,1,nmodel),nage,nmodel),nallmodel)
+;   bigtburst   = reform(rebin(reform(modelgrid.tburst,1,nmodel),nage,nmodel),nallmodel)
+;   bigdtburst   = reform(rebin(reform(modelgrid.dtburst,1,nmodel),nage,nmodel),nallmodel)
+;   bignburst   = reform(rebin(reform(modelgrid.nburst,1,nmodel),nage,nmodel),nallmodel)
+;   bigtautrunc = reform(rebin(reform(modelgrid.tautrunc,1,nmodel),nage,nmodel),nallmodel)
     
 ; reconstruct the SFH, time-averaged SFR, and birthrate parameter for
 ; each model 
@@ -132,9 +137,11 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
           isedfit[igal].ageindx = allmindx[0]
           isedfit[igal].modelindx = modelgrid[allmindx[1]].modelindx
           isedfit[igal].chunkindx = modelgrid[allmindx[1]].chunkindx
+          isedfit[igal].delayed = modelgrid[allmindx[1]].delayed
+          isedfit[igal].bursttype = modelgrid[allmindx[1]].bursttype
           
           isedfit[igal].nburst = modelgrid[allmindx[1]].nburst
-          isedfit[igal].tauburst = modelgrid[allmindx[1]].tauburst
+          isedfit[igal].tautrunc = modelgrid[allmindx[1]].tautrunc
           isedfit[igal].tburst = modelgrid[allmindx[1]].tburst
           isedfit[igal].dtburst = modelgrid[allmindx[1]].dtburst
           isedfit[igal].fburst = modelgrid[allmindx[1]].fburst
@@ -152,17 +159,12 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
 
           isedfit[igal].bestmaggies = galgrid[mindx].bestmaggies
        endif
-; some plots       
-;      djs_plot, bigage, galgrid.chi2, ps=6, /ylog, /xlog, yr=isedfit[igal].chi2*[0.9,3], xsty=3, ysty=3, sym=0.5
-;      djs_oplot, bigage[allow[these]], galgrid[allow[these]].chi2, ps=6, sym=0.5, color='green'
+; some plots
+;       xx = bigage & yy = bigdtburst
+;       djs_plot, xx, galgrid.chi2, ps=6, /ylog, xlog=0, yr=isedfit[igal].chi2*[0.9,3], xsty=3, ysty=3, sym=0.5 & djs_oplot, xx[allow[these]], galgrid[allow[these]].chi2, ps=6, sym=0.5, color='green'
 ;
-;      djs_plot, bigmass, galgrid.chi2, ps=6, /ylog, /xlog, yr=isedfit[igal].chi2*[0.9,3], xsty=3, ysty=3, sym=0.5
-;      djs_oplot, bigage[allow[these]], galgrid[allow[these]].chi2, ps=6, sym=0.5, color='green'
-;
-;      plot, bigav, galgrid.chi2, ps=6, /ylog, /xlog, yr=isedfit[igal].chi2*[0.9,3], ysty=3, sym=0.5
-
-;      plot, bigsfr*galgrid.scale, galgrid.chi2, ps=6, /ylog, /xlog, $
-;        yr=isedfit[igal].chi2*[0.9,3], ysty=3, sym=0.5, xr=[1,1E4]
+;      ww = where(galgrid.chi2 lt 150) & w2 = where(galgrid.chi2 lt 100)
+;      djs_plot, xx, yy, ps=6, /ylog, sym=0.2, ysty=3 & djs_oplot, xx[ww], yy[ww], psym=7, color='red', sym=2 & djs_oplot, xx[w2], yy[w2], psym=7, color='green', sym=2.5
     endfor 
 
 return, isedfit

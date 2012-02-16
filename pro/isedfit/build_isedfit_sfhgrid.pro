@@ -54,11 +54,6 @@
 ; 
 ;   debug - make some debugging plots and wait for a keystroke 
 ;
-;   stepburst - treat each burst as a step function (default)
-;   gaussburst - treat each burst as a Gaussian 
-;   exptruncburst - treat each burst as a step function with
-;     exponential wings
-; 
 ; OUTPUTS: 
 ;   The grids get written out in a data model that ISEDFIT
 ;   understands, and which should be transparent to the user. 
@@ -105,12 +100,13 @@ function init_montegrid, nmodel, nage, imf=imf, nmaxburst=nmaxburst
       chunkindx:                 -1,$
       modelindx:                 -1,$
       delayed:                    0,$ ; delayed tau model?
+      bursttype:                  0,$ ; burst type: 0=step function (default); 1=gaussian; 2=step function with exponential wings
       tau:                     -1.0,$
       Z:                       -1.0,$
       av:                       0.0,$ ; always initialize with zero to accommodate the dust-free models!
       mu:                       1.0,$ ; always default to 1.0!
       nburst:                     0,$
-      tauburst:                -1.0,$ ; burst truncation time scale
+      tautrunc:                -1.0,$ ; burst truncation time scale
       tburst:           burstarray1,$
       dtburst:          burstarray1,$ ; 
       fburst:           burstarray1,$ ; burst mass fraction
@@ -165,8 +161,7 @@ return, fits
 end
 
 pro build_grid, montegrid, chunkinfo, ssppath=ssppath, $
-  sspinfo=sspinfo, redcurve=redcurve, params=params, debug=debug, $
-  stepburst=stepburst, gaussburst=gaussburst, exptruncburst=exptruncburst
+  sspinfo=sspinfo, redcurve=redcurve, params=params, debug=debug
 ; this is the main driver routine for building the grid
 
 ; reddening curves
@@ -236,24 +231,23 @@ pro build_grid, montegrid, chunkinfo, ssppath=ssppath, $
 
 ; do the convolution; tau=0 and no bursts is a special case
              outage = outinfo[indx1[jj]].age
-             outsfr = isedfit_reconstruct_sfh(outinfo[indx1[jj]],outage=im_double(outage),$
-               mgalaxy=outmgal,aburst=aburst,mburst=mburst,debug=0,$
-               stepburst=stepburst,gaussburst=gaussburst,exptruncburst=exptruncburst)
-
              if (outinfo[indx1[jj]].tau eq 0.0) and (outinfo[indx1[jj]].nburst eq 0) then begin ; special case
                 ageindx = findex(sspfits[jj].age,outage*1D9)
                 outflux = interpolate(sspfits[jj].flux,lindgen(npix),ageindx,/grid)
                 outmstar = interpolate(sspfits[jj].mstar,ageindx)
                 outmgal = outmstar*0+1
+                outsfr = isedfit_reconstruct_sfh(outinfo[indx1[jj]],outage=im_double(outage),$
+                  minage=min(outage)<0.01D,mgalaxy=outmgal,aburst=aburst,mburst=mburst,debug=0) ;,/xlog,/ylog)
              endif else begin
-                outflux = isedfit_convolve_sfh(sspfits[jj],info=outinfo[indx1[jj]],time=im_double(outage),$
-                  mstar=sspfits[jj].mstar,cspmstar=outmstar,nsamp=1.0,debug=0,stepburst=stepburst,$
-                  gaussburst=gaussburst,exptruncburst=exptruncburst)
+                outflux = isedfit_convolve_sfh(sspfits[jj],info=outinfo[indx1[jj]],$
+                  time=im_double(outage),mstar=sspfits[jj].mstar,cspmstar=outmstar,$
+                  sfh=outsfr,nsamp=1.0,debug=0)
+
 ;               test = isedfit_reconstruct_sfh(outinfo[indx1[jj]],outage=outage,/debug,xr=[3.5,8])
              endelse
              inf = where(finite(outflux) eq 0)
              if (inf[0] ne -1) then message, 'Bad bad bad'
-             
+
              outinfo[indx1[jj]].age = outage
              outinfo[indx1[jj]].mstar = outmstar
              outinfo[indx1[jj]].flux = outflux
@@ -265,7 +259,7 @@ pro build_grid, montegrid, chunkinfo, ssppath=ssppath, $
                 yr = [min(outsfr)>1D-15,max(outsfr)>1D-10]
 
                 im_window, 0, yr=0.8
-                djs_plot, [0], [0], position=pos[*,0], xsty=3, ysty=3, /xlog, /ylog, $
+                djs_plot, [0], [0], position=pos[*,0], xsty=3, ysty=3, xlog=0, /ylog, $
                   xrange=xr, yrange=yr, ytitle='SFR (M_{\odot} yr^{-1})', $
                   xtickname=replicate(' ',20)
                 djs_oplot, outage, outsfr, psym=-6
@@ -277,7 +271,7 @@ pro build_grid, montegrid, chunkinfo, ssppath=ssppath, $
                   ' Gyr', /right, /top, box=0, margin=0
 
                 djs_plot, outage, outmgal, position=pos[*,1], /noerase, xsty=3, $
-                  xrange=xr, /xlog, psym=-6, ysty=3, yr=[0,1.05], xtitle='Age (Gyr)'
+                  xrange=xr, xlog=0, psym=-6, ysty=3, yr=[0,1.05], xtitle='Age (Gyr)'
                 djs_oplot, outage, outmstar, line=5, psym=-6
                 for iburst = 0, outinfo[indx1[jj]].nburst-1 do djs_oplot, $
                   outinfo[indx1[jj]].tburst[iburst]*[1,1], !y.crange, color='yellow'
@@ -294,8 +288,7 @@ end
 pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
   redcurve=redcurve, sfhgrid_paramfile=sfhgrid_paramfile, $
   isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, make_montegrid=make_montegrid, $
-  clobber=clobber, debug=debug, stepburst=stepburst, gaussburst=gaussburst, $
-  exptruncburst=exptruncburst
+  clobber=clobber, debug=debug
 
 ; some defaults
     if (n_elements(synthmodels) eq 0) then synthmodels = 'bc03'
@@ -372,6 +365,7 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
 
 ; draw uniformly from linear TAU, or 1/TAU?
        tau = randomu(seed,params.nmonte)*(params.tau[1]-params.tau[0])+params.tau[0]
+       if params.oneovertau and params.delayed then message, 'DELAYED and ONEOVERTAU probably will not work well together.'
        if params.oneovertau then tau = 1D/tau
        montegrid.tau = tau
 
@@ -428,6 +422,10 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
 ; now assign bursts; divide each age vector into NMAXBURST intervals
 ; of width PBURSTINTERVAL [Gyr]; don't let a burst happen on
 ; the first or last "point" in the age vector
+
+; type of burst       
+       montegrid.bursttype = params.bursttype
+       
        if (nmaxburst gt 0) then begin
           tburst = dblarr(nmaxburst,params.nmonte)-1.0
           ran = randomu(seed,nmaxburst,params.nmonte)
@@ -469,19 +467,28 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
 ;                   if (this[0] ne -1) then tburst[ib,imod] = montegrid[imod].age[these[this[0]]]
 ;                endif
              endfor
+;         if tburst[0,imod] le min(montegrid[imod].age) then stop
           endfor 
           montegrid.nburst = total(tburst gt -1.0,1) ; total number of bursts
-       endif 
-
+       endif
+       
 ; assign burst strengths and durations       
        hasburst = where(montegrid.nburst gt 0,nhasburst)
        nallburst = long(total(montegrid.nburst))
        if (nhasburst ne 0L) then begin
-          dtburst = 10.0^(randomu(seed,nallburst)*(alog10(params.dtburst[1])-$
-            alog10(params.dtburst[0]))+alog10(params.dtburst[0]))
+          if params.flatdtburst then begin
+             dtburst = randomu(seed,nallburst)*(params.dtburst[1]-params.dtburst[0])+params.dtburst[0]
+          endif else begin
+             dtburst = 10.0^(randomu(seed,nallburst)*(alog10(params.dtburst[1])-$
+               alog10(params.dtburst[0]))+alog10(params.dtburst[0]))
+          endelse
 
-          fburst = 10.0^(randomu(seed,nallburst)*(alog10(params.fburst[1])-$
-            alog10(params.fburst[0]))+alog10(params.fburst[0]))
+          if params.flatfburst then begin
+             fburst = randomu(seed,nallburst)*(params.fburst[1]-params.fburst[0])+params.fburst[0]
+          endif else begin
+             fburst = 10.0^(randomu(seed,nallburst)*(alog10(params.fburst[1])-$
+               alog10(params.fburst[0]))+alog10(params.fburst[0]))
+          endelse
 
           count = 0L
           for ii = 0L, nhasburst-1 do begin ; sort
@@ -501,11 +508,13 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
              ntrunc = long(params.fractrunc*nhasburst)
              if params.fractrunc eq 1D then trunc = lindgen(ntrunc) else $
                trunc = random_indices(nhasburst,ntrunc)
-          endif else begin
-             trunc = hasburst
-             ntrunc = nhasburst
-          endelse
-          if (ntrunc gt 0L) then montegrid[hasburst[trunc]].tauburst = params.tauburst ; [Gyr]
+          endif else ntrunc = 0L
+          if (ntrunc gt 0L) then begin
+             if (montegrid[0].bursttype ne 1) then message, 'Should use truncated *Gaussian* bursts.'
+;            montegrid[hasburst[trunc]].tautrunc = params.tautrunc ; [Gyr]
+             montegrid[hasburst[trunc]].tautrunc = randomu(seed,ntrunc)*(params.tautrunc[1]-$
+               params.tautrunc[0])+params.tautrunc[0] ; [Gyr]
+          endif
        endif  
 
 ; write out
@@ -539,8 +548,7 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
 
     t0 = systime(1)
     build_grid, montegrid, chunkinfo, ssppath=ssppath+synthmodels+'/', $
-      sspinfo=sspinfo, redcurve=redcurve, params=params, debug=debug, $
-      stepburst=stepburst, gaussburst=gaussburst, exptruncburst=exptruncburst
+      sspinfo=sspinfo, redcurve=redcurve, params=params, debug=debug
     chunkinfo.chunkfiles = file_basename(chunkinfo.chunkfiles)+'.gz'
     splog, 'Total time (min) = ', (systime(1)-t0)/60.0
  
