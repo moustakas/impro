@@ -101,7 +101,6 @@ function init_isedfit, ngal, nfilt, sfhgrid, sfhgrid_paramfile=sfhgrid_paramfile
 
 ; best-fit values (at the chi2 minimum); see BUILD_ISEDFIT_SFHGRID
     best = {$
-;     imf:              '',$
       chunkindx:        -1,$
       modelindx:        -1,$
       ageindx:          -1,$

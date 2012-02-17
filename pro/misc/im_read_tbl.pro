@@ -60,7 +60,7 @@ WHILE  (stopper EQ 0) DO BEGIN
         counter=counter+1       
         readf,unit,line 
         counter=counter+1 
-      ENDIF ELSE BEGIN 
+     ENDIF ELSE BEGIN 
         stopper=1 
       ENDELSE
 ENDWHILE
@@ -73,7 +73,7 @@ names = repstr(names,'-','')
 FOR i=0L, n_elements(names)-1L DO BEGIN
    dummy=type2var(types[i],'')
 ; jm - enforce type double on ra,dec
-   if strmatch(names[i],'*ra*') then dummy = 0.0D
+   if strmatch(names[i],'*ra*') and (strmatch(names[i],'*spectra*') eq 0) then dummy = 0.0D
    if strmatch(names[i],'*dec*') then dummy = 0.0D
     IF(n_tags(instr1) EQ 0) THEN $
       instr1=create_struct(names[i],dummy) $
@@ -102,12 +102,12 @@ FOR i=0L, nchunks-1L DO BEGIN
         chunk[*,j]=strmid(line,limits-1,length+1)
     ENDFOR
     FOR j=0L,ncols-1L DO BEGIN
-;print, i, j & wait, 0.1
+;      print, i, j              ; & wait, 0.1
        nullindx=where(strtrim(chunk[j,0L:ninchunk-1L],2) eq 'null' or $
          strtrim(chunk[j,0L:ninchunk-1L],2) eq 'nul',nullcount)
         if(nullcount gt 0) then chunk[j,nullindx]='0'
 ; jm10feb03ucsd - error check (not very general!)
-        thischunk = chunk[j,0L:ninchunk-1L]
+        thischunk = repstr(chunk[j,0L:ninchunk-1L],'|','')
         dash = where(strtrim(thischunk,2) eq '-',ndash)
         if (ndash ne 0) then thischunk[dash] = -999.0
        instr[startchunk:endchunk].(j)= $
@@ -117,7 +117,5 @@ ENDFOR
 free_lun,unit
 
 RETURN,instr
-
-STOP
 
 END

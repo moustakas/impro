@@ -14,7 +14,10 @@
 ; KEYWORD PARAMETERS: 
 ;   allow_nuv_nondetect - allow photometry of objects not detected in
 ;     the NUV, but with measured FUV photometry (in general objects
-;     without solid NUV detections should not be used)
+;     without solid NUV detections should not be used) (has no effect
+;     if /PSF_FLUX)
+;   psf_flux - use the PSF flux from the Schiminovich catalogs (default is
+;     to use the AUTO flux) 
 ;
 ; OUTPUTS: 
 ;   maggies - [2,NGAL] output FUV/NUV maggies 
@@ -46,7 +49,7 @@
 ; General Public License for more details. 
 ;-
 
-pro im_galex_to_maggies, galex, maggies, ivarmaggies, $
+pro im_galex_to_maggies, galex, maggies, ivarmaggies, psf_flux=psf_flux, $
   filterlist=filterlist, allow_nuv_nondetect=allow_nuv_nondetect
 
     ngal = n_elements(galex)
@@ -85,28 +88,56 @@ pro im_galex_to_maggies, galex, maggies, ivarmaggies, $
 ; the FUV photometry, unless /allow_nuv_nondetect
     obsmaggies = fltarr(2,ngal)-999.0
     obsmaggieserr = fltarr(2,ngal)-999.0
-    
-    good = where((galex.nuv_flux_auto gt -90.0),ngood)
-    if (ngood ne 0L) then begin
-       obsmaggies[1,good] = galex[good].nuv_flux_auto*10^(-0.4*nuv_zpt) ; galex flux-->maggies
-       obsmaggieserr[1,good] = galex[good].nuv_fluxerr_auto*10^(-0.4*nuv_zpt)
-; use the aperture-matched FUV photometry, if possible
-       good_fuv = where(galex[good].fuv_ncat_flux gt -900.0,ngood_fuv)
-       obsmaggies[0,good[good_fuv]] =  galex[good[good_fuv]].fuv_ncat_flux*10^(-0.4*23.9) ; microJy-->maggies
-       obsmaggieserr[0,good[good_fuv]] =  galex[good[good_fuv]].fuv_ncat_fluxerr*10^(-0.4*23.9)
-    endif
 
-    if keyword_set(allow_nuv_nondetect) then begin
-       good = where((galex.nuv_flux_auto lt -90.0) and (galex.fuv_flux_auto gt -90.0),ngood)
+    if keyword_set(psf_flux) then begin
+       fuvfluxtag = tag_indx(galex,'fuv_flux')
+       fuvfluxerrtag = tag_indx(galex,'fuv_fluxerr')
+       nuvfluxtag = tag_indx(galex,'nuv_flux')
+       nuvfluxerrtag = tag_indx(galex,'nuv_fluxerr')
+    endif else begin
+       fuvfluxtag = tag_indx(galex,'fuv_flux_auto')
+       fuvfluxerrtag = tag_indx(galex,'fuv_fluxerr_auto')
+       nuvfluxtag = tag_indx(galex,'nuv_flux_auto')
+       nuvfluxerrtag = tag_indx(galex,'nuv_fluxerr_auto')
+    endelse
+
+    if keyword_set(psf_flux) then begin
+; FUV
+       good = where((galex.(fuvfluxtag) gt -90.0),ngood)
        if (ngood ne 0L) then begin
-          obsmaggies[0,good] = galex[good].fuv_flux_auto*10^(-0.4*fuv_zpt) ; galex flux-->maggies
-          obsmaggieserr[0,good] = galex[good].fuv_fluxerr_auto*10^(-0.4*fuv_zpt)
-
-          good_nuv = where(galex[good].nuv_fcat_flux gt -900.0,ngood_nuv)
-          obsmaggies[1,good[good_nuv]] =  galex[good[good_nuv]].nuv_fcat_flux*10^(-0.4*23.9) ; microJy-->maggies
-          obsmaggieserr[1,good[good_nuv]] =  galex[good[good_nuv]].nuv_fcat_fluxerr*10^(-0.4*23.9)
+          obsmaggies[0,good] = galex[good].(fuvfluxtag)*10^(-0.4*23.9) ; microJy-->maggies
+          obsmaggieserr[0,good] = galex[good].(fuvfluxerrtag)*10^(-0.4*23.9)
        endif
-    endif
+; NUV
+       good = where((galex.(nuvfluxtag) gt -90.0),ngood)
+       if (ngood ne 0L) then begin
+          obsmaggies[1,good] = galex[good].(nuvfluxtag)*10^(-0.4*23.9) ; microJy-->maggies
+          obsmaggieserr[1,good] = galex[good].(nuvfluxerrtag)*10^(-0.4*23.9)
+       endif
+    endif else begin
+       good = where((galex.(nuvfluxtag) gt -90.0),ngood)
+       if (ngood ne 0L) then begin
+          obsmaggies[1,good] = galex[good].(nuvfluxtag)*10^(-0.4*nuv_zpt) ; galex flux-->maggies
+          obsmaggieserr[1,good] = galex[good].(nuvfluxerrtag)*10^(-0.4*nuv_zpt)
+; use the aperture-matched FUV photometry, if possible
+          good_fuv = where(galex[good].fuv_ncat_flux gt -900.0,ngood_fuv)
+          obsmaggies[0,good[good_fuv]] =  galex[good[good_fuv]].fuv_ncat_flux*10^(-0.4*23.9) ; microJy-->maggies
+          obsmaggieserr[0,good[good_fuv]] =  galex[good[good_fuv]].fuv_ncat_fluxerr*10^(-0.4*23.9)
+       endif
+
+; optionally allow NUV non-detections       
+       if keyword_set(allow_nuv_nondetect) then begin
+          good = where((galex.(nuvfluxtag) lt -90.0) and (galex.(fuvfluxtag) gt -90.0),ngood)
+          if (ngood ne 0L) then begin
+             obsmaggies[0,good] = galex[good].(fuvfluxtag)*10^(-0.4*fuv_zpt) ; galex flux-->maggies
+             obsmaggieserr[0,good] = galex[good].(fuvfluxerrtag)*10^(-0.4*fuv_zpt)
+; use the aperture-matched NUV photometry, if possible
+             good_nuv = where(galex[good].nuv_fcat_flux gt -900.0,ngood_nuv)
+             obsmaggies[1,good[good_nuv]] =  galex[good[good_nuv]].nuv_fcat_flux*10^(-0.4*23.9) ; microJy-->maggies
+             obsmaggieserr[1,good[good_nuv]] =  galex[good[good_nuv]].nuv_fcat_fluxerr*10^(-0.4*23.9)
+          endif 
+       endif 
+    endelse
     
 ; now correct for extinction, convert to ivarmaggies, and return
     maggies = dblarr(2,ngal)

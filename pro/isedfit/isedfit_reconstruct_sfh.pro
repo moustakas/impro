@@ -3,28 +3,27 @@
 ;   ISEDFIT_RECONSTRUCT_SFH()
 ;
 ; PURPOSE:
-;   
+;   Reconstruct an iSEDfit-compatible star formation history. 
 ;
 ; INPUTS: 
-;
-;
+;   info - iSEDfit information structure with the following mandatory
+;     tags (see BUILD_ISEDFIT_SFHGRID) for definitions and details 
+;     NBURST
+;     FBURST
+;     TBURST
+;     DTBURST
+;     MINTBURST
+;     MAXTBURST
+; 
 ; OPTIONAL INPUTS: 
-;
 ;
 ; KEYWORD PARAMETERS: 
 ;
-;
 ; OUTPUTS: 
-;
 ;
 ; OPTIONAL OUTPUTS:
 ;
-;
 ; COMMENTS:
-;
-;
-; EXAMPLES:
-;
 ;
 ; MODIFICATION HISTORY:
 ;
@@ -41,7 +40,7 @@
 ; General Public License for more details. 
 ;-
 
-function isedfit_reconstruct_sfh, info, outage=outage, mtau=mtau, $
+function isedfit_reconstruct_sfh, info, useage=useage, outage=outage, mtau=mtau, $
   aburst=aburst, mburst=mburst, mgalaxy=outmgalaxy, sfr100=outsfr100, $
   b100=outb100, notruncate=notruncate, sfhtau=outsfhtau, sfhburst=outsfhburst, $
   sfrage=outsfrage, nooversample=nooversample, debug=debug, _extra=extra
@@ -72,20 +71,27 @@ function isedfit_reconstruct_sfh, info, outage=outage, mtau=mtau, $
        dtburst = im_double(info.dtburst[0:nb-1])
     endif
     
-; need a highly sampled age grid to get the integrations right
-;   if (n_elements(age) eq 0) then age = build_isedfit_agegrid(info,$
-;     debug=0,_extra=extra)
+; need a highly sampled age grid to get the integrations right; this
+; grid is used internally and then the output quantities are
+; interpolated at OUTAGE
     if (n_elements(outage) ne 0) then begin
 ;      minage = 0.001D
        if (nb gt 0) then begin
-          minage = min(outage)<min(tburst) ; burst can technically start before MINAGE
-          maxage = max(outage)>max(tburst)
+          minage = min(outage)<info.mintburst ; burst can technically start before MINAGE
+          maxage = max(outage)>info.maxtburst
+;         minage = min(outage)<min(tburst) ; burst can technically start before MINAGE
+;         maxage = max(outage)>max(tburst)
        endif else begin
           minage = min(outage)
           maxage = max(outage)
        endelse
        nage = 500>n_elements(outage)
     endif else nage = 500
+
+    if (n_elements(useage) eq 0) then begin
+
+       
+    endif
 
     if keyword_set(nooversample) then begin
        if (n_elements(outage) eq 0) then message, 'NOOVERSAMPLE '+$

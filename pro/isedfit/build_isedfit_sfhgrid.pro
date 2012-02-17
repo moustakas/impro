@@ -107,6 +107,8 @@ function init_montegrid, nmodel, nage, imf=imf, nmaxburst=nmaxburst
       mu:                       1.0,$ ; always default to 1.0!
       nburst:                     0,$
       tautrunc:                -1.0,$ ; burst truncation time scale
+      mintburst:               -1.0,$
+      maxtburst:               -1.0,$
       tburst:           burstarray1,$
       dtburst:          burstarray1,$ ; 
       fburst:           burstarray1,$ ; burst mass fraction
@@ -241,42 +243,16 @@ pro build_grid, montegrid, chunkinfo, ssppath=ssppath, $
              endif else begin
                 outflux = isedfit_convolve_sfh(sspfits[jj],info=outinfo[indx1[jj]],$
                   time=im_double(outage),mstar=sspfits[jj].mstar,cspmstar=outmstar,$
-                  sfh=outsfr,nsamp=1.0,debug=0)
-
+                  sfh=outsfr,nsamp=1.0,debug=debug);,/ylog,xr=[4,7],yrange=[1D-14,1D-6])
 ;               test = isedfit_reconstruct_sfh(outinfo[indx1[jj]],outage=outage,/debug,xr=[3.5,8])
              endelse
+
              inf = where(finite(outflux) eq 0)
              if (inf[0] ne -1) then message, 'Bad bad bad'
 
              outinfo[indx1[jj]].age = outage
              outinfo[indx1[jj]].mstar = outmstar
              outinfo[indx1[jj]].flux = outflux
-
-; QAplot for debugging
-             if keyword_set(debug) then begin
-                im_plotconfig, 6, pos
-                xr = [min(outage)>1,max(outage)]
-                yr = [min(outsfr)>1D-15,max(outsfr)>1D-10]
-
-                im_window, 0, yr=0.8
-                djs_plot, [0], [0], position=pos[*,0], xsty=3, ysty=3, xlog=0, /ylog, $
-                  xrange=xr, yrange=yr, ytitle='SFR (M_{\odot} yr^{-1})', $
-                  xtickname=replicate(' ',20)
-                djs_oplot, outage, outsfr, psym=-6
-                for iburst = 0, outinfo[indx1[jj]].nburst-1 do djs_oplot, $
-                  outinfo[indx1[jj]].tburst[iburst]*[1,1], 10^!y.crange, color='yellow'
-                im_legend, 'N_{burst}='+strtrim(outinfo[indx1[jj]].nburst,2), $
-                  /left, /bottom, box=0, margin=0
-                im_legend, '\tau='+string(outinfo[indx1[jj]].tau,format='(G0.0)')+$
-                  ' Gyr', /right, /top, box=0, margin=0
-
-                djs_plot, outage, outmgal, position=pos[*,1], /noerase, xsty=3, $
-                  xrange=xr, xlog=0, psym=-6, ysty=3, yr=[0,1.05], xtitle='Age (Gyr)'
-                djs_oplot, outage, outmstar, line=5, psym=-6
-                for iburst = 0, outinfo[indx1[jj]].nburst-1 do djs_oplot, $
-                  outinfo[indx1[jj]].tburst[iburst]*[1,1], !y.crange, color='yellow'
-                cc = get_kbrd(1)
-             endif 
           endfor 
        endfor    ; close SSP loop 
        im_mwrfits, outinfo, chunkinfo.chunkfiles[ichunk], /clobber
@@ -340,37 +316,37 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
        splog, 'Making directory '+sfhgridpath
        spawn, 'mkdir -p '+sfhgridpath
     endif
-    cc = 'N'
-    if (keyword_set(clobber) eq 0) then begin
-       splog, 'Delete all *'+imf+'* files from '+sfhgridpath+' [Y/N]?'
-       cc = get_kbrd(1)
-    endif
-    if keyword_set(clobber) or (strupcase(cc) eq 'Y') then $
-      spawn, '/bin/rm -f '+sfhgridpath+'*'+imf+'*.fits.gz', /sh
 
 ; ---------------------------------------------------------------------------
 ; first major step: build the Monte Carlo grid, if it doesn't
 ; already exist 
     montefile = sfhgridpath+imf+'_montegrid.fits'
     if (file_test(montefile+'.gz') eq 0) or keyword_set(make_montegrid) then begin
+       cc = 'N'
+       if (keyword_set(clobber) eq 0) then begin
+          splog, 'Delete all *'+imf+'* files from '+sfhgridpath+' [Y/N]?'
+          cc = get_kbrd(1)
+       endif
+       if keyword_set(clobber) or (strupcase(cc) eq 'Y') then $
+         spawn, '/bin/rm -f '+sfhgridpath+'*'+imf+'*.fits.gz', /sh
+       
        splog, 'Building SFHGRID='+sfhgridstring+' REDCURVE='+redcurvestring+$
          ' NMODEL='+string(params.nmonte*params.nage,format='(I0)')
 
 ; compute the maximum number of bursts, if any
        if (params.pburst le 0.0) then nmaxburst = 0 else $
-         nmaxburst = ceil(long(100D*(params.maxage-params.minage)/params.pburstinterval)/100D)
+         nmaxburst = ceil(long(100D*(params.maxtburst-params.mintburst)/params.pburstinterval)/100D)
+;      if (params.pburst le 0.0) then nmaxburst = 0 else $
+;        nmaxburst = ceil(long(100D*(params.maxage-params.minage)/params.pburstinterval)/100D)
 
        montegrid = init_montegrid(params.nmonte,params.nage,imf=imf,nmaxburst=nmaxburst)
        montegrid.delayed = params.delayed ; delayed SFH?
 
 ; draw uniformly from linear TAU, or 1/TAU?
        tau = randomu(seed,params.nmonte)*(params.tau[1]-params.tau[0])+params.tau[0]
-       if params.oneovertau and params.delayed then message, 'DELAYED and ONEOVERTAU probably will not work well together.'
+       if params.oneovertau and params.delayed then message, 'DELAYED and ONEOVERTAU may not work well together.'
        if params.oneovertau then tau = 1D/tau
        montegrid.tau = tau
-
-;      montegrid.tau = randomu(seed,params.nmonte)*(params.gamma[1]-params.gamma[0])+params.gamma[0]
-;      im_plothist, montegrid.tau, bin=0.2
 
 ; metallicity; check to make sure that the prior boundaries do not
 ; exceed the metallicity range available from the chosen SYNTHMODELS
@@ -385,16 +361,12 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
        montegrid.Z = randomu(seed,params.nmonte)*(params.Z[1]-params.Z[0])+params.Z[0]
 
 ; age; unfortunately I think we have to loop to sort
-;      montegrid.age = asinh_random(params.minage,params.maxage,[params.nage,params.nmonte],soft=
-;      montegrid.age = 10^(randomu(seed,params.nage,params.nmonte)*(alog10(params.maxage)-$
-;        alog10(params.minage))+alog10(params.minage))
-
 ;      splog, 'TESTING WITH A UNIFORM AGE GRID!'
 ;      for ii = 0L, params.nmonte-1 do montegrid[ii].age = range(params.minage,params.maxage,params.nage)
        montegrid.age = randomu(seed,params.nage,params.nmonte)*(params.maxage-params.minage)+params.minage
        for ii = 0L, params.nmonte-1 do montegrid[ii].age = montegrid[ii].age[sort(montegrid[ii].age)]
 
-; reddening, if desired; exponential prior is the default 
+; reddening, if any; Gamma distribution is the default, unless FLATAV==1
        if (params.av[1] gt 0) then begin
           if params.flatav then begin
              montegrid.av = randomu(seed,params.nmonte)*(params.av[1]-params.av[0])+params.av[0] 
@@ -406,7 +378,7 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
           endelse
        
 ; "mu" is the Charlot & Fall (2000) factor for evolved stellar
-; populations; log-normal distribution
+; populations; Gamma distribution is the default, unless FLATMU==1
           if (redcurvestring eq 'charlot') then begin
              if params.flatmu then begin
                 montegrid.mu = randomu(seed,params.nmonte)*(params.mu[1]-params.mu[0])+params.mu[0] 
@@ -416,58 +388,46 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
              endelse
           endif
        endif 
-;      im_plothist, montegrid.av, bin=0.02, yr=[0,110]
-;      im_plothist, montegrid.mu*montegrid.av, bin=0.02, /over, color='green'
 
-; now assign bursts; divide each age vector into NMAXBURST intervals
-; of width PBURSTINTERVAL [Gyr]; don't let a burst happen on
-; the first or last "point" in the age vector
-
-; type of burst       
+; now assign bursts; note that the bursts can occur outside
+; (generally, before) the AGE vector; divide the time vector into
+; NMAXBURST intervals of width PBURSTINTERVAL [Gyr]
+       ntime = 100
+;      ntime = params.nage
+       
+; type of burst: 0 (step function, default), 1 (gaussian), 2 (step
+; function with exponential wings) 
        montegrid.bursttype = params.bursttype
        
        if (nmaxburst gt 0) then begin
+          montegrid.mintburst = params.mintburst
+          montegrid.maxtburst = params.maxtburst
+          
           tburst = dblarr(nmaxburst,params.nmonte)-1.0
           ran = randomu(seed,nmaxburst,params.nmonte)
           for imod = 0L, params.nmonte-1 do begin
              for ib = 0, nmaxburst-1 do begin
-                tmin = params.minage+ib*params.pburstinterval
-                tmax = (params.minage+(ib+1)*params.pburstinterval)<params.maxage
+                tmin = params.mintburst+ib*params.pburstinterval
+                tmax = (params.mintburst+(ib+1)*params.pburstinterval)<params.maxtburst
+;               tmin = params.minage+ib*params.pburstinterval
+;               tmax = (params.minage+(ib+1)*params.pburstinterval)<params.maxage
+
                 if (tmax le tmin) then message, 'This violates causality!'
-                age1 = randomu(seed,params.nage)*(tmax-tmin)+tmin
-                age1 = age1[sort(age1)]
+                time1 = randomu(seed,ntime)*(tmax-tmin)+tmin
+                time1 = time1[sort(time1)]
 
 ; compute the cumulative probability, dealing with edge effects correctly
-                dageleft = (age1-shift(age1,1))/2.0
-                dageleft[0] = age1[0]-tmin
-                dageright = (shift(age1,-1)-age1)/2.0
-                dageright[params.nage-1] = tmax-age1[params.nage-1]
-                prob = params.pburst*total([[dageleft],[dageright]],2)/params.pburstinterval
+                dtimeleft = (time1-shift(time1,1))/2.0
+                dtimeleft[0] = time1[0]-tmin
+                dtimeright = (shift(time1,-1)-time1)/2.0
+                dtimeright[ntime-1] = tmax-time1[ntime-1]
+                prob = params.pburst*total([[dtimeleft],[dtimeright]],2)/params.pburstinterval
                 if (prob[0] le 0) then message, 'This should not happen!'
 
                 this = where(total(prob,/cum) gt ran[ib,imod])
-                if (this[0] ne -1) then tburst[ib,imod] = age1[this[0]]
+                if (this[0] ne -1) then tburst[ib,imod] = time1[this[0]]
 ;               splog, tmin, tmax, ran[ib,imod], tburst[ib,imod] & if ib eq 0 then print
-
-;; (good) old code that chooses tburst from the *actual* age vector below here
-;                tmin = montegrid[imod].age[0]+ib*params.pburstinterval
-;                tmax = (montegrid[imod].age[0]+(ib+1)*params.pburstinterval)<montegrid[imod].age[params.nage-1]
-;                these = where((montegrid[imod].age ge tmin) and (montegrid[imod].age le tmax),nthese)
-;
-;                if (nthese ne 0) then begin
-;                   age1 = montegrid[imod].age[these]
-;                   dageleft = (age1-shift(age1,1))/2.0
-;                   dageleft[0] = age1[0]-tmin
-;                   dageright = (shift(age1,-1)-age1)/2.0
-;                   dageright[nthese-1] = tmax-age1[nthese-1]
-;                   prob = params.pburst*total([[dageleft],[dageright]],2)/params.pburstinterval
-;                   if (prob[0] le 0) then message, 'This should not happen!'
-;
-;                   this = where(total(prob,/cum) gt randomu(seed))
-;                   if (this[0] ne -1) then tburst[ib,imod] = montegrid[imod].age[these[this[0]]]
-;                endif
              endfor
-;         if tburst[0,imod] le min(montegrid[imod].age) then stop
           endfor 
           montegrid.nburst = total(tburst gt -1.0,1) ; total number of bursts
        endif
@@ -557,3 +517,29 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
 
 return
 end
+
+;; QAplot for debugging
+;             if keyword_set(debug) then begin
+;                im_plotconfig, 6, pos
+;                xr = [min(outage)>1,max(outage)]
+;                yr = [min(outsfr)>1D-15,max(outsfr)>1D-10]
+;
+;                im_window, 0, yr=0.8
+;                djs_plot, [0], [0], position=pos[*,0], xsty=3, ysty=3, xlog=0, /ylog, $
+;                  xrange=xr, yrange=yr, ytitle='SFR (M_{\odot} yr^{-1})', $
+;                  xtickname=replicate(' ',20)
+;                djs_oplot, outage, outsfr, psym=-6
+;                for iburst = 0, outinfo[indx1[jj]].nburst-1 do djs_oplot, $
+;                  outinfo[indx1[jj]].tburst[iburst]*[1,1], 10^!y.crange, color='yellow'
+;                im_legend, 'N_{burst}='+strtrim(outinfo[indx1[jj]].nburst,2), $
+;                  /left, /bottom, box=0, margin=0
+;                im_legend, '\tau='+string(outinfo[indx1[jj]].tau,format='(G0.0)')+$
+;                  ' Gyr', /right, /top, box=0, margin=0
+;
+;                djs_plot, outage, outmgal, position=pos[*,1], /noerase, xsty=3, $
+;                  xrange=xr, xlog=0, psym=-6, ysty=3, yr=[0,1.05], xtitle='Age (Gyr)'
+;                djs_oplot, outage, outmstar, line=5, psym=-6
+;                for iburst = 0, outinfo[indx1[jj]].nburst-1 do djs_oplot, $
+;                  outinfo[indx1[jj]].tburst[iburst]*[1,1], !y.crange, color='yellow'
+;                cc = get_kbrd(1)
+;             endif 
