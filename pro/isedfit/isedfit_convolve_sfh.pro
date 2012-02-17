@@ -110,7 +110,7 @@ function isedfit_convolve_sfh, ssp, infosfh=infosfh, time=time, $
 ; interpolate       
        sspindx = findex(ssp.age,reverse(thistime))>0
        isspflux = interpolate(ssp.flux,sspindx)
-       thissfh = isedfit_reconstruct_sfh(infosfh,outage=thistime/1D9,/nooversample)
+       thissfh = isedfit_reconstruct_sfh(infosfh,useage=thistime/1D9)
 
        if keyword_set(bigdebug) then begin
           djs_plot, time, sfh, psym=6, xsty=3, ysty=3, /xlog, /ylog, $

@@ -107,6 +107,8 @@ function init_montegrid, nmodel, nage, imf=imf, nmaxburst=nmaxburst
       mu:                       1.0,$ ; always default to 1.0!
       nburst:                     0,$
       tautrunc:                -1.0,$ ; burst truncation time scale
+      minage:                  -1.0,$
+      maxage:                  -1.0,$
       mintburst:               -1.0,$
       maxtburst:               -1.0,$
       tburst:           burstarray1,$
@@ -238,8 +240,8 @@ pro build_grid, montegrid, chunkinfo, ssppath=ssppath, $
                 outflux = interpolate(sspfits[jj].flux,lindgen(npix),ageindx,/grid)
                 outmstar = interpolate(sspfits[jj].mstar,ageindx)
                 outmgal = outmstar*0+1
-                outsfr = isedfit_reconstruct_sfh(outinfo[indx1[jj]],outage=im_double(outage),$
-                  minage=min(outage)<0.01D,mgalaxy=outmgal,aburst=aburst,mburst=mburst,debug=0) ;,/xlog,/ylog)
+                outsfr = isedfit_reconstruct_sfh(outinfo[indx1[jj]],$
+                  outage=im_double(outage),debug=debug)
              endif else begin
                 outflux = isedfit_convolve_sfh(sspfits[jj],info=outinfo[indx1[jj]],$
                   time=im_double(outage),mstar=sspfits[jj].mstar,cspmstar=outmstar,$
@@ -340,7 +342,10 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
 ;        nmaxburst = ceil(long(100D*(params.maxage-params.minage)/params.pburstinterval)/100D)
 
        montegrid = init_montegrid(params.nmonte,params.nage,imf=imf,nmaxburst=nmaxburst)
+
        montegrid.delayed = params.delayed ; delayed SFH?
+       montegrid.minage = params.minage
+       montegrid.maxage = params.maxage
 
 ; draw uniformly from linear TAU, or 1/TAU?
        tau = randomu(seed,params.nmonte)*(params.tau[1]-params.tau[0])+params.tau[0]
