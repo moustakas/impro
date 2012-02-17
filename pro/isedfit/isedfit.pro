@@ -101,45 +101,67 @@ function init_isedfit, ngal, nfilt, sfhgrid, sfhgrid_paramfile=sfhgrid_paramfile
 
 ; best-fit values (at the chi2 minimum); see BUILD_ISEDFIT_SFHGRID
     best = {$
-      chunkindx:        -1,$
-      modelindx:        -1,$
-      ageindx:          -1,$
-      delayed:           0,$
-      bursttype:         0,$
+      ageindx:                   -1,$
+      chunkindx:                 -1,$
+      modelindx:                 -1,$
+      delayed:                    0,$ ; delayed tau model?
+      bursttype:                  0,$ ; burst type: 0=step function (default); 1=gaussian; 2=step function with exponential wings
+      tau:                     -1.0,$
+      Z:                       -1.0,$
+      av:                       0.0,$ ; always initialize with zero to accommodate the dust-free models!
+      mu:                       1.0,$ ; always default to 1.0!
+      nburst:                     0,$
+      tautrunc:                -1.0,$ ; burst truncation time scale
+      minage:                  -1.0,$
+      maxage:                  -1.0,$
+      mintburst:               -1.0,$
+      maxtburst:               -1.0,$
+      tburst:           burstarray1,$
+      dtburst:          burstarray1,$ ; 
+      fburst:           burstarray1,$ ; burst mass fraction
+;     aburst:           burstarray1,$ ; burst amplitude
 
-      tau:            -1.0,$
-      Z:              -1.0,$
-      av:             -1.0,$
-      mu:             -1.0,$
-      nburst:            0,$
-      tautrunc:       -1.0,$ ; burst truncation time scale
-      tburst:    burstarray1,$
-      dtburst:   burstarray1,$
-      fburst:    burstarray1,$
+;     chunkindx:        -1,$
+;     modelindx:        -1,$
+;     ageindx:          -1,$
+;     delayed:           0,$
+;     bursttype:         0,$
+;
+;     tau:            -1.0,$
+;     Z:              -1.0,$
+;     av:             -1.0,$
+;     mu:             -1.0,$
+;     nburst:            0,$
+;     tautrunc:       -1.0,$ ; burst truncation time scale
+;     tburst:    burstarray1,$
+;     dtburst:   burstarray1,$
+;     fburst:    burstarray1,$
 
+      chi2:            1E6,$ ; chi2 minimum
       scale:          -1.0,$ 
       scale_err:      -1.0,$ 
       mass:           -1.0,$ 
       age:            -1.0,$
+      sfrage:         -1.0,$
       sfr:            -1.0,$ ; instantaneous
       sfr100:         -1.0,$ ; 100 Myr
-      b100:           -1.0,$ ; averaged over the previous 100 Myr
-      chi2:            1E6}  ; chi2 minimum
+      b100:           -1.0}  ; averaged over the previous 100 Myr
 
 ; median quantities and PDF quantiles
     qmed = {$
-      mass_avg:     -1.0,$
-      age_avg:      -1.0,$
-      sfr_avg:      -1.0,$ ; instantaneous
-      sfr100_avg:   -1.0,$ ; 100 Myr
-      b100_avg:     -1.0,$
-      tau_avg:      -1.0,$
-      Z_avg:        -1.0,$
-      av_avg:       -1.0,$
-      mu_avg:       -1.0,$
+;     mass_avg:     -1.0,$
+;     age_avg:      -1.0,$
+;     sfr_avg:      -1.0,$ ; instantaneous
+;     sfr100_avg:   -1.0,$ ; 100 Myr
+;     b100_avg:     -1.0,$
+;     tau_avg:      -1.0,$
+;     Z_avg:        -1.0,$
+;     av_avg:       -1.0,$
+;     mu_avg:       -1.0,$
 
       mass_50:     -1.0,$
       age_50:      -1.0,$
+      sfrage_50:   -1.0,$
       sfr_50:      -1.0,$ ; instantaneous
       sfr100_50:   -1.0,$ ; 100 Myr
       b100_50:     -1.0,$
@@ -150,6 +172,7 @@ function init_isedfit, ngal, nfilt, sfhgrid, sfhgrid_paramfile=sfhgrid_paramfile
 
       mass_err:     -1.0,$
       age_err:      -1.0,$
+      sfrage_err:   -1.0,$
       sfr_err:      -1.0,$
       sfr100_err:   -1.0,$
       b100_err:     -1.0,$

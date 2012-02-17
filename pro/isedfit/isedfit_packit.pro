@@ -1,7 +1,7 @@
 function isedfit_packit, isedfit, array, type=type, wquant=wquant
 ; support routine for isedfit_compute_posterior()
     
-    tagavg = tag_indx(isedfit,type+'_avg')
+;   tagavg = tag_indx(isedfit,type+'_avg')
     tag50 = tag_indx(isedfit,type+'_50')
 ;   tagmode = tag_indx(isedfit,type+'_mode')
 
@@ -9,7 +9,7 @@ function isedfit_packit, isedfit, array, type=type, wquant=wquant
     tagerr = tag_indx(isedfit,type+'_err')
 ;   tagefferr = tag_indx(isedfit,type+'_eff_err')
 
-    isedfit.(tagavg) = djs_mean(array)
+;   isedfit.(tagavg) = djs_mean(array)
 ;   isedfit.(tagerr) = djsig(array)
 
     quant = [1.0-gauss_pdf(2.0),0.5,gauss_pdf(2.0)]

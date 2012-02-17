@@ -69,16 +69,18 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
 ; each model 
     bigsfr = bigage*0D
     bigsfr100 = bigage*0D ; average over the previous 100 Myr
+    bigsfrage = bigage*0D ; SFR-weighted age
     bigb100 = bigage*0D   ; birthrate parameter
     bigmgal = bigage*0D   ; galaxy mass ignoring mass loss 
     for imod = 0L, nmodel-1 do begin
        tindx = lindgen(nage)+imod*nage
        sfr = isedfit_reconstruct_sfh(modelgrid[imod],outage=bigage[tindx],$
-         sfr100=sfr100,b100=b100,mgalaxy=mgal)
+         sfr100=sfr100,sfrage=sfrage,b100=b100,mgalaxy=mgal)
        bigsfr[tindx] = sfr>1D-30 ; avoid SFR=0, which leads to an inf when we take the log, below 
        bigsfr100[tindx] = sfr100>1D-30
        bigb100[tindx] = b100
        bigmgal[tindx] = mgal
+       bigsfrage[tindx] = sfrage
     endfor
 
 ; gotta loop...    
@@ -116,6 +118,7 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
           isedfit[igal] = isedfit_packit(isedfit[igal],alog10(bigsfr[allow[these]])+logscale,type='sfr')
           isedfit[igal] = isedfit_packit(isedfit[igal],alog10(bigsfr100[allow[these]])+logscale,type='sfr100')
 
+          isedfit[igal] = isedfit_packit(isedfit[igal],bigage[allow[these]],type='sfrage')
           isedfit[igal] = isedfit_packit(isedfit[igal],bigage[allow[these]],type='age')
           isedfit[igal] = isedfit_packit(isedfit[igal],bigtau[allow[these]],type='tau')
           isedfit[igal] = isedfit_packit(isedfit[igal],bigZ[allow[these]],type='Z')
@@ -135,27 +138,30 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
           
           allmindx = array_indices([nage,nmodel],mindx,/dim) ; parse the index
           isedfit[igal].ageindx = allmindx[0]
-          isedfit[igal].modelindx = modelgrid[allmindx[1]].modelindx
-          isedfit[igal].chunkindx = modelgrid[allmindx[1]].chunkindx
-          isedfit[igal].delayed = modelgrid[allmindx[1]].delayed
-          isedfit[igal].bursttype = modelgrid[allmindx[1]].bursttype
+          isedfit[igal] = im_struct_assign(modelgrid[allmindx[1]],isedfit[igal],/nozero)
+
+;         isedfit[igal].modelindx = modelgrid[allmindx[1]].modelindx
+;         isedfit[igal].chunkindx = modelgrid[allmindx[1]].chunkindx
+;         isedfit[igal].delayed = modelgrid[allmindx[1]].delayed
+;         isedfit[igal].bursttype = modelgrid[allmindx[1]].bursttype
+;         
+;         isedfit[igal].nburst = modelgrid[allmindx[1]].nburst
+;         isedfit[igal].tautrunc = modelgrid[allmindx[1]].tautrunc
+;         isedfit[igal].tburst = modelgrid[allmindx[1]].tburst
+;         isedfit[igal].dtburst = modelgrid[allmindx[1]].dtburst
+;         isedfit[igal].fburst = modelgrid[allmindx[1]].fburst
           
-          isedfit[igal].nburst = modelgrid[allmindx[1]].nburst
-          isedfit[igal].tautrunc = modelgrid[allmindx[1]].tautrunc
-          isedfit[igal].tburst = modelgrid[allmindx[1]].tburst
-          isedfit[igal].dtburst = modelgrid[allmindx[1]].dtburst
-          isedfit[igal].fburst = modelgrid[allmindx[1]].fburst
-          
-          isedfit[igal].tau = bigtau[mindx]
-          isedfit[igal].Z = bigZ[mindx]
-          isedfit[igal].av = bigav[mindx]
-          isedfit[igal].mu = bigmu[mindx]
+;         isedfit[igal].tau = bigtau[mindx]
+;         isedfit[igal].Z = bigZ[mindx]
+;         isedfit[igal].av = bigav[mindx]
+;         isedfit[igal].mu = bigmu[mindx]
+
           isedfit[igal].age = bigage[mindx]
-          isedfit[igal].b100 = bigb100[mindx]
-          
+          isedfit[igal].sfrage = bigsfrage[mindx]
           isedfit[igal].mass = alog10(bigmass[mindx]*isedfit[igal].scale)
           isedfit[igal].sfr = alog10(bigsfr[mindx]*isedfit[igal].scale)
           isedfit[igal].sfr100 = alog10(bigsfr100[mindx]*isedfit[igal].scale)
+          isedfit[igal].b100 = bigb100[mindx]
 
           isedfit[igal].bestmaggies = galgrid[mindx].bestmaggies
        endif

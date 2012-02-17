@@ -96,7 +96,6 @@ function init_montegrid, nmodel, nage, imf=imf, nmaxburst=nmaxburst
     if (nmaxburst gt 1) then burstarray1 = fltarr(nmaxburst)-1.0
     
     montegrid = {$
-;     imf:                      imf,$
       chunkindx:                 -1,$
       modelindx:                 -1,$
       delayed:                    0,$ ; delayed tau model?

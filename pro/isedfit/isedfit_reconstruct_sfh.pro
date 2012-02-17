@@ -43,7 +43,7 @@
 function isedfit_reconstruct_sfh, info, useage=useage, outage=outage, mtau=mtau, $
   aburst=aburst, mburst=mburst, mgalaxy=outmgalaxy, sfr100=outsfr100, $
   b100=outb100, notruncate=notruncate, sfhtau=outsfhtau, sfhburst=outsfhburst, $
-  sfrage=outsfrage, debug=debug, _extra=extra
+  sfrage=outsfrage, linear=linear, debug=debug, _extra=extra
 ; jm10dec22ucsd - given an iSEDfit structure, reconstruct the star
 ; formation history, allowing for multiple bursts
 
@@ -203,9 +203,10 @@ function isedfit_reconstruct_sfh, info, useage=useage, outage=outage, mtau=mtau,
                 mgalaxy[iage] = mtau*(1D0-exp(-age[iage]/info.tau)) + mtotburst
              endelse
           endelse
-          sfr100[iage] = mtot100/(dt*1D9)
-          b100[iage] = sfr100[iage]/(mgalaxy[iage]/(1D9*age[iage]))
-
+          if (age[iage] gt 0D) then begin
+             sfr100[iage] = mtot100/(dt*1D9)
+             b100[iage] = sfr100[iage]/(mgalaxy[iage]/(1D9*age[iage]))
+          endif
 ; compute the SFR-weighted age
           norm = im_integral(age*1D9,sfh,0D,1D9*age[iage])
           if (norm eq 0D) then sfrage[iage] = age[iage] else $
