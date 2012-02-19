@@ -95,6 +95,7 @@ function init_isedfit, ngal, nfilt, sfhgrid, sfhgrid_paramfile=sfhgrid_paramfile
     isedfit1 = {$
       isedfit_id:      -1L,$    ; unique ID number
       zobj:           -1.0,$    ; redshift
+;     zobj_err:       -1.0,$    ; redshift error
       maggies:     fltarr(nfilt),$ ; observed maggies
       ivarmaggies: fltarr(nfilt),$ ; corresponding inverse variance
       bestmaggies: fltarr(nfilt)}  ; best-fitting model photometry

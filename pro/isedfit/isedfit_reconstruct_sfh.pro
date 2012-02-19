@@ -78,7 +78,7 @@ function isedfit_reconstruct_sfh, info, useage=useage, outage=outage, mtau=mtau,
     if (nb eq 0) then maxage = im_double(info.maxage) else $
       maxage = im_double(info.maxage>info.maxtburst)
     dage = 0.02D ; default 10 Myr time interval
-    nage = long(((maxage-minage)/dage)<500L)
+    nage = long(((maxage-minage)/dage)<300L)
     
     if (n_elements(useage) eq 0) then begin
        age = build_isedfit_agegrid(info,debug=0,nage=nage,$
@@ -104,7 +104,7 @@ function isedfit_reconstruct_sfh, info, useage=useage, outage=outage, mtau=mtau,
        aburst = dblarr(nb)
        mburst = dblarr(nb)
        for ib = 0, nb-1 do begin
-          if (info.tau eq 0.0) then $
+          if (info.tau eq 0D) then $
             aburst[ib] = fburst[ib]*mtau/(dtburst[ib]*1D9) else $
               aburst[ib] = fburst[ib]*mtau*(1.0-exp(-tburst[ib]/info.tau))/(dtburst[ib]*1D9)
 ; step-function burst (default)
@@ -141,7 +141,7 @@ function isedfit_reconstruct_sfh, info, useage=useage, outage=outage, mtau=mtau,
 ; truncate the last burst?
     dotruncate = 0
     ilast = -1
-    if (nb gt 0) and (info.tautrunc gt 0.0) then begin
+    if (nb gt 0) and (info.tautrunc gt 0D) then begin
        if (keyword_set(notruncate) eq 0) then begin
           dotruncate = 1
           ilast = (long(findex(age,tburst[nb-1])))>0
@@ -195,7 +195,7 @@ function isedfit_reconstruct_sfh, info, useage=useage, outage=outage, mtau=mtau,
                 m100burst = im_integral(age*1D9,sfhburst,1D9*(age[iage]-dt)>0,1D9*age[iage])
                 mtotburst = im_integral(age*1D9,sfhburst,0D,1D9*age[iage])
              endelse
-             if (info.tau eq 0.0) then begin
+             if (info.tau eq 0D) then begin
                 mtot100 = 0D + m100burst
                 mgalaxy[iage] = mtau + mtotburst
              endif else begin
@@ -208,11 +208,11 @@ function isedfit_reconstruct_sfh, info, useage=useage, outage=outage, mtau=mtau,
              b100[iage] = sfr100[iage]/(mgalaxy[iage]/(1D9*age[iage]))
           endif
 ; compute the SFR-weighted age
-          norm = im_integral(age*1D9,sfh,0D,1D9*age[iage])
-          if (norm eq 0D) then sfrage[iage] = age[iage] else $
-            sfrage[iage] = im_integral(age*1D9,age*1D9*sfh,0D,1D9*age[iage])/norm
-;         print, im_integral(age*1D9,age*1D9*sfh,0D,1D9*age[iage]), norm, sfrage[iage]
-;         if iage eq 200 then stop
+          if (info.tau eq 0D) then sfrage[iage] = age[iage] else begin
+             norm = im_integral(age*1D9,sfh,0D,1D9*age[iage])
+             if (norm eq 0D) then sfrage[iage] = age[iage] else $
+               sfrage[iage] = im_integral(age*1D9,sfh*(age[iage]-age)*1D9,0D,1D9*age[iage])/norm
+          endelse
           
 ;         print, age[iage], mtot100, mtot100/(dt*1D9), sfh[iage]
 ;         plot, age, sfhburst, xr=[1.4,2.4], psym=-6, xsty=3, ysty=3
