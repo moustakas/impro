@@ -57,7 +57,7 @@ function isedfit_reconstruct_posterior, paramfile, post=post, params=params, $
   iopath=iopath, index=index, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
   outprefix=outprefix, age=age, sfrage=sfrage, tau=tau, Z=Z, av=av, nburst=nburst, $
   sfr0=sfr0, sfr100=sfr100, b100=b100, mgal=mgal, chunkindx=chunkindx, $
-  modelindx=modelindx, indxage=ageindx
+  modelindx=modelindx, indxage=ageindx, bigsfr0=bigsfr, bigmass=bigmass, bigsfrage=bigsfrage
   
     if (n_elements(paramfile) eq 0) and (n_elements(params) eq 0) then begin
        doc_library, 'isedfit_reconstruct_posterior'
@@ -146,7 +146,7 @@ function isedfit_reconstruct_posterior, paramfile, post=post, params=params, $
 ;         mgal[*,gg] = bigmgal[post[gg].draws]
        endfor    
     endif
-    
+
 ; now get the remaining parameters    
     mass = fltarr(ndraw,ngal)
     for gg = 0L, ngal-1 do begin

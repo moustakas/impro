@@ -118,7 +118,7 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
           isedfit[igal] = isedfit_packit(isedfit[igal],alog10(bigsfr[allow[these]])+logscale,type='sfr')
           isedfit[igal] = isedfit_packit(isedfit[igal],alog10(bigsfr100[allow[these]])+logscale,type='sfr100')
 
-          isedfit[igal] = isedfit_packit(isedfit[igal],bigage[allow[these]],type='sfrage')
+          isedfit[igal] = isedfit_packit(isedfit[igal],bigsfrage[allow[these]],type='sfrage')
           isedfit[igal] = isedfit_packit(isedfit[igal],bigage[allow[these]],type='age')
           isedfit[igal] = isedfit_packit(isedfit[igal],bigtau[allow[these]],type='tau')
           isedfit[igal] = isedfit_packit(isedfit[igal],bigZ[allow[these]],type='Z')
@@ -162,7 +162,7 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
           isedfit[igal].sfr = alog10(bigsfr[mindx]*isedfit[igal].scale)
           isedfit[igal].sfr100 = alog10(bigsfr100[mindx]*isedfit[igal].scale)
           isedfit[igal].b100 = bigb100[mindx]
-
+stop
           isedfit[igal].bestmaggies = galgrid[mindx].bestmaggies
        endif
 ; some plots
