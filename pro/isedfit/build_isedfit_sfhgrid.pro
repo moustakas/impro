@@ -210,7 +210,8 @@ pro build_grid, montegrid, chunkinfo, ssppath=ssppath, $
 
 ; initialize the output SED data structure
           if (issp eq 0) then outinfo = struct_addtags(temporary(outinfo),$
-            replicate({mstar: fltarr(params.nage), wave: float(sspfits[0].wave), $
+            replicate({mstar: fltarr(params.nage), $
+            wave: float(sspfits[0].wave), $
             flux: fltarr(npix,params.nage)},nthese))
 
           delvarx, rv

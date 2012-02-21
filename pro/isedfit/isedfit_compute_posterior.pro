@@ -162,7 +162,6 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
           isedfit[igal].sfr = alog10(bigsfr[mindx]*isedfit[igal].scale)
           isedfit[igal].sfr100 = alog10(bigsfr100[mindx]*isedfit[igal].scale)
           isedfit[igal].b100 = bigb100[mindx]
-stop
           isedfit[igal].bestmaggies = galgrid[mindx].bestmaggies
        endif
 ; some plots

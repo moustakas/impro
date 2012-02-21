@@ -226,10 +226,15 @@ pro isedfit_models, paramfile, params=params, iopath=iopath, $
        mem0 = memory(/current)
        splog, 'Reading '+fp.sfhgrid_chunkfiles[ichunk]
        chunk = mrdfits(fp.sfhgrid_chunkfiles[ichunk],1,/silent)
+       nage = n_elements(chunk[0].age)
        ndim = size(chunk.flux,/n_dim)
        sz = size(chunk.flux,/dim)
-       npix = sz[0] & nage = sz[1]
-       if (ndim eq 2L) then nmodel = 1L else nmodel = sz[2]
+       npix = sz[0]
+       if (nage eq 1) then begin
+          if (ndim eq 1) then nmodel = 1L else nmodel = sz[1]
+       endif else begin
+          if (ndim eq 2) then nmodel = 1L else nmodel = sz[2]
+       endelse
        distfactor = rebin(reform((pc10/dlum)^2.0,nredshift,1),nredshift,nmodel)
 ; initialize the output structure
        isedfit_models = struct_trimtags(chunk,except=['WAVE','FLUX'])

@@ -43,7 +43,8 @@
 function isedfit_reconstruct_sfh, info, useage=useage, outage=outage, mtau=mtau, $
   aburst=aburst, mburst=mburst, mgalaxy=outmgalaxy, sfr100=outsfr100, $
   b100=outb100, notruncate=notruncate, sfhtau=outsfhtau, sfhburst=outsfhburst, $
-  sfrage=outsfrage, linear=linear, debug=debug, _extra=extra
+  sfrage=outsfrage, linear=linear, debug=debug, _extra=extra, nagemax=nagemax, $
+  dage=dage
 ; jm10dec22ucsd - given an iSEDfit structure, reconstruct the star
 ; formation history, allowing for multiple bursts
 
@@ -74,11 +75,13 @@ function isedfit_reconstruct_sfh, info, useage=useage, outage=outage, mtau=mtau,
 ; need a highly sampled age grid to get the integrations right; this
 ; grid is used internally and then the output quantities are
 ; interpolated at OUTAGE
+    if (n_elements(nagemax) eq 0) then nagemax = 300L
+    if (n_elements(dage) eq 0) then dage = 0.02D ; default 20 Myr time interval
+
     minage = 0D
     if (nb eq 0) then maxage = im_double(info.maxage) else $
       maxage = im_double(info.maxage>info.maxtburst)
-    dage = 0.02D ; default 10 Myr time interval
-    nage = long(((maxage-minage)/dage)<300L)
+    nage = long(((maxage-minage)/dage)<nagemax)
     
     if (n_elements(useage) eq 0) then begin
        age = build_isedfit_agegrid(info,debug=0,nage=nage,$
