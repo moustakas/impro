@@ -77,7 +77,7 @@ function integrate_mf, mf_vmax, minmass=minmass1, maxmass=maxmass1, $
 
        if (n_elements(minmass1) eq 0) then minmass = minmass_data else minmass = minmass1
        if (n_elements(maxmass1) eq 0) then maxmass = maxmass_data else maxmass = maxmass1
-       if (minmass_data le minmass1) and (maxmass_data ge minmass1) then begin
+       if (minmass_data le minmass) and (maxmass_data ge minmass) then begin
           result.minmass = minmass
           result.maxmass = maxmass
           

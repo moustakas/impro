@@ -195,35 +195,42 @@ pro isedfit_qaplot, paramfile, isedfit, params=params, iopath=iopath, $
 
 ; overplot the data; distinguish between three different cases, based
 ; on the input photometry
-          used = where((isedfit[igal].maggies gt 0.0) and $ ; used in the fitting
-            (isedfit[igal].ivarmaggies gt 0.0),nused)
+          mab = maggies2mag(isedfit[igal].maggies,ivar=isedfit[igal].ivarmaggies,$
+            magerr=maberr,lomagerr=mabloerr,himagerr=mabhierr,magnsigma=mabupper,nsigma=2.0)
+          used = where(mab gt -90.0,nused)
+          upper = where(mab lt -90.0 and mabupper gt -90,nupper)
+
+;         used = where((isedfit[igal].maggies gt 0.0) and $ ; used in the fitting
+;           (isedfit[igal].ivarmaggies gt 0.0),nused)
+;         upper = where((isedfit[igal].maggies le 0.0) and $ ; upper limit
+;           (isedfit[igal].ivarmaggies gt 0.0),nupper)
           notused = where((isedfit[igal].maggies gt 0.0) and $ ; not used in the fitting
             (isedfit[igal].ivarmaggies eq 0.0),nnotused)
           nodata = where((isedfit[igal].maggies eq 0.0) and $ ; no measurement
             (isedfit[igal].ivarmaggies eq 0.0),nnodata)
-          upper = where((isedfit[igal].maggies le 0.0) and $ ; upper limit
-            (isedfit[igal].ivarmaggies gt 0.0),nupper)
 
           if (nused ne 0L) then begin
-             mab = maggies2mag(isedfit[igal].maggies[used],$
-               ivar=isedfit[igal].ivarmaggies[used],magerr=mab_err)
-             oploterror, weff[used], mab, hwhm[used], mab_err, psym=symcat(16), $
-               symsize=2.0, color=djs_icolor('dark green'), $
-               errcolor=djs_icolor('dark green'), errthick=!p.thick
+             oploterror, weff[used], mab[used], hwhm[used], mabhierr[used], psym=symcat(16), $
+               symsize=2.0, color=im_color('firebrick'), /hibar, $
+               errcolor=im_color('firebrick'), errthick=!p.thick
+             oploterror, weff[used], mab[used], hwhm[used], mabloerr[used], psym=3, $
+               color=im_color('firebrick'), /lobar, $
+               errcolor=im_color('firebrick'), errthick=!p.thick
+          endif
+
+          if (nupper ne 0) then begin
+             djs_oplot, weff[upper], mabupper[upper], $
+               psym=symcat(11,thick=4), symsize=3.0, color=im_color('dodger blue')
+;            oploterror, weff[upper], mabupper[upper], hwhm[upper], mabupper[upper]*0, $
+;              psym=symcat(11,thick=4), symsize=3.0, color=im_color('blue'), $
+;              errcolor=im_color('blue'), errthick=!p.thick
           endif
 
           if (nnotused ne 0L) then begin
              mab = maggies2mag(isedfit[igal].maggies[notused])
              oploterror, weff[notused], mab, hwhm[notused], mab*0.0, $
-               psym=symcat(4,thick=6.0), symsize=3.0, color=djs_icolor('red'), $
-               errcolor=djs_icolor('red'), errthick=!p.thick
-          endif
-
-          if (nupper ne 0) then begin
-             mab = maggies2mag(1.0/sqrt(isedfit[igal].ivarmaggies[upper]))
-             oploterror, weff[upper], mab, hwhm[upper], mab*0.0, psym=symcat(11,thick=4), $
-               symsize=3.0, color=djs_icolor('blue'), $
-               errcolor=djs_icolor('blue'), errthick=!p.thick
+               psym=symcat(4,thick=6.0), symsize=3.0, color=im_color('forest green'), $
+               errcolor=im_color('red'), errthick=!p.thick
           endif
 
 ; legend

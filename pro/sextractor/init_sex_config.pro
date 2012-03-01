@@ -57,11 +57,11 @@ function init_sex_config, ncopies
 
       PHOT_FLUXFRAC:    '0.5'             ,$ ; string
       SATUR_LEVEL:      50000.0           ,$
-      SATUR_KEY:        'SATURATE'        ,$
+;     SATUR_KEY:        'SATURATE'        ,$
       MAG_ZEROPOINT:    0.0               ,$
       MAG_GAMMA:        4.0               ,$
       GAIN:             '0.0'             ,$ ; should be string, to handle MEF
-      GAIN_KEY:         'GAIN'            ,$
+;     GAIN_KEY:         'GAIN'            ,$
       PIXEL_SCALE:      0.0               ,$
 ; star/galaxy separation
       SEEING_FWHM:      1.2               ,$
@@ -102,7 +102,7 @@ function init_sex_config, ncopies
       PSF_NAME:         'default.psf'     ,$
       PSF_NMAX:         9                 ,$
       PSFDISPLAY_TYPE:  'SPLIT'           ,$
-      PATTERN_TYPE:     'RINGS-HARMONIC'  ,$
+;     PATTERN_TYPE:     'RINGS-HARMONIC'  ,$
       SOM_NAME:         'default.som'     }
     config = replicate(config,ncopies)
 

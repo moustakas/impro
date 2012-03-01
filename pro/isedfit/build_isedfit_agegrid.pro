@@ -94,12 +94,14 @@ function build_isedfit_agegrid, info, inage=inage1, nage=nage, $
           if (ngood ne 0) then begin
              burstage1 = burstage1[good] ; NGOOD=0 means the burst has not happened yet
              if (burstage1[0] ne -1) then begin
-                if (n_elements(burstage) eq 0) then burstage = burstage1 else $
-                  burstage = [burstage,burstage1]
+                if (n_elements(burstage) eq 0) then burstage = burstage1 else begin
+                   burstage = [burstage,burstage1]
+                   burstage = burstage[uniq(im_double(burstage),sort(im_double(burstage)))]
+                endelse
              endif
           endif
-       endfor
-       
+       endfor 
+
 ; now get rid of NBURSTAGE random ages from the old age vector
        ntoss = n_elements(burstage)
        if (ntoss ne 0) then begin
@@ -117,7 +119,7 @@ function build_isedfit_agegrid, info, inage=inage1, nage=nage, $
     endif else outage = inage
 
     if (n_elements(outage) ne nage) then message, 'Bad bad bad!'
-    
+
 ; truncate the last burst?  require at least 5 age samplings of the
 ; exponential tail
     if (info.tautrunc gt 0.0) then begin
