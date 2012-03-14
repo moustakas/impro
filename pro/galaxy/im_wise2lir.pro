@@ -3,13 +3,13 @@
 ;   IM_WISE2LIR()
 ;
 ; PURPOSE:
-;   Given a redshift and the four bands of *observed* WISE photometry,
+;   Given a redshift and 12- and 22-micron *observed* WISE photometry,
 ;   compute the total infrared luminosity, L(IR)=L(8-1100), based on
 ;   various infrared SED models.
 ;
 ; INPUTS: 
 ;   redshift - redshift for each object [NGAL]
-;   maggies - observed 3.4, 4.6, 12, and 22 micron fluxes, as output
+;   maggies - observed 12, and 22 micron fluxes, as output
 ;     by WISE_TO_MAGGIES [4,NGAL]
 ;   ivarmaggies - corresponding inverse variances [4,NGAL]
 ;
@@ -59,12 +59,13 @@ function wise2lir_model_maggies, model, zref, dlum=dlum
 ; loop and call k_project_filters    
 ;   k_projection_table, rmatrix, model.flux, model.wave, $
 ;     zref, (wise_filterlist())[2:3]
-    model_maggies = dblarr(4,nmodel,nzref)
+;   model_maggies = dblarr(4,nmodel,nzref)
+    model_maggies = dblarr(2,nmodel,nzref)
     for ii = 0, nmodel-1 do begin
        for jj = 0, nzref-1 do begin
           model_maggies[*,ii,jj] = k_project_filters(k_lambda_to_edges($
             model.wave*(1.0+zref[jj])),model.flux[*,ii]/(4.0*!dpi*dlum[jj]^2)/$
-            (1.0+zref[jj]),filterlist=wise_filterlist())
+            (1.0+zref[jj]),filterlist=(wise_filterlist())[2:3])
        endfor
     endfor
 return, model_maggies
@@ -97,6 +98,10 @@ function im_wise2lir, redshift, maggies, ivarmaggies, chi2=chi2, $
 ; define the fiducial redshift grid
     zrefmin = min(redshift)
     zrefmax = max(redshift)
+    if zrefmin eq zrefmax then begin
+       zrefmin = zrefmin*0.95
+       zrefmax = zrefmax*1.05
+    endif
     nzz = (ceil((zrefmax-zrefmin)/0.01)>50)<200
     zref = range(zrefmin,zrefmax,nzz,log=zlog)
     dlum = dluminosity(zref,/cm)
@@ -130,7 +135,7 @@ function im_wise2lir, redshift, maggies, ivarmaggies, chi2=chi2, $
     nmodel = n_elements(model.lir)
     npix = n_elements(model.wave)
 
-    filt = wise_filterlist()
+    filt = (wise_filterlist())[2:3]
     weff = k_lambda_eff(filterlist=filt)
     nfilt = n_elements(filt)
     
@@ -139,13 +144,18 @@ function im_wise2lir, redshift, maggies, ivarmaggies, chi2=chi2, $
     model_maggies = interpolate(model_maggies_grid,zindx)
     idlum = interpolate(dlum,zindx)
     
-; give the 12- and 22-micron bands equal statistical weight; ignore
-; the 3.3- and 4.6-micron fluxes
+; give the 12- and 22-micron bands equal statistical weight
     new_ivarmaggies = ivarmaggies
-    new_ivarmaggies[0:1,*] = 0.0
-;   new_ivarmaggies[2,*] = 0.0
-    new_ivarmaggies[2,*] = max(ivarmaggies,dim=1)
-    new_ivarmaggies[3,*] = max(ivarmaggies,dim=1)
+    new_ivarmaggies[0,*] = max(ivarmaggies,dim=1)
+    new_ivarmaggies[1,*] = max(ivarmaggies,dim=1)
+    
+;; give the 12- and 22-micron bands equal statistical weight; ignore
+;; the 3.3- and 4.6-micron fluxes
+;    new_ivarmaggies = ivarmaggies
+;    new_ivarmaggies[0:1,*] = 0.0
+;;   new_ivarmaggies[2,*] = 0.0
+;    new_ivarmaggies[2,*] = max(ivarmaggies,dim=1)
+;    new_ivarmaggies[3,*] = max(ivarmaggies,dim=1)
     
 ; need to loop, unfortunately...  derive the uncertainties on L(IR)
 ; and L(24) using a simple Monte Carlo method
@@ -203,17 +213,17 @@ function im_wise2lir, redshift, maggies, ivarmaggies, chi2=chi2, $
              djs_oplot, !x.crange, minchi2*[1,1], color='dark green'
              cc = get_kbrd(1)
              
-             modelflam = interpolate(model.flux,modelindx1)/(4.0*!dpi*idlum[igal]^2)/(1.0+redshift[igal])
+             modelflam = interpolate(model.flux,modelindx1,/grid)/(4.0*!dpi*idlum[igal]^2)/(1.0+redshift[igal])
              good = where(modelflam gt 0.0,ngood)
              modelwave = model.wave[good]*(1.0+redshift[igal])
-             modelmab = -2.5*alog10(modelflam[good]*rebin(reform(modelwave,ngood,1),$
+             modelmab = -2.5*alog10(modelflam[good]*rebin(reform(model.wave[good],ngood,1),$
                ngood,nmodel)^2/im_light(/ang))-48.6
 
              djs_plot, weff*(1.0+redshift[igal])/1D4, -2.5*alog10(maggies[*,igal]), psym=7, color='yellow', $
                sym=3, xr=[1,500], /xlog, yr=[max(modelmab),min(modelmab)], xsty=3, ysty=3
              djs_oplot, weff*(1.0+redshift[igal])/1D4, -2.5*alog10(interpolate(vmodelmaggies,modelindx1)), $
                psym=6, sym=3
-             djs_oplot, modelwave/1D4, modelmab
+             djs_oplot, modelwave/1D4, modelmab, color='orange'
 
 ;            plot, findgen(nmodel), vchi2, xsty=3, ysty=3, psym=6, /ylog, $
 ;              position=[2.0,max(modelmab)+2,9.0,min(modelmab)-2], /noerase, $
