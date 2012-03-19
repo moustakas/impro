@@ -163,6 +163,16 @@ function isedfit_compute_posterior, isedfit, modelgrid, fullgrid, $
           isedfit[igal].sfr100 = alog10(bigsfr100[mindx]*isedfit[igal].scale)
           isedfit[igal].b100 = bigb100[mindx]
           isedfit[igal].bestmaggies = galgrid[mindx].bestmaggies
+
+;         psfile = 'chi2_vs_deltamag.ps'
+;         im_plotconfig, 0, pos, psfile=psfile, height=5.5
+;         dmag = 2.5*alog10(galgrid.bestmaggies[17])-2.5*alog10(isedfit.maggies[17])
+;         djs_plot, dmag, galgrid.chi2, psym=6, xtitle='[ch2]_{model}-[ch2]_{data}', $
+;           ytitle='\chi^{2}_{\nu}', symsize=0.5, position=pos, xsty=1, ysty=1, thick=1, $
+;           yrange=[0,6], color=im_color('grey')
+;         djs_oplot, dmag[allow[these]], (galgrid.chi2)[allow[these]], psym=6, $
+;           symsize=0.5, thick=1, color=im_color('firebrick')
+;         im_plotconfig, psfile=psfile, /psclose, /pdf
        endif
 ; some plots
 ;       xx = bigage & yy = bigdtburst

@@ -18,6 +18,7 @@ function im_color, colorname, colorindx, _extra=extra
        doc_library, 'im_color'
        return, -1
     endif
+    if size(colorname,/type) ne 7 then return, colorname
     if (n_elements(colorindx) eq 0) then colorindx = 100
     if (ncolor gt 1) then begin
        col = lonarr(ncolor)

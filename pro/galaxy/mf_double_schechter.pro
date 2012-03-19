@@ -12,7 +12,7 @@
 ;     model 
 ;   logmstar - log-base-10 stellar mass at the 'knee' of the first
 ;     Schechter model 
-;   alpha - low-mass slope
+;   alpha - low-mass slope of the first Schechter model
 ;   phistar2 - number density at the 'knee' of the second Schechter
 ;     model 
 ;   logmstar2 - log-base-10 stellar mass at the 'knee' of the second
@@ -47,14 +47,14 @@
 ;-
 
 function mf_double_schechter, logmass, phistar, logmstar, alpha, phistar2, $
-  logmstar2, alpha2, schechter=schechter
+  logmstar2, alpha2, double_schechter=double_schechter
 
     if (n_elements(logmass) eq 0L) then begin
        doc_library, 'mf_schechter'
        return, -1
     endif
 
-    if (n_elements(schechter) eq 0) then begin
+    if (n_elements(double_schechter) eq 0) then begin
        if (n_elements(phistar) eq 0) or (n_elements(logmstar) eq 0) or $
          (n_elements(alpha) eq 0) or (n_elements(phistar2) eq 0) or $
          (n_elements(logmstar2) eq 0) or (n_elements(alpha2) eq 0) then begin
@@ -68,21 +68,21 @@ function mf_double_schechter, logmass, phistar, logmstar, alpha, phistar2, $
        use_logmstar2 = logmstar2
        use_alpha2 = alpha2
     endif else begin
-       if (tag_exist(schechter,'phistar') eq 0) or $
-         (tag_exist(schechter,'logmstar') eq 0) or $
-         (tag_exist(schechter,'alpha') eq 0) or $
-         (tag_exist(schechter,'phistar2') eq 0) or $
-         (tag_exist(schechter,'logmstar2') eq 0) or $
-         (tag_exist(schechter,'alpha2') eq 0) then begin
+       if (tag_exist(double_schechter,'phistar') eq 0) or $
+         (tag_exist(double_schechter,'logmstar') eq 0) or $
+         (tag_exist(double_schechter,'alpha') eq 0) or $
+         (tag_exist(double_schechter,'phistar2') eq 0) or $
+         (tag_exist(double_schechter,'logmstar2') eq 0) or $
+         (tag_exist(double_schechter,'alpha2') eq 0) then begin
           splog, 'Improper SCHECHTER structure!'
           return, -1
        endif
-       use_phistar = schechter.phistar
-       use_logmstar = schechter.logmstar
-       use_alpha = schechter.alpha
-       use_phistar2 = schechter.phistar2
-       use_logmstar2 = schechter.logmstar2
-       use_alpha2 = schechter.alpha2
+       use_phistar = double_schechter.phistar
+       use_logmstar = double_schechter.logmstar
+       use_alpha = double_schechter.alpha
+       use_phistar2 = double_schechter.phistar2
+       use_logmstar2 = double_schechter.logmstar2
+       use_alpha2 = double_schechter.alpha2
     endelse
 
     mratio = 10D^(logmass-use_logmstar)

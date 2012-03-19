@@ -88,7 +88,14 @@ function mf_fit_schechter, logmass, phi, phierr, parinfo=parinfo, quiet=quiet
     params = mpfitfun('mf_fit_schechter_func',logmass,phi,phierr,$
       weight=phiweights,parinfo=parinfo,perror=perror,status=mpstatus,$
       quiet=quiet,bestnorm=chi2,dof=dof,covar=covar)
-
+    if mpstatus le 0 then begin
+       splog, 'Problem with the fit'
+       params = parinfo.value
+       perror = params*0
+       dof = 1
+       chi2 = 0D
+       covar = dblarr(n_elements(parinfo),n_elements(parinfo))-999.0
+    endif
     schechter = {phistar: params[0], logmstar: params[1], $
       alpha: params[2], phistar_err: perror[0], $
       logmstar_err: perror[1], alpha_err: perror[2], $

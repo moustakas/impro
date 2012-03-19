@@ -351,8 +351,6 @@ pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfi
 ; ZOBJ starting from a maximum formation redshift z=10 [Gyr]
        maxage = lf_z2t(zobj[gthese],omega0=params.omega0,$ ; [Gyr]
          omegal0=params.omegal)/params.h100 
-;      maxage = getage(zobj,/gyr)
-;      maxage = getage(zobj,/gyr)-getage(10.0,/gyr) 
        zindx = findex(redshift,zobj[gthese]) ; used for interpolation
 ; loop on each "chunk" of output from ISEDFIT_MODELS
        nchunk = n_elements(fp.isedfit_models_chunkfiles)

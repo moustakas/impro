@@ -3,7 +3,8 @@
 ;   MF_SCHECHTER_PLUS()
 ;
 ; PURPOSE:
-;   Generate a double Schechter model given the relevant parameters.
+;   Generate a Schechter plus additional low-mass component model
+;   given the relevant parameters. 
 ;
 ; INPUTS: 
 ;   logmass - log-base-10 stellar masses (in the same units as MSTAR,

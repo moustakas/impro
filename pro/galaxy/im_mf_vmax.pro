@@ -105,6 +105,8 @@ function im_mf_vmax, mass, oneovervmax, binsize=binsize, masslimit=masslimit1, $
     weff = fltarr(nbins)
     neff = fltarr(nbins)
     neff_err = fltarr(nbins)
+    medmass = fltarr(nbins)
+    meanmass = fltarr(nbins)
     phierr_gehrels = fltarr(2,nbins)
     for ii = 0L, nbins-1 do begin
        number[ii] = rev[ii+1]-rev[ii] ; number of objects per bin
@@ -123,6 +125,8 @@ function im_mf_vmax, mass, oneovervmax, binsize=binsize, masslimit=masslimit1, $
           neff_err[ii] = (neff_err1[1]-neff_err1[0])/2.0 ; error is asymmetric, but approximate
           phierr_gehrels[0,ii] = phi[ii]-weff[ii]*neff_err1[0]/binsize ; lower
           phierr_gehrels[1,ii] = weff[ii]*neff_err1[1]/binsize-phi[ii] ; upper
+          medmass[ii] = djs_median(mass[rev[rev[ii]:rev[ii+1]-1]]) 
+          meanmass[ii] = djs_mean(mass[rev[rev[ii]:rev[ii+1]-1]]) 
        endelse
     endfor
 
@@ -158,6 +162,8 @@ function im_mf_vmax, mass, oneovervmax, binsize=binsize, masslimit=masslimit1, $
          neff_err:       null,$
          weff:           null,$
          mass:           null,$
+         medmass:        null,$
+         meanmass:       null,$
          phi:            null,$
          phierr_poisson: null,$
          phierr_lower:   null,$
@@ -173,6 +179,8 @@ function im_mf_vmax, mass, oneovervmax, binsize=binsize, masslimit=masslimit1, $
     mf_data.neff[0:nbins-1] = neff
     mf_data.neff_err[0:nbins-1] = neff_err
     mf_data.weff[0:nbins-1] = weff
+    mf_data.medmass[0:nbins-1] = medmass
+    mf_data.meanmass[0:nbins-1] = meanmass
     
     mf_data.phi[0:nbins-1] = phi
     mf_data.phierr_poisson[0:nbins-1] = phierr_poisson
