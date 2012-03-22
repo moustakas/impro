@@ -149,9 +149,9 @@ function im_filterspecs, filterlist=filterlist, verbose=verbose, $
        specs[ifilt].fwhm = 2.0*sqrt(int_tabulated(ww,ff*(ww-filtweff)^2.0)/filtarea) ; [Angstrom]
        
        if keyword_set(doplot) then begin
-          
-          plot, ww, ff, xsty=3, ysty=3, xthick=2, ythick=2, title=strupcase(specs[ifilt].filter), $
-            thick=2, charsize=1.5, charthick=2.0, xtitle='Wavelength', $
+          if specs[ifilt].weff gt 1D4 then norm = 1D4 else norm = 1D
+          plot, ww/norm, ff, xsty=3, ysty=3, xthick=2, ythick=2, title=strupcase(specs[ifilt].filter), $
+            thick=2, charsize=1.4, charthick=2.0, xtitle='Wavelength', $
             ytitle='Response'
           cc = get_kbrd(1)
 

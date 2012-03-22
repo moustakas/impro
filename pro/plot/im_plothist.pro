@@ -57,7 +57,7 @@ pro im_plothist, arr, xhist, yhist, bin=bin, edge=edge, weight=weight, $
   psym=psym, cumulative=cumulative, normfactor=normfactor, noplot=noplot, $
   overplot=overplot, fill=fill, fcolor=fcolor, fline=fline, fspacing=fspacing, $
   fpattern=fpattern, forientation=forientation, fraction=fraction, peak=peak, $
-  _extra=extra
+  locations=locations, xlog=xlog, logbins=logbins, _extra=extra
 
     ndata = n_elements(arr)
     if (ndata eq 0L) then begin
@@ -69,7 +69,9 @@ pro im_plothist, arr, xhist, yhist, bin=bin, edge=edge, weight=weight, $
     if (n_elements(weight) eq 0L) then weight = dblarr(ndata)+1.0
 
     if (n_elements(bin) eq 0) then begin
-       bin = (max(arr)-min(arr))/double(ceil(0.3D*sqrt(ndata)))
+       if keyword_set(logbins) then $
+         bin = (max(alog10(arr))-min(alog10(arr)))/double(ceil(0.3D*sqrt(ndata))) else $
+           bin = (max(arr)-min(arr))/double(ceil(0.3D*sqrt(ndata)))
        if (dtype eq 4) then bin = float(bin)
     endif else begin
        bin = float(abs(bin))
@@ -86,9 +88,23 @@ pro im_plothist, arr, xhist, yhist, bin=bin, edge=edge, weight=weight, $
 ;      message, 'BIN and ARR datatypes must match!'
 ;   endif
 
-    yhist = im_hist1d(amult*arr,weight,binsize=bin,obin=xhist,binedge=edge,_extra=extra)
-    n_hist = n_elements(yhist)
+; allow for logarithmic bins (code contributed by J. Aird)
+    if keyword_set(logbins) then begin
+       xlog = 1
+       yhist1 = im_hist1d(alog10(amult*arr),weight,binsize=bin,obin=xhist1,$
+         binedge=edge,_extra=extra,locations=loglocations)
+       locations = 10.0^loglocations
 
+       xhist = reform(transpose(rebin(locations,n_elements(locations),2)),n_elements(locations)*2)
+       yhist = shift(reform(transpose(rebin(yhist1,n_elements(yhist1),2)),n_elements(yhist1)*2),+1)
+       yhist[0] = 0
+       yhist[n_elements(yhist)-1] = 0
+    endif else begin
+       yhist = im_hist1d(amult*arr,weight,binsize=bin,obin=xhist,$
+         binedge=edge,_extra=extra)
+    endelse
+    n_hist = n_elements(yhist)
+    
     if keyword_set(fraction) then normfactor = total(yhist)
     if (n_elements(normfactor) ne 0L) then yhist = yhist/float(normfactor)
     if keyword_set(peak) then yhist = yhist/max(yhist)
@@ -113,23 +129,33 @@ pro im_plothist, arr, xhist, yhist, bin=bin, edge=edge, weight=weight, $
     endif else begin
        if keyword_set(cumulative) then begin
           yhist = total(yhist,/cumulative)/total(yhist)
-          plot, xhist, yhist, _extra=extra 
+          plot, xhist, yhist, xlog=xlog, _extra=extra 
        endif else begin
           plot, [xhist[0]-bin,xhist,xhist[n_hist-1]+bin], [0,yhist,0],  $ 
-            psym=psym, _extra=extra
+            psym=psym, xlog=xlog, _extra=extra
        endelse
     endelse
 
     if keyword_set(fill) then begin
-
-       xfill = transpose([[Xhist-bin/2.0],[Xhist+bin/2.0]])
-       xfill = reform(xfill, n_elements(xfill))
-       xfill = [xfill[0], xfill, xfill[n_elements(xfill)-1]]
-       yfill = transpose([[yhist],[yhist]])
-       yfill = reform(yfill, n_elements(yfill))
-       yfill = [0, yfill, 0]
-       xfill = xfill > !X.CRANGE[0] < !X.CRANGE[1] ;Make sure within plot range
-       yfill = yfill > !Y.CRANGE[0] < !Y.CRANGE[1]
+       if keyword_set(logbins) then begin
+          xfill = transpose([[Xhist-10^bin/2.0],[Xhist+10^bin/2.0]])
+          xfill = reform(xfill, n_elements(xfill))
+          xfill = [xfill[0], xfill, xfill[n_elements(xfill)-1]]
+          yfill = transpose([[yhist],[yhist]])
+          yfill = reform(yfill, n_elements(yfill))
+          yfill = [0, yfill, 0]
+          xfill = xfill > 10^!X.CRANGE[0] < 10^!X.CRANGE[1] ;Make sure within plot range
+          yfill = yfill > !Y.CRANGE[0] < !Y.CRANGE[1]
+       endif else begin
+          xfill = transpose([[Xhist-bin/2.0],[Xhist+bin/2.0]])
+          xfill = reform(xfill, n_elements(xfill))
+          xfill = [xfill[0], xfill, xfill[n_elements(xfill)-1]]
+          yfill = transpose([[yhist],[yhist]])
+          yfill = reform(yfill, n_elements(yfill))
+          yfill = [0, yfill, 0]
+          xfill = xfill > !X.CRANGE[0] < !X.CRANGE[1] ;Make sure within plot range
+          yfill = yfill > !Y.CRANGE[0] < !Y.CRANGE[1]
+       endelse
 
        if keyword_set(Fcolor) then Fc = djs_icolor(Fcolor) else Fc = !P.Color
        if keyword_set(Fline) then begin
@@ -147,7 +173,7 @@ pro im_plothist, arr, xhist, yhist, bin=bin, edge=edge, weight=weight, $
 ; because the POLYFILL can erase/overwrite parts of the originally plotted
 ; histogram, we need to replot it here.
        if keyword_set(cumulative) then $
-         plot, xhist, yhist, _extra=extra  else $
+         plot, xhist, yhist, xlog=xlog, _extra=extra  else $
            oplot, [xhist[0]-bin,xhist,xhist[n_hist-1]+bin], [0,yhist,0], $
          psym=psym, _extra=extra
     endif

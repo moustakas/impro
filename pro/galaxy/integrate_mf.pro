@@ -125,8 +125,8 @@ function integrate_mf, mf_vmax, minmass=minmass1, maxmass=maxmass1, $
                 if (keyword_set(double) eq 0) and (keyword_set(plus) eq 0) then begin
                    modelphi = mf_schechter(modelmass,schechter=schechter)
                 endif else begin
-                   if keyword_set(double) then modelphi = mf_double_schechter(modelmass,schechter=schechter)
-                   if keyword_set(plus) then modelphi = mf_schechter_plus(modelmass,schechter=schechter)
+                   if keyword_set(double) then modelphi = mf_double_schechter(modelmass,double_schechter=schechter)
+                   if keyword_set(plus) then modelphi = mf_schechter_plus(modelmass,schechter_plus=schechter)
                 endelse
                 rho_add = im_integral(modelmass,10D^modelmass*modelphi,result.maxmass_data,maxmass1)
                 num_add = im_integral(modelmass,modelphi,result.maxmass_data,maxmass1)
@@ -146,8 +146,8 @@ function integrate_mf, mf_vmax, minmass=minmass1, maxmass=maxmass1, $
              if (keyword_set(double) eq 0) and (keyword_set(plus) eq 0) then begin
                 modelphi = mf_schechter(modelmass,schechter=schechter)
              endif else begin
-                if keyword_set(double) then modelphi = mf_double_schechter(modelmass,schechter=schechter)
-                if keyword_set(plus) then modelphi = mf_schechter_plus(modelmass,schechter=schechter)
+                if keyword_set(double) then modelphi = mf_double_schechter(modelmass,double_schechter=schechter)
+                if keyword_set(plus) then modelphi = mf_schechter_plus(modelmass,schechter_plus=schechter)
              endelse
 
 ; integrate the model             
@@ -202,8 +202,8 @@ function integrate_mf, mf_vmax, minmass=minmass1, maxmass=maxmass1, $
        if (keyword_set(double) eq 0) and (keyword_set(plus) eq 0) then begin
           modelphi = mf_schechter(modelmass,schechter=schechter)
        endif else begin
-          if keyword_set(double) then modelphi = mf_double_schechter(modelmass,schechter=schechter)
-          if keyword_set(plus) then modelphi = mf_schechter_plus(modelmass,schechter=schechter)
+          if keyword_set(double) then modelphi = mf_double_schechter(modelmass,double_schechter=schechter)
+          if keyword_set(plus) then modelphi = mf_schechter_plus(modelmass,schechter_plus=schechter)
        endelse
        result.rho_model = im_integral(modelmass,10D^modelmass*modelphi,minmass,maxmass)
        result.num_model = im_integral(modelmass,modelphi,minmass,maxmass)
@@ -218,8 +218,8 @@ function integrate_mf, mf_vmax, minmass=minmass1, maxmass=maxmass1, $
        if (keyword_set(double) eq 0) and (keyword_set(plus) eq 0) then begin
           modelphitot = mf_schechter(modelmasstot,schechter=schechter)
        endif else begin
-          if keyword_set(double) then modelphitot = mf_double_schechter(modelmasstot,schechter=schechter)
-          if keyword_set(plus) then modelphitot = mf_schechter_plus(modelmasstot,schechter=schechter)
+          if keyword_set(double) then modelphitot = mf_double_schechter(modelmasstot,double_schechter=schechter)
+          if keyword_set(plus) then modelphitot = mf_schechter_plus(modelmasstot,schechter_plus=schechter)
        endelse
        result.rhotot_model = im_integral(modelmasstot,10D^modelmasstot*modelphitot,minmasstot,maxmasstot)
        result.numtot_model = im_integral(modelmasstot,modelphitot,minmasstot,maxmasstot)

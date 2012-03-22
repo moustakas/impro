@@ -100,7 +100,7 @@
 function im_HIST1D, Array, Weight, BINSIZE=Binsize, INPUT=Input, $
   _EXTRA=INPUTKeywords, OMAX=Omax, OMIN=Omin, $
   OBIN=Obin, REVERSE_INDICES=R, DENSITY=Density, $
-  ANONYMOUS_=Dummy_, BINEDGE=Binedge, $
+  ANONYMOUS_=Dummy_, BINEDGE=Binedge, locations=locations, $
   density_err=density_err, h_err=h_err, ylog=ylog, histmin=histmin, histmax=histmax
 
          ON_ERROR, 2          ; on error, return control to caller
@@ -109,7 +109,7 @@ function im_HIST1D, Array, Weight, BINSIZE=Binsize, INPUT=Input, $
          else dbin = 1.0
 
          Density = HISTOGRAM( Array, BINSIZE=dbin,min=histmin,max=histmax,_EXTRA=INPUTKeywords, $
-                              OMAX=Omax, OMIN=Omin, REVERSE_INDICES=R  )
+           OMAX=Omax, OMIN=Omin, REVERSE_INDICES=R,locations=locations)
 
 ;   Determine value at the center of each bin
          if (N_ELEMENTS( Binedge ) eq 0) then Binedge = 0
