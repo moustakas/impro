@@ -99,7 +99,7 @@ function mf_fit_schechter, logmass, phi, phierr, parinfo=parinfo, quiet=quiet
     schechter = {phistar: params[0], logmstar: params[1], $
       alpha: params[2], phistar_err: perror[0], $
       logmstar_err: perror[1], alpha_err: perror[2], $
-      covar: covar, chi2_dof: chi2/(dof+(dof eq 0))}
+      covar: covar, chi2_dof: chi2/(dof+(dof eq 0)), status: mpstatus}
 
 return, schechter
 end

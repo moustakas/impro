@@ -118,7 +118,7 @@ function mf_fit_double_schechter, logmass, phi, phierr, parinfo=parinfo, quiet=q
       phistar_err: perror[0], logmstar_err: perror[1], $
       alpha_err: perror[2], phistar2_err: perror[3], $
       logmstar2_err: perror[4], alpha2_err: perror[5], $
-      covar: covar, chi2_dof: chi2/(dof+(dof eq 0))}
+      covar: covar, chi2_dof: chi2/(dof+(dof eq 0)), status: mpstatus}
 
 return, double_schechter
 end

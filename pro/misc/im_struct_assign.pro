@@ -33,7 +33,8 @@
 ; General Public License for more details. 
 ;-
 
-function im_struct_assign, in, out, nozero=nozero
+function im_struct_assign, in, out1, nozero=nozero
+    out = out1 ; make sure OUT1 is not affected
     struct_assign, in, out, nozero=nozero
 return, out
 end
