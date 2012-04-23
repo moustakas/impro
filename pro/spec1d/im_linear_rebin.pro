@@ -117,6 +117,11 @@ function im_linear_rebin, wave, flux, minwave=minwave, maxwave=maxwave, $
            outferr = sqrt(abs(var))
     endif
 
+; deal with extrapolation
+    mask = ((outwave ge min(wave)) and (outwave le max(wave)))
+    outflux *= mask
+    if (n_err eq n_data) then outferr *= mask
+    
 return, outflux
 end
 

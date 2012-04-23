@@ -48,7 +48,8 @@
 ;-
 
 function integrate_mf, mf_vmax, mingal=mingal, minmass=minmass1, maxmass=maxmass1, $
-  schechter=schechter, nmonte=nmonte, plus=plus, double=double, debug=debug
+  schechter=schechter, nmonte=nmonte, plus=plus, double=double, modified=modified, $
+  debug=debug
 
     if (n_elements(mf_vmax) eq 0) and (n_elements(schechter) eq 0) then begin
        doc_library, 'integrate_mf'
@@ -65,7 +66,9 @@ function integrate_mf, mf_vmax, mingal=mingal, minmass=minmass1, maxmass=maxmass
       rhoerr_model: -1.0, rhototerr_model: -1.0, num: -1.0, num_cor: -1.0, num_model: -1.0, $
       numtot_model: -1.0, numerr: -1.0, numerr_model: -1.0, numtoterr_model: -1.0, $
       mass_cumuphi50: -1.0, mass_cumuphi45: -1.0, mass_cumuphi40: -1.0, mass_cumuphi35: -1.0, $
-      mass_cumuphi30: -1.0, mass_cumuphi25: -1.0}
+      mass_cumuphi30: -1.0, mass_cumuphi25: -1.0, $ ; mass_cumuphi20: -1.0, $
+      masserr_cumuphi50: -1.0, masserr_cumuphi45: -1.0, masserr_cumuphi40: -1.0, masserr_cumuphi35: -1.0, $
+      masserr_cumuphi30: -1.0, masserr_cumuphi25: -1.0} ;, masserr_cumuphi20: -1.0}
 
 ; integrate the MF over the measured range of stellar masses, using
 ; the model, if provided, to extrapolate to from log(M)=[5,15]; get
@@ -92,8 +95,12 @@ function integrate_mf, mf_vmax, mingal=mingal, minmass=minmass1, maxmass=maxmass
        result.minmass = minmass
        result.maxmass = maxmass
           
-       these = where((im_double(mf_vmax.mass)-binsz/2D ge minmass) and $
-         (im_double(mf_vmax.mass)+binsz/2D le maxmass) and (mf_vmax.number gt mingal),nthese)
+       these = where((im_double(mf_vmax.mass) ge minmass) and $
+         (im_double(mf_vmax.mass) le maxmass) and (mf_vmax.number gt mingal),nthese)
+;      these = where((im_double(mf_vmax.mass)-binsz ge minmass) and $
+;        (im_double(mf_vmax.mass)+binsz le maxmass) and (mf_vmax.number gt mingal),nthese)
+;      these = where((im_double(mf_vmax.mass)-binsz/2D ge minmass) and $
+;        (im_double(mf_vmax.mass)+binsz/2D le maxmass) and (mf_vmax.number gt mingal),nthese)
 ;      these = where((mf_vmax.limit eq 1) and (mf_vmax.mass ge minmass) and $
 ;        (mf_vmax.mass le maxmass) and (mf_vmax.number gt 3),nthese)
        if (nthese eq 0) then begin ; special case
@@ -113,7 +120,10 @@ function integrate_mf, mf_vmax, mingal=mingal, minmass=minmass1, maxmass=maxmass
              phierr = mf_vmax.phierr[these]
 
              result.rho = im_integral(mass,10D^mass*phi,minmass,maxmass) ; [Msun Mpc^-3]
-             result.num = im_integral(mass,phi,minmass,maxmass)          ; [Mpc^-3]
+             result.rhoerr = sqrt(im_integral(mass,(10D^mass*phierr)^2,minmass,maxmass)) ; [Msun Mpc^-3]
+             
+             result.num = im_integral(mass,phi,minmass,maxmass) ; [Mpc^-3]
+             result.numerr = sqrt(im_integral(mass,phierr^2,minmass,maxmass)) ; [Mpc^-3]
 
 ;; this is wrong because PHIMONTE can go negative!!
 ;                nbin = n_elements(mass)
@@ -139,10 +149,13 @@ function integrate_mf, mf_vmax, mingal=mingal, minmass=minmass1, maxmass=maxmass
 ; extrapolate to higher mass, if necessary          
           if (result.maxmass_data lt maxmass1) then begin
              modelmass = range(result.maxmass_data,maxmass1,50)
-             if (keyword_set(double) eq 0) and (keyword_set(plus) eq 0) then $
-               modelphi = mf_schechter(modelmass,schechter=schechter) else begin
+             if (keyword_set(double) eq 0) and (keyword_set(plus) eq 0) and $
+               (keyword_set(modified) eq 0) then begin
+                modelphi = mf_schechter(modelmass,schechter=schechter) 
+             endif else begin
                 if keyword_set(double) then modelphi = mf_double_schechter(modelmass,double_schechter=schechter)
                 if keyword_set(plus) then modelphi = mf_schechter_plus(modelmass,schechter_plus=schechter)
+                if keyword_set(modified) then modelphi = mf_modified_schechter(modelmass,modified_schechter=schechter)
              endelse 
              rho_add = im_integral(modelmass,10D^modelmass*modelphi,result.maxmass_data,maxmass1)
              num_add = im_integral(modelmass,modelphi,result.maxmass_data,maxmass1)
@@ -153,10 +166,13 @@ function integrate_mf, mf_vmax, mingal=mingal, minmass=minmass1, maxmass=maxmass
 ; extrapolate to lower mass, if necessary          
           if (result.minmass_data gt minmass1) then begin
              modelmass = range(minmass1,result.minmass_data,50)
-             if (keyword_set(double) eq 0) and (keyword_set(plus) eq 0) then $
-               modelphi = mf_schechter(modelmass,schechter=schechter) else begin
+             if (keyword_set(double) eq 0) and (keyword_set(plus) eq 0) and $
+               (keyword_set(modified) eq 0) then begin
+                modelphi = mf_schechter(modelmass,schechter=schechter) 
+             endif else begin
                 if keyword_set(double) then modelphi = mf_double_schechter(modelmass,double_schechter=schechter)
                 if keyword_set(plus) then modelphi = mf_schechter_plus(modelmass,schechter_plus=schechter)
+                if keyword_set(modified) then modelphi = mf_modified_schechter(modelmass,modified_schechter=schechter)
              endelse 
              rho_add = im_integral(modelmass,10D^modelmass*modelphi,minmass1,result.minmass_data)
              num_add = im_integral(modelmass,modelphi,minmass1,result.minmass_data)
@@ -170,11 +186,13 @@ function integrate_mf, mf_vmax, mingal=mingal, minmass=minmass1, maxmass=maxmass
           nnmodel = 100
           modelmass = range(7D,14D,nnmodel)
 ;         modelmass = range(result.maxmass_data,14D,100)
-          if (keyword_set(double) eq 0) and (keyword_set(plus) eq 0) then begin
+          if (keyword_set(double) eq 0) and (keyword_set(plus) eq 0) and $
+            (keyword_set(modified) eq 0) then begin
              modelphi = mf_schechter(modelmass,schechter=schechter)
           endif else begin
              if keyword_set(double) then modelphi = mf_double_schechter(modelmass,double_schechter=schechter)
              if keyword_set(plus) then modelphi = mf_schechter_plus(modelmass,schechter_plus=schechter)
+             if keyword_set(modified) then modelphi = mf_modified_schechter(modelmass,modified_schechter=schechter)
           endelse
           
 ; integrate the model             
@@ -187,21 +205,41 @@ function integrate_mf, mf_vmax, mingal=mingal, minmass=minmass1, maxmass=maxmass
             modelmass lt min(mf_vmax.mass[gd]))
           mass1 = [mf_vmax.mass[gd],modelmass[keep]]
           phi1 = [mf_vmax.phi[gd],modelphi[keep]]
+          phierrup1 = [mf_vmax.phierr_upper[gd],modelphi[keep]]
+          phierrlo1 = [mf_vmax.phierr_lower[gd],modelphi[keep]]
+
           uu = uniq(mass1,sort(mass1))
           mass1 = mass1[uu]
           phi1 = phi1[uu]
+          phierrup1 = phierrup1[uu]
+          phierrlo1 = phierrlo1[uu]
+          
           cumuphi = phi1*0
+          cumuphi_up = phi1*0
+          cumuphi_lo = phi1*0
           nn = n_elements(mass1)
-          for ii = nn-2, 0, -1 do cumuphi[ii] = im_integral(mass1,phi1,mass1[ii],mass1[nn-1])
-          mm = interpol(mass1,alog10(cumuphi>1D-30),[-5.0,-4.5,-4.0,-3.5,-3.0,-2.5])
+          for ii = nn-2, 0, -1 do begin
+             cumuphi[ii] = im_integral(mass1,phi1,mass1[ii],mass1[nn-1])
+             cumuphi_up[ii] = im_integral(mass1,phi1+phierrup1,mass1[ii],mass1[nn-1])
+             cumuphi_lo[ii] = im_integral(mass1,phi1-phierrlo1,mass1[ii],mass1[nn-1])
+          endfor
+
+          numlimit = [-5.0,-4.5,-4.0,-3.5,-3.0,-2.5];,-2.0]
+          linterp, alog10(cumuphi>1D-30), mass1, numlimit, mm
+          linterp, alog10(cumuphi_up>1D-30), mass1, numlimit, mmerrup
+          linterp, alog10(cumuphi_lo>1D-30), mass1, numlimit, mmerrlo
+          mmerr = (mmerrup-mmerrlo)/2.0
 
           if keyword_set(debug) then begin
              djs_plot, alog10(cumuphi>1D-30), mass1, psym=6, xsty=3, ysty=3, xrange=[-1.5,-6], yrange=[7,12.2]
+             djs_oplot, alog10(cumuphi_up>1D-30), mass1, line=1
+             djs_oplot, alog10(cumuphi_lo>1D-30), mass1, line=1
              djs_oplot, alog10(model_cumuphi>1D-30), modelmass, psym=6, color='orange'
              djs_oplot, alog10(model_cumuphi[keep]>1D-30), modelmass[keep], psym=6, color='blue'
              djs_oplot, -5*[1,1], !y.crange, line=0
              djs_oplot, -4*[1,1], !y.crange, line=5
              djs_oplot, -3*[1,1], !y.crange, line=3
+             djs_oplot, -2.5*[1,1], !y.crange, line=3
              cc = get_kbrd(1)
           endif
 
@@ -211,6 +249,15 @@ function integrate_mf, mf_vmax, mingal=mingal, minmass=minmass1, maxmass=maxmass
           result.mass_cumuphi35 = mm[3]
           result.mass_cumuphi30 = mm[4]
           result.mass_cumuphi25 = mm[5]
+;         result.mass_cumuphi20 = mm[6]
+
+          result.masserr_cumuphi50 = mmerr[0]
+          result.masserr_cumuphi45 = mmerr[1]
+          result.masserr_cumuphi40 = mmerr[2]
+          result.masserr_cumuphi35 = mmerr[3]
+          result.masserr_cumuphi30 = mmerr[4]
+          result.masserr_cumuphi25 = mmerr[5]
+;         result.masserr_cumuphi20 = mmerr[6]
        endif  
     endif 
     
@@ -225,11 +272,13 @@ function integrate_mf, mf_vmax, mingal=mingal, minmass=minmass1, maxmass=maxmass
 
 ; use empirical integration because we can integrated the double
 ; Schechter function easily; the empirical and analytic results match 
-       if (keyword_set(double) eq 0) and (keyword_set(plus) eq 0) then begin
+       if (keyword_set(double) eq 0) and (keyword_set(plus) eq 0) and $
+         (keyword_set(modified) eq 0) then begin
           modelphi = mf_schechter(modelmass,schechter=schechter)
        endif else begin
           if keyword_set(double) then modelphi = mf_double_schechter(modelmass,double_schechter=schechter)
           if keyword_set(plus) then modelphi = mf_schechter_plus(modelmass,schechter_plus=schechter)
+          if keyword_set(modified) then modelphi = mf_modified_schechter(modelmass,modified_schechter=schechter)
        endelse
        result.rho_model = im_integral(modelmass,10D^modelmass*modelphi,minmass,maxmass)
        result.num_model = im_integral(modelmass,modelphi,minmass,maxmass)
@@ -241,11 +290,13 @@ function integrate_mf, mf_vmax, mingal=mingal, minmass=minmass1, maxmass=maxmass
        result.maxmass_tot = maxmasstot
        modelmasstot = range(minmasstot,maxmasstot,500)
 
-       if (keyword_set(double) eq 0) and (keyword_set(plus) eq 0) then begin
+       if (keyword_set(double) eq 0) and (keyword_set(plus) eq 0) and $
+         (keyword_set(modified) eq 0) then begin
           modelphitot = mf_schechter(modelmasstot,schechter=schechter)
        endif else begin
           if keyword_set(double) then modelphitot = mf_double_schechter(modelmasstot,double_schechter=schechter)
           if keyword_set(plus) then modelphitot = mf_schechter_plus(modelmasstot,schechter_plus=schechter)
+          if keyword_set(modified) then modelphitot = mf_modified_schechter(modelmass,modified_schechter=schechter)
        endelse
        result.rhotot_model = im_integral(modelmasstot,10D^modelmasstot*modelphitot,minmasstot,maxmasstot)
        result.numtot_model = im_integral(modelmasstot,modelphitot,minmasstot,maxmasstot)
