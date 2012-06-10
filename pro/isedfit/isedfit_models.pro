@@ -205,7 +205,8 @@ pro isedfit_models, paramfile, params=params, iopath=iopath, $
     endif
     
     pc10 = 3.085678D19 ; fiducial distance [10 pc in cm]
-    dlum = pc10*10D^(lf_distmod(redshift,omega0=params.omega0,omegal0=params.omegal)/5D)/params.h100 ; [cm]
+    dlum = pc10*10D^(lf_distmod(redshift,omega0=params.omega0,$ ; [cm]
+      omegal0=params.omegal)/5D)/params.h100 
 ;   dlum = dluminosity(redshift,/cm) ; luminosity distance [cm]
 
 ; IGM attenuation    

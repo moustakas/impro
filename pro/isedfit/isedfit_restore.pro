@@ -88,9 +88,11 @@ function isedfit_restore, paramfile, isedfit, params=params, iopath=iopath, $
        return, 1
     endif else begin
        light = 2.99792458D18             ; speed of light [A/s]
-       dist = 10.0*3.085678D18           ; fiducial distance [10 pc in cm]
-       dlum = dluminosity(isedfit.zobj,/cm) ; luminosity distance [cm]
-
+       pc10 = 3.085678D19                ; fiducial distance [10 pc in cm]
+       dlum = pc10*10D^(lf_distmod(isedfit.zobj,omega0=params.omega0,$ ; [cm]
+         omegal0=params.omegal)/5D)/params.h100 
+;      dlum = dluminosity(isedfit.zobj,/cm) ; luminosity distance [cm]
+       
 ; read the models; group by chunks; remove objects that were not
 ; fitted
        allchunks = isedfit.chunkindx
@@ -134,7 +136,7 @@ function isedfit_restore, paramfile, isedfit, params=params, iopath=iopath, $
              zobj = isedfit[igal].zobj
              zwave = model[igal].wave*(1+zobj)
              zflux_flam = isedfit[igal].scale*model[igal].flux*$ ; [erg/s/cm2/A]
-               (dist/dlum[igal])^2.0/(1.0+zobj)
+               (pc10/dlum[igal])^2.0/(1.0+zobj)
              if params.igm and (keyword_set(noigm) eq 0) then begin
                 windx = findex(igmgrid.wave,zwave)
                 zindx = findex(igmgrid.zgrid,zobj)

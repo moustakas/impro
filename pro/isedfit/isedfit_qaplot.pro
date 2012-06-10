@@ -230,7 +230,7 @@ pro isedfit_qaplot, paramfile, isedfit, params=params, iopath=iopath, $
              mab = maggies2mag(isedfit[igal].maggies[notused])
              oploterror, weff[notused], mab, hwhm[notused], mab*0.0, $
                psym=symcat(4,thick=6.0), symsize=3.0, color=im_color('forest green'), $
-               errcolor=im_color('red'), errthick=!p.thick
+               errcolor=im_color('forest green'), errthick=!p.thick
           endif
 
 ; legend
