@@ -59,7 +59,7 @@ function im_imgscl, image, losig=losig, hisig=hisig, boxfrac=boxfrac, log=log, $
     ybox = fix(ysize*boxfrac)/2L
 
     if keyword_set(log) then im = alog10(float(image))
-    if keyword_set(sqrroot) then im = sqrt(float(image))
+    if keyword_set(sqrroot) then im = sqrt(float(image>0))
 
     stats = im_stats(im,sigrej=5.0)
     substats = im_stats(im[xcen-xbox+1L:xcen+xbox-1L,ycen-ybox+1L:ycen+ybox-1L],sigrej=5.0)

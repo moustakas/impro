@@ -108,9 +108,9 @@ FOR i=0L, nchunks-1L DO BEGIN
         if(nullcount gt 0) then chunk[j,nullindx]='0'
 ; jm10feb03ucsd - error check (not very general!)
         thischunk = repstr(chunk[j,0L:ninchunk-1L],'|','')
-        dash = where(strtrim(thischunk,2) eq '-',ndash)
+        dash = where(strtrim(thischunk,2) eq '-' or strtrim(thischunk,2) eq '---',ndash)
         if (ndash ne 0) then thischunk[dash] = -999.0
-       instr[startchunk:endchunk].(j)= $
+        instr[startchunk:endchunk].(j)= $
           transpose(type2var(types[j],thischunk))
     ENDFOR
 ENDFOR
