@@ -42,9 +42,9 @@
 
 pro build_igmtau_grid, clobber=clobber
 
-    dz = 0.03 ; 0.05
+    dz = 0.02 ; 0.05
     zmin = dz
-    zmax = 10.0 ; 6.0
+    zmax = 15.0 ; 6.0
     zgrid = findgen((zmax-zmin)/dz+1)*dz+zmin
     nz = n_elements(zgrid)
 

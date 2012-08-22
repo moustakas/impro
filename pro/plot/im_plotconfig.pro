@@ -355,6 +355,7 @@ pro im_plotconfig, plotnum, position, psfile=psfile, psclose=psclose, $
        if (!d.name ne 'X') then begin
           device, /close
           set_plot, 'X'
+;         !p.font = -1 ; sans-serif fonts
           im_plotfaves
 ;         !p.color = defcolor
           if keyword_set(pdf) or keyword_set(keynote) then begin
@@ -393,9 +394,11 @@ pro im_plotconfig, plotnum, position, psfile=psfile, psclose=psclose, $
           xoffset = ((8.5-xpage1)/2.0)>0.0
           yoffset = ((11.0-ypage1)/2.0)>0.0
        endelse
+;      !p.font = 0 ; sans-serif fonts
        device, file=psfile, color=(keyword_set(blackwhite) eq 0), /inches, $
          xsize=xpage1, ysize=ypage1, xoffset=xoffset, yoffset=yoffset, $
-         landscape=landscape1, encapsulated=encap, _extra=extra
+         landscape=landscape1, encapsulated=encap, _extra=extra;, $
+;        /helvetica ; sans-serif fonts
     endif
 
     if (!d.name eq 'X') then !p.color = djs_icolor('white')

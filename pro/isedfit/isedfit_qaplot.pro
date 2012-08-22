@@ -142,7 +142,7 @@ pro isedfit_qaplot, paramfile, isedfit, params=params, iopath=iopath, $
     xtitle2 = 'Rest Wavelength (\AA)'
     ytitle1 = 'm_{AB}'
 
-    im_plotconfig, 8, pos, psfile=psfile, ymargin=[1.0,1.1]
+    im_plotconfig, 0, pos, psfile=psfile, ymargin=[1.0,1.1], height=5
 ;   for igal = 54, ngal-1L do begin
     for igal = 0L, ngal-1L do begin
        if ((igal mod 10) eq 0) then print, igal, ngal, string(13b), $
@@ -160,7 +160,7 @@ pro isedfit_qaplot, paramfile, isedfit, params=params, iopath=iopath, $
             position=pos        ; ymargin=[4,3], 
           legend, ['No mass estimate available'], /left, /top, $
             box=0, spacing=1.5, charsize=1.6
-          label = [strtrim(galaxy[igal],2),'z = '+string(zobj,format='(F6.4)')]
+          label = [strtrim(galaxy[igal],2),'z = '+strtrim(string(zobj,format='(F12.4)'),2)]
           legend, label, /right, /bottom, box=0, spacing=1.5, charsize=1.6
        endif else begin
           if (n_elements(in_xrange) eq 2) then xrange1 = in_xrange else begin
@@ -251,12 +251,12 @@ pro isedfit_qaplot, paramfile, isedfit, params=params, iopath=iopath, $
             ' ('+strtrim(string(isedfit[igal].b100_50,format='(F12.3)'),2)+')']
           legend, textoidl(label), /left, /top, box=0, spacing=1.7, charsize=1.1, margin=0
           label = textoidl([strtrim(repstr(galaxy[igal],'_',' '),2),$
-            'z = '+string(zobj,format='(F6.4)'),'\chi^{2} = '+$
+            'z = '+strtrim(string(zobj,format='(F12.4)'),2),'\chi_{\nu}^{2} = '+$
             strtrim(string(isedfit[igal].chi2,format='(F12.2)'),2)])
           legend, label, /right, /bottom, box=0, spacing=1.5, charsize=1.4, margin=0
        endelse
     endfor 
-    im_plotconfig, psfile=psfile, /psclose, /gzip
+    im_plotconfig, psfile=psfile, /psclose, /pdf;, /gzip
     
 return
 end
