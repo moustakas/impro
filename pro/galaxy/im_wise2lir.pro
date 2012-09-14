@@ -10,7 +10,7 @@
 ; INPUTS: 
 ;   redshift - redshift for each object [NGAL]
 ;   maggies - observed 12, and 22 micron fluxes, as output
-;     by WISE_TO_MAGGIES [4,NGAL]
+;     by WISE_TO_MAGGIES [2,NGAL]
 ;   ivarmaggies - corresponding inverse variances [4,NGAL]
 ;
 ; OPTIONAL INPUTS: 
@@ -216,13 +216,17 @@ function im_wise2lir, redshift, maggies, ivarmaggies, chi2=chi2, $
              modelflam = interpolate(model.flux,modelindx1,/grid)/(4.0*!dpi*idlum[igal]^2)/(1.0+redshift[igal])
              good = where(modelflam gt 0.0,ngood)
              modelwave = model.wave[good]*(1.0+redshift[igal])
-             modelmab = -2.5*alog10(modelflam[good]*rebin(reform(model.wave[good],ngood,1),$
+             modelmab = -2.5*alog10(modelflam[good]*rebin(reform(modelwave,ngood,1),$
                ngood,nmodel)^2/im_light(/ang))-48.6
 
-             djs_plot, weff*(1.0+redshift[igal])/1D4, -2.5*alog10(maggies[*,igal]), psym=7, color='yellow', $
+             djs_plot, weff/1D4, -2.5*alog10(maggies[*,igal]), psym=7, color='yellow', $
                sym=3, xr=[1,500], /xlog, yr=[max(modelmab),min(modelmab)], xsty=3, ysty=3
-             djs_oplot, weff*(1.0+redshift[igal])/1D4, -2.5*alog10(interpolate(vmodelmaggies,modelindx1)), $
+             djs_oplot, weff/1D4, -2.5*alog10(interpolate(vmodelmaggies,modelindx1)), $
                psym=6, sym=3
+;            djs_plot, weff*(1.0+redshift[igal])/1D4, -2.5*alog10(maggies[*,igal]), psym=7, color='yellow', $
+;              sym=3, xr=[1,500], /xlog, yr=[max(modelmab),min(modelmab)], xsty=3, ysty=3
+;            djs_oplot, weff*(1.0+redshift[igal])/1D4, -2.5*alog10(interpolate(vmodelmaggies,modelindx1)), $
+;              psym=6, sym=3
              djs_oplot, modelwave/1D4, modelmab, color='orange'
 
 ;            plot, findgen(nmodel), vchi2, xsty=3, ysty=3, psym=6, /ylog, $
