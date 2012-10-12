@@ -10,7 +10,7 @@
 ;
 ; OPTIONAL INPUTS:
 ;   params - iSEDfit parameter data structure (over-rides PARAMFILE) 
-;   iopath - I/O path
+;   isedpath - I/O path
 ;
 ; KEYWORD PARAMETERS:
 ;   maxold - see ISEDFIT
@@ -54,7 +54,7 @@
 ;-
 
 function isedfit_reconstruct_posterior, paramfile, post=post, params=params, $
-  iopath=iopath, index=index, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
+  isedpath=isedpath, index=index, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
   outprefix=outprefix, age=age, sfrage=sfrage, tau=tau, Z=Z, av=av, nburst=nburst, $
   sfr0=sfr0, sfr100=sfr100, b100=b100, mgal=mgal, chunkindx=chunkindx, $
   modelindx=modelindx, indxage=ageindx, bigsfr0=bigsfr, bigmass=bigmass, bigsfrage=bigsfrage
@@ -64,26 +64,26 @@ function isedfit_reconstruct_posterior, paramfile, post=post, params=params, $
        return, -1
     endif
 
-    if (n_elements(iopath) eq 0) then iopath = './'
+    if (n_elements(isedpath) eq 0) then isedpath = './'
     if (n_elements(params) eq 0) then params = $
       read_isedfit_paramfile(paramfile)
-    fp = isedfit_filepaths(params,outprefix=outprefix,iopath=iopath,$
+    fp = isedfit_filepaths(params,outprefix=outprefix,isedpath=isedpath,$
       isedfit_sfhgrid_dir=isedfit_sfhgrid_dir)
 
 ; restore the POSTERIOR output if not passes
     if (n_elements(post) eq 0L) then begin
-       if (file_test(fp.iopath+fp.post_outfile+'.gz',/regular) eq 0L) then $
+       if (file_test(fp.isedpath+fp.post_outfile+'.gz',/regular) eq 0L) then $
          message, 'POSTERIOR output not found!'
-       splog, 'Reading '+fp.iopath+fp.post_outfile+'.gz'
-       post = mrdfits(fp.iopath+fp.post_outfile+'.gz',1,/silent,rows=index)
+       splog, 'Reading '+fp.isedpath+fp.post_outfile+'.gz'
+       post = mrdfits(fp.isedpath+fp.post_outfile+'.gz',1,/silent,rows=index)
     endif
     ngal = n_elements(post)
 
 ;   if (n_elements(isedfit) eq 0L) then begin
-;      if (file_test(fp.iopath+fp.isedfit_outfile+'.gz',/regular) eq 0L) then $
+;      if (file_test(fp.isedpath+fp.isedfit_outfile+'.gz',/regular) eq 0L) then $
 ;        message, 'ISEDFIT output not found!'
-;      splog, 'Reading '+fp.iopath+fp.isedfit_outfile+'.gz'
-;      isedfit = mrdfits(fp.iopath+fp.isedfit_outfile+'.gz',1,/silent,rows=index)
+;      splog, 'Reading '+fp.isedpath+fp.isedfit_outfile+'.gz'
+;      isedfit = mrdfits(fp.isedpath+fp.isedfit_outfile+'.gz',1,/silent,rows=index)
 ;   endif
     
 ; need all the chunks in memory!

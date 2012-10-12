@@ -10,7 +10,7 @@
 ;
 ; OPTIONAL INPUTS:
 ;   params - iSEDfit parameter data structure (over-rides PARAMFILE) 
-;   iopath - I/O path
+;   isedpath - I/O path
 ;   index - zero-indexed list of objects to analyze (default is to
 ;     compute K-corrections for everything)
 ;   isedfit_sfhgrid_dir - see BUILD_ISEDFIT_SFHGRID
@@ -58,7 +58,7 @@
 ; General Public License for more details. 
 ;-
 
-pro isedfit_kcorrect, paramfile, isedfit, params=params, iopath=iopath, index=index, $
+pro isedfit_kcorrect, paramfile, isedfit, params=params, isedpath=isedpath, index=index, $
   outprefix=outprefix, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, thissfhgrid=thissfhgrid, $
   galchunksize=galchunksize, out_filterlst=out_filterlist, band_shift=band_shift, $
   kcorrect=kcorrect, absmag=absmag, ivarabsmag=ivarabsmag, synth_absmag=synth_absmag, $
@@ -71,7 +71,7 @@ pro isedfit_kcorrect, paramfile, isedfit, params=params, iopath=iopath, index=in
 
 ; read the parameter file and parse to get the relevant path and
 ; filenames  
-    if (n_elements(iopath) eq 0) then iopath = './'
+    if (n_elements(isedpath) eq 0) then isedpath = './'
     if (n_elements(params) eq 0) then params = $
       read_isedfit_paramfile(paramfile)
 
@@ -88,9 +88,9 @@ pro isedfit_kcorrect, paramfile, isedfit, params=params, iopath=iopath, index=in
        endelse
     endif
 
-    fp = isedfit_filepaths(params,outprefix=outprefix,iopath=iopath,$
+    fp = isedfit_filepaths(params,outprefix=outprefix,isedpath=isedpath,$
       isedfit_sfhgrid_dir=isedfit_sfhgrid_dir)
-    kcorrfile = iopath+strtrim(fp.kcorr_outfile,2)
+    kcorrfile = isedpath+strtrim(fp.kcorr_outfile,2)
     if file_test(kcorrfile+'.gz',/regular) and $
       (keyword_set(clobber) eq 0) then begin
        splog, 'Output file '+kcorrfile+' exists; use /CLOBBER'
@@ -107,7 +107,7 @@ pro isedfit_kcorrect, paramfile, isedfit, params=params, iopath=iopath, index=in
     endif
     
     junk = isedfit_restore(paramfile,isedfit,params=params,$
-      iopath=iopath,index=index,isedfit_sfhgrid_dir=isedfit_sfhgrid_dir,$
+      isedpath=isedpath,index=index,isedfit_sfhgrid_dir=isedfit_sfhgrid_dir,$
       outprefix=outprefix,silent=silent,/nomodels)
     ngal = n_elements(isedfit)
 
@@ -135,7 +135,7 @@ pro isedfit_kcorrect, paramfile, isedfit, params=params, iopath=iopath, index=in
        good = where((isedfit[sortindx[gthese]].chi2 gt 0.0) and $
          (isedfit[sortindx[gthese]].chi2 lt 1E6),ngood)
        if (ngood ne 0L) then begin
-          model = isedfit_restore(paramfile,params=params,iopath=iopath,$
+          model = isedfit_restore(paramfile,params=params,isedpath=isedpath,$
             index=sortindx[gthese[good]],/flambda,outprefix=outprefix,$
             isedfit_sfhgrid_dir=isedfit_sfhgrid_dir,silent=silent)
           oneplusz = rebin(reform(1.0+isedfit[sortindx[gthese[good]]].zobj,1,ngood),$

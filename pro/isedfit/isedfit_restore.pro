@@ -10,7 +10,7 @@
 ;
 ; OPTIONAL INPUTS:
 ;   params - iSEDfit parameter data structure (over-rides PARAMFILE) 
-;   iopath - I/O path
+;   isedpath - I/O path
 ;   index - zero-indexed list of objects to restore (default is to
 ;     restore all)
 ;   isedfit_sfhgrid_dir - see BUILD_ISEDFIT_SFHGRID
@@ -54,7 +54,7 @@
 ; General Public License for more details. 
 ;-
 
-function isedfit_restore, paramfile, isedfit, params=params, iopath=iopath, $
+function isedfit_restore, paramfile, isedfit, params=params, isedpath=isedpath, $
   index=index, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, outprefix=outprefix, $
   flambda=flambda, fnu=fnu, nomodels=nomodels, noigm=noigm, silent=silent, $
   in_isedfit=in_isedfit
@@ -64,19 +64,19 @@ function isedfit_restore, paramfile, isedfit, params=params, iopath=iopath, $
        return, -1
     endif
 
-    if (n_elements(iopath) eq 0) then iopath = './'
+    if (n_elements(isedpath) eq 0) then isedpath = './'
     if (n_elements(params) eq 0) then params = $
       read_isedfit_paramfile(paramfile)
-    fp = isedfit_filepaths(params,outprefix=outprefix,iopath=iopath,$
+    fp = isedfit_filepaths(params,outprefix=outprefix,isedpath=isedpath,$
       isedfit_sfhgrid_dir=isedfit_sfhgrid_dir)
 
 ; restore the ISEDFIT output; optionally take ISEDFIT as an input
 ; structure
     if (n_elements(in_isedfit) eq 0L) then begin
-       if (file_test(fp.iopath+fp.isedfit_outfile+'.gz',/regular) eq 0L) then $
+       if (file_test(fp.isedpath+fp.isedfit_outfile+'.gz',/regular) eq 0L) then $
          message, 'ISEDFIT output not found!'
-       splog, 'Reading '+fp.iopath+fp.isedfit_outfile+'.gz'
-       isedfit1 = mrdfits(fp.iopath+fp.isedfit_outfile+'.gz',1,/silent)
+       splog, 'Reading '+fp.isedpath+fp.isedfit_outfile+'.gz'
+       isedfit1 = mrdfits(fp.isedpath+fp.isedfit_outfile+'.gz',1,/silent)
 
 ; only restore a subset of the objects    
        if (n_elements(index) eq 0L) then isedfit = isedfit1 else $

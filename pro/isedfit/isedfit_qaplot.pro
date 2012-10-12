@@ -56,7 +56,7 @@
 ; General Public License for more details. 
 ;-
 
-pro isedfit_qaplot, paramfile, isedfit, params=params, iopath=iopath, $
+pro isedfit_qaplot, paramfile, isedfit, params=params, isedpath=isedpath, $
   galaxy=galaxy1, outprefix=outprefix, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
   sfhgrid=sfhgrid, psfile=psfile1, index=index, clobber=clobber, $
   xrange=in_xrange, yrange=in_yrange, xlog=xlog
@@ -70,7 +70,7 @@ pro isedfit_qaplot, paramfile, isedfit, params=params, iopath=iopath, $
 
 ; read the parameter file and parse to get the relevant path and
 ; filenames; optionally overwrite SFHGRID in the parameter file
-    if (n_elements(iopath) eq 0) then iopath = './'
+    if (n_elements(isedpath) eq 0) then isedpath = './'
     if (n_elements(params) eq 0) then params = $
       read_isedfit_paramfile(paramfile,sfhgrid=sfhgrid)
     
@@ -83,7 +83,7 @@ pro isedfit_qaplot, paramfile, isedfit, params=params, iopath=iopath, $
           for jj = 0, nredcurve-1 do begin
              newparams2 = struct_trimtags(newparams1,except='redcurve')
              newparams2 = struct_addtags(newparams2,{redcurve: params.redcurve[jj]})
-             isedfit_qaplot, params=newparams2, iopath=iopath, galaxy=galaxy1, $
+             isedfit_qaplot, params=newparams2, isedpath=isedpath, galaxy=galaxy1, $
                outprefix=outprefix, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
                psfile=psfile1, index=index, clobber=clobber, xrange=xrange1, $
                yrange=yrange, xlog=xlog
@@ -93,10 +93,10 @@ pro isedfit_qaplot, paramfile, isedfit, params=params, iopath=iopath, $
     endif
 
 ; allow the user to overwrite PSFILE
-    fp = isedfit_filepaths(params,outprefix=outprefix,iopath=iopath,$
+    fp = isedfit_filepaths(params,outprefix=outprefix,isedpath=isedpath,$
       isedfit_sfhgrid_dir=isedfit_sfhgrid_dir)
     if (n_elements(psfile1) eq 0) then $
-      psfile = iopath+strtrim(fp.qaplot_psfile,2) else $
+      psfile = isedpath+strtrim(fp.qaplot_psfile,2) else $
         psfile = psfile1
     if file_test(psfile+'.gz',/regular) and $
       (keyword_set(clobber) eq 0) then begin
@@ -110,7 +110,7 @@ pro isedfit_qaplot, paramfile, isedfit, params=params, iopath=iopath, $
     nfilt = n_elements(filterlist)
 
     model = isedfit_restore(paramfile,isedfit,params=params,$
-      iopath=iopath,index=index,isedfit_sfhgrid_dir=isedfit_sfhgrid_dir,$
+      isedpath=isedpath,index=index,isedfit_sfhgrid_dir=isedfit_sfhgrid_dir,$
       outprefix=outprefix,silent=silent)
     ngal = n_elements(isedfit)
 

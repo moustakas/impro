@@ -11,7 +11,7 @@
 ;
 ; OPTIONAL INPUTS: 
 ;   outprefix - 
-;   iopath - 
+;   isedpath - 
 ;
 ; KEYWORD PARAMETERS: 
 ;
@@ -35,11 +35,11 @@
 ; General Public License for more details. 
 ;-
 
-function isedfit_filepaths, params, outprefix=outprefix1, iopath=iopath, $
+function isedfit_filepaths, params, outprefix=outprefix1, isedpath=isedpath, $
   ngalaxy=ngalaxy, ngalchunk=ngalchunk, galchunksize=galchunksize, $
   isedfit_sfhgrid_dir=isedfit_sfhgrid_dir
 
-    if (n_elements(iopath) eq 0L) then iopath = './'
+    if (n_elements(isedpath) eq 0L) then isedpath = './'
     if (n_elements(params) eq 0L) then $
       message, 'PARAMS input required'
     if (n_elements(galchunksize) eq 0L) then $
@@ -71,7 +71,7 @@ function isedfit_filepaths, params, outprefix=outprefix1, iopath=iopath, $
     if (file_test(chunkinfofile) eq 0) then $
       message, 'CHUNKINFOFILE '+chunkinfofile+' not found!'
 
-    modelspath = iopath+sfhgridstring+'/'+redcurvestring+'/'
+    modelspath = isedpath+sfhgridstring+'/'+redcurvestring+'/'
 
 ; needs error checking here to make sure the directories exist    
 
@@ -125,7 +125,7 @@ function isedfit_filepaths, params, outprefix=outprefix1, iopath=iopath, $
     filepaths = {$
       synthmodels:               synthmodels,        $
       sfhgrid:                   sfhgrid,            $
-      iopath:                    iopath,             $
+      isedpath:                    isedpath,             $
       modelspath:                modelspath,         $
       sfhgrid_dir:               sfhgridpath,        $
       sfhgrid_chunkinfo:         chunkinfofile,      $ 

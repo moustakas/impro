@@ -15,7 +15,7 @@
 ; OPTIONAL INPUTS:
 ;   params - data structure with the same information contained in
 ;     PARAMFILE (over-rides PARAMFILE)
-;   iopath - full path name to the input and output files (default ./) 
+;   isedpath - full path name to the input and output files (default ./) 
 ;   nminphot - require at least NMINPHOT bandpasses of well-measured
 ;     photometry (i.e., excluding upper limits) before fitting
 ;     (default 3)  
@@ -207,7 +207,7 @@ return, isedfit
 end
 
 pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfit_post, $
-  params=params, iopath=iopath, nminphot=nminphot, galchunksize=galchunksize, $
+  params=params, isedpath=isedpath, nminphot=nminphot, galchunksize=galchunksize, $
   outprefix=outprefix, sfhgrid_paramfile=sfhgrid_paramfile, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
   index=index, allages=allages, write_chi2grid=write_chi2grid, silent=silent, $
   nowrite=nowrite, clobber=clobber
@@ -251,7 +251,7 @@ pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfi
 
 ; read the parameter file; parse to get the relevant path and
 ; filenames
-    if (n_elements(iopath) eq 0) then iopath = './'
+    if (n_elements(isedpath) eq 0) then isedpath = './'
     if (n_elements(params) eq 0) then params = $
       read_isedfit_paramfile(paramfile)
 
@@ -262,7 +262,7 @@ pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfi
           newparams1 = struct_trimtags(params,except='sfhgrid')
           newparams1 = struct_addtags(newparams1,{sfhgrid: params.sfhgrid[ii]})
           isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfit_post, $
-            params=newparams1, iopath=iopath, nminphot=nminphot, $
+            params=newparams1, isedpath=isedpath, nminphot=nminphot, $
             galchunksize=galchunksize, outprefix=outprefix, index=index, $
             sfhgrid_paramfile=sfhgrid_paramfile, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
             allages=allages, clobber=clobber, write_chi2grid=write_chi2grid, $
@@ -271,11 +271,11 @@ pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfi
        return
     endif
 
-    fp = isedfit_filepaths(params,outprefix=outprefix,iopath=iopath,$
+    fp = isedfit_filepaths(params,outprefix=outprefix,isedpath=isedpath,$
       ngalaxy=ngal,ngalchunk=ngalchunk,galchunksize=galchunksize,$
       isedfit_sfhgrid_dir=isedfit_sfhgrid_dir)
 
-    outfile = fp.iopath+fp.isedfit_outfile
+    outfile = fp.isedpath+fp.isedfit_outfile
     if file_test(outfile+'.gz',/regular) and $
       (keyword_set(clobber) eq 0) and $
       (keyword_set(nowrite) eq 0) then begin
@@ -287,7 +287,7 @@ pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfi
     if (n_elements(index) ne 0L) then begin
        isedfit, paramfile, maggies[*,index], ivarmaggies[*,index], zobj[index], $
          isedfit1, isedfit_post=isedfit_post1, params=params, nminphot=nminphot, $
-         outprefix=outprefix, allages=allages, iopath=iopath, clobber=clobber, $
+         outprefix=outprefix, allages=allages, isedpath=isedpath, clobber=clobber, $
          write_chi2grid=write_chi2grid, /nowrite, silent=silent, $
          sfhgrid_paramfile=sfhgrid_paramfile, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir
        isedfit = init_isedfit(ngal,nfilt,params.sfhgrid,sfhgrid_paramfile=sfhgrid_paramfile,$
@@ -296,7 +296,7 @@ pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfi
        isedfit_post[index] = isedfit_post1
        if (keyword_set(nowrite) eq 0) then begin
           im_mwrfits, isedfit, outfile, /clobber
-          im_mwrfits, isedfit_post, fp.iopath+fp.post_outfile, /clobber
+          im_mwrfits, isedfit_post, fp.isedpath+fp.post_outfile, /clobber
        endif
        return
     endif
@@ -399,7 +399,7 @@ pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfi
 ; write out the final structure and the full posterior distributions
     if (keyword_set(nowrite) eq 0) then begin
        im_mwrfits, isedfit, outfile, silent=silent, /clobber
-       im_mwrfits, isedfit_post, fp.iopath+fp.post_outfile, silent=silent, /clobber
+       im_mwrfits, isedfit_post, fp.isedpath+fp.post_outfile, silent=silent, /clobber
     endif
 
 return

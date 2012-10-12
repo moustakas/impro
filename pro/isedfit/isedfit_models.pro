@@ -132,7 +132,7 @@
 ; General Public License for more details. 
 ;-
 
-pro isedfit_models, paramfile, params=params, iopath=iopath, $
+pro isedfit_models, paramfile, params=params, isedpath=isedpath, $
   isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, clobber=clobber
 
     if (n_elements(paramfile) eq 0) and $
@@ -143,7 +143,7 @@ pro isedfit_models, paramfile, params=params, iopath=iopath, $
 
 ; read the parameter file; parse to get the relevant path and
 ; filenames
-    if (n_elements(iopath) eq 0) then iopath = './'
+    if (n_elements(isedpath) eq 0) then isedpath = './'
     if (n_elements(params) eq 0) then params = $
       read_isedfit_paramfile(paramfile)
 
@@ -159,14 +159,14 @@ pro isedfit_models, paramfile, params=params, iopath=iopath, $
           for jj = 0, nredcurve-1 do begin
              newparams2 = struct_trimtags(newparams1,except='redcurve')
              newparams2 = struct_addtags(newparams2,{redcurve: params.redcurve[jj]})
-             isedfit_models, params=newparams2, iopath=iopath, $
+             isedfit_models, params=newparams2, isedpath=isedpath, $
                isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, clobber=clobber
           endfor
        endfor 
        return 
     endif 
 
-    fp = isedfit_filepaths(params,iopath=iopath,isedfit_sfhgrid_dir=isedfit_sfhgrid_dir)
+    fp = isedfit_filepaths(params,isedpath=isedpath,isedfit_sfhgrid_dir=isedfit_sfhgrid_dir)
     if (file_test(fp.modelspath,/dir) eq 0) then begin
        splog, 'Creating directory '+fp.modelspath
        spawn, 'mkdir -p '+fp.modelspath, /sh
@@ -196,10 +196,10 @@ pro isedfit_models, paramfile, params=params, iopath=iopath, $
     nredshift = n_elements(redshift)
     splog, 'Redshift grid: '
     splog, '  Nz   = '+string(nredshift,format='(I0)')
-    splog, '  zmin = '+string(min(redshift),format='(G0)')
-    splog, '  zmax = '+string(max(redshift),format='(G0)')
+    splog, '  zmin = '+strtrim(string(min(redshift),format='(F12.3)'),2)
+    splog, '  zmax = '+strtrim(string(max(redshift),format='(F12.3)'),2)
 
-    if (min(redshift) le 0.0) then begin
+    if (im_double(min(redshift)) le 0D) then begin
        splog, 'REDSHIFT should be positive and non-zero'
        return
     endif

@@ -69,7 +69,11 @@ function read_isedfit_paramfile, paramfile, sfhgrid=sfhgrid
           'filterlist': value = strsplit(value1,',',/extract)
           'igm': value = fix(value1)
           'maxold': value = fix(value1)
-          'h100': value = float(value1)
+          'minz': value = double(value1)
+          'maxz': value = double(value1)
+          'nzz': value = long(value1)
+          'zlog': value = fix(value1)
+          'h100': value = double(value1)
           'omega0': value = float(value1)
           'omegal': value = float(value1)
           'redshift': begin
