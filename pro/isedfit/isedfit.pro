@@ -207,13 +207,14 @@ return, isedfit
 end
 
 pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfit_post, $
-  params=params, isedpath=isedpath, nminphot=nminphot, galchunksize=galchunksize, $
+  params=params, super=super, isedpath=isedpath, nminphot=nminphot, galchunksize=galchunksize, $
   outprefix=outprefix, sfhgrid_paramfile=sfhgrid_paramfile, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
   index=index, allages=allages, write_chi2grid=write_chi2grid, silent=silent, $
   nowrite=nowrite, clobber=clobber
 
-    if (n_elements(paramfile) eq 0) and $
-      (n_elements(params) eq 0) then begin
+    nsuper = n_elements(super)
+    if nsuper eq 0 or ((n_elements(paramfile) eq 0) and $
+      (n_elements(params) eq 0)) then begin
        doc_library, 'isedfit'
        return
     endif
@@ -255,14 +256,11 @@ pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfi
     if (n_elements(params) eq 0) then params = $
       read_isedfit_paramfile(paramfile)
 
-; SFHGRID can be a vector
-    nsfhgrid = n_elements(params.sfhgrid)
-    if (nsfhgrid gt 1) then begin
-       for ii = 0, nsfhgrid-1 do begin
-          newparams1 = struct_trimtags(params,except='sfhgrid')
-          newparams1 = struct_addtags(newparams1,{sfhgrid: params.sfhgrid[ii]})
+; SUPER can be a vector
+    if nsuper gt 1 then begin
+       for ii = 0, nsuper-1 do begin
           isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfit_post, $
-            params=newparams1, isedpath=isedpath, nminphot=nminphot, $
+            params=newparams1, super=super[ii], isedpath=isedpath, nminphot=nminphot, $
             galchunksize=galchunksize, outprefix=outprefix, index=index, $
             sfhgrid_paramfile=sfhgrid_paramfile, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
             allages=allages, clobber=clobber, write_chi2grid=write_chi2grid, $
@@ -271,7 +269,23 @@ pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfi
        return
     endif
 
-    fp = isedfit_filepaths(params,outprefix=outprefix,isedpath=isedpath,$
+;; SFHGRID can be a vector
+;    nsfhgrid = n_elements(params.sfhgrid)
+;    if (nsfhgrid gt 1) then begin
+;       for ii = 0, nsfhgrid-1 do begin
+;          newparams1 = struct_trimtags(params,except='sfhgrid')
+;          newparams1 = struct_addtags(newparams1,{sfhgrid: params.sfhgrid[ii]})
+;          isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfit_post, $
+;            params=newparams1, isedpath=isedpath, nminphot=nminphot, $
+;            galchunksize=galchunksize, outprefix=outprefix, index=index, $
+;            sfhgrid_paramfile=sfhgrid_paramfile, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
+;            allages=allages, clobber=clobber, write_chi2grid=write_chi2grid, $
+;            nowrite=nowrite, silent=silent
+;       endfor
+;       return
+;    endif
+
+    fp = isedfit_filepaths(params,super=super,outprefix=outprefix,isedpath=isedpath,$
       ngalaxy=ngal,ngalchunk=ngalchunk,galchunksize=galchunksize,$
       isedfit_sfhgrid_dir=isedfit_sfhgrid_dir)
 
@@ -286,7 +300,7 @@ pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfi
 ; fit the requested subset of objects and return
     if (n_elements(index) ne 0L) then begin
        isedfit, paramfile, maggies[*,index], ivarmaggies[*,index], zobj[index], $
-         isedfit1, isedfit_post=isedfit_post1, params=params, nminphot=nminphot, $
+         isedfit1, isedfit_post=isedfit_post1, params=params, super=super, nminphot=nminphot, $
          outprefix=outprefix, allages=allages, isedpath=isedpath, clobber=clobber, $
          write_chi2grid=write_chi2grid, /nowrite, silent=silent, $
          sfhgrid_paramfile=sfhgrid_paramfile, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir
@@ -314,10 +328,10 @@ pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfi
     if (n_elements(nminphot) eq 0L) then nminphot = 3
 
     if (keyword_set(silent) eq 0) then begin
-       splog, 'SYNTHMODELS='+params.synthmodels+', '+$
-         'IMF='+params.imf+', '+'SFHGRID='+$
-         string(params.sfhgrid,format='(I2.2)')+', '+$
-         'REDCURVE='+strtrim(params.redcurve,2)
+       splog, 'SYNTHMODELS='+super.synthmodels+', '+$
+         'IMF='+super.imf+', '+'SFHGRID='+$
+         string(super.sfhgrid,format='(I2.2)')+', '+$
+         'REDCURVE='+strtrim(redcurve2string(super.redcurve),2)
     endif
 
 ; filters and redshift grid
@@ -332,7 +346,7 @@ pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfi
     endif
 
 ; initialize the output structure(s)
-    isedfit = init_isedfit(ngal,nfilt,params.sfhgrid,isedfit_post=isedfit_post,$
+    isedfit = init_isedfit(ngal,nfilt,super.sfhgrid,isedfit_post=isedfit_post,$
       sfhgrid_paramfile=sfhgrid_paramfile)
     isedfit.isedfit_id = lindgen(ngal)
     isedfit.maggies = maggies

@@ -54,12 +54,14 @@
 ;-
 
 function isedfit_reconstruct_posterior, paramfile, post=post, params=params, $
-  isedpath=isedpath, index=index, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
+  super=super, isedpath=isedpath, index=index, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
   outprefix=outprefix, age=age, sfrage=sfrage, tau=tau, Z=Z, av=av, nburst=nburst, $
   sfr0=sfr0, sfr100=sfr100, b100=b100, mgal=mgal, chunkindx=chunkindx, $
   modelindx=modelindx, indxage=ageindx, bigsfr0=bigsfr, bigmass=bigmass, bigsfrage=bigsfrage
-  
-    if (n_elements(paramfile) eq 0) and (n_elements(params) eq 0) then begin
+
+    nsuper = n_elements(super)
+    if nsuper eq 0 or ((n_elements(paramfile) eq 0) and $
+      (n_elements(params) eq 0)) then begin
        doc_library, 'isedfit_reconstruct_posterior'
        return, -1
     endif
@@ -68,7 +70,7 @@ function isedfit_reconstruct_posterior, paramfile, post=post, params=params, $
     if (n_elements(params) eq 0) then params = $
       read_isedfit_paramfile(paramfile)
     fp = isedfit_filepaths(params,outprefix=outprefix,isedpath=isedpath,$
-      isedfit_sfhgrid_dir=isedfit_sfhgrid_dir)
+      super=super,isedfit_sfhgrid_dir=isedfit_sfhgrid_dir)
 
 ; restore the POSTERIOR output if not passes
     if (n_elements(post) eq 0L) then begin

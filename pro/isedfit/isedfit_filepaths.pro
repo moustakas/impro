@@ -35,9 +35,9 @@
 ; General Public License for more details. 
 ;-
 
-function isedfit_filepaths, params, outprefix=outprefix1, isedpath=isedpath, $
-  ngalaxy=ngalaxy, ngalchunk=ngalchunk, galchunksize=galchunksize, $
-  isedfit_sfhgrid_dir=isedfit_sfhgrid_dir
+function isedfit_filepaths, params, super=super, outprefix=outprefix1, $
+  isedpath=isedpath, ngalaxy=ngalaxy, ngalchunk=ngalchunk, $
+  galchunksize=galchunksize, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir
 
     if (n_elements(isedpath) eq 0L) then isedpath = './'
     if (n_elements(params) eq 0L) then $
@@ -50,10 +50,15 @@ function isedfit_filepaths, params, outprefix=outprefix1, isedpath=isedpath, $
     
 ; read the output from build_isedfit_sfhgrid based on the specified
 ; spectral synthesis models and SFH grid
-    synthmodels = strtrim(params.synthmodels,2)
-    imf = strtrim(params.imf,2)
-    redcurvestring = strtrim(params.redcurve,2)
-    sfhgrid = params.sfhgrid
+    synthmodels = strtrim(super.synthmodels,2)
+    imf = strtrim(super.imf,2)
+    redcurvestring = strtrim(redcurve2string(super.redcurve),2)
+    sfhgrid = super.sfhgrid
+
+;   synthmodels = strtrim(params.synthmodels,2)
+;   imf = strtrim(params.imf,2)
+;   redcurvestring = strtrim(params.redcurve,2)
+;   sfhgrid = params.sfhgrid
     if (n_elements(sfhgrid) ne 1) then $
       message, 'SFHGRID must be a scalar'
 

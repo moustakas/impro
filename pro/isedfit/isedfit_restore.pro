@@ -55,7 +55,7 @@
 ;-
 
 function isedfit_restore, paramfile, isedfit, params=params, isedpath=isedpath, $
-  index=index, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, outprefix=outprefix, $
+  super=super, index=index, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, outprefix=outprefix, $
   flambda=flambda, fnu=fnu, nomodels=nomodels, noigm=noigm, silent=silent, $
   in_isedfit=in_isedfit
 
@@ -67,8 +67,8 @@ function isedfit_restore, paramfile, isedfit, params=params, isedpath=isedpath, 
     if (n_elements(isedpath) eq 0) then isedpath = './'
     if (n_elements(params) eq 0) then params = $
       read_isedfit_paramfile(paramfile)
-    fp = isedfit_filepaths(params,outprefix=outprefix,isedpath=isedpath,$
-      isedfit_sfhgrid_dir=isedfit_sfhgrid_dir)
+    fp = isedfit_filepaths(params,outprefix=outprefix,super=super,$
+      isedpath=isedpath,isedfit_sfhgrid_dir=isedfit_sfhgrid_dir)
 
 ; restore the ISEDFIT output; optionally take ISEDFIT as an input
 ; structure

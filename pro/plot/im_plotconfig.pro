@@ -61,7 +61,7 @@
 pro im_plotconfig, plotnum, position, psfile=psfile, psclose=psclose, $
   xmargin=xmargin, ymargin=ymargin, xspace=xspace, yspace=yspace, $
   width=width, height=height, xpage=xpage, ypage=ypage, keynote=keynote, $
-  blackwhite=blackwhite, gzip=gzip, pdf=pdf, pskeep=pskeep, $
+  blackwhite=blackwhite, gzip=gzip, pdf=pdf, png=png, pskeep=pskeep, $
   silent=silent, _extra=extra
     
     if (n_elements(plotnum) eq 0) then plotnum = 0
@@ -358,12 +358,18 @@ pro im_plotconfig, plotnum, position, psfile=psfile, psclose=psclose, $
 ;         !p.font = -1 ; sans-serif fonts
           im_plotfaves
 ;         !p.color = defcolor
-          if keyword_set(pdf) or keyword_set(keynote) then begin
+          if keyword_set(png) or keyword_set(pdf) or keyword_set(keynote) then begin
              if (n_elements(psfile) eq 0) then begin
-                splog, 'You must pass PSFILE to generate a PDF!' 
+                splog, 'You must pass PSFILE to generate a PDF or PNG!' 
              endif else begin
-                pdffile = repstr(repstr(psfile,'.eps','.pdf'),'.ps','.pdf')
-                spawn, 'ps2pdf -dEPSFitPage '+psfile+' '+pdffile, /sh
+                if keyword_set(pdf) then begin
+                   pdffile = repstr(repstr(psfile,'.eps','.pdf'),'.ps','.pdf')
+                   spawn, 'ps2pdf -dEPSFitPage '+psfile+' '+pdffile, /sh
+                endif
+                if keyword_set(png) then begin
+                   pngfile = repstr(repstr(psfile,'.eps','.png'),'.ps','.png')
+                   spawn, 'convert '+psfile+' '+pngfile, /sh
+                endif
                 if (keyword_set(pskeep) eq 0) then rmfile, psfile
              endelse
              return

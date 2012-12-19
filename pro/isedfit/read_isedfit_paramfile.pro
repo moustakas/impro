@@ -56,16 +56,16 @@ function read_isedfit_paramfile, paramfile, sfhgrid=sfhgrid
        if (n_elements(words) eq 1) then value1 = '' else $ ; blank, probably REDCURVE
          value1 = strtrim(words[1],2)
        case name of
-          'sfhgrid': begin
-             if (n_elements(sfhgrid) eq 0) then begin
-                value = fix(strsplit(value1,',',/extract))
-                if (n_elements(value) eq 1) then value = value[0]
-             endif else value = sfhgrid ; overwrite the parameter file
-          end
-          'redcurve': begin
-             value = strsplit(value1,',',/extract)
-             if (n_elements(value) eq 1) then value = value[0]
-          end
+;         'sfhgrid': begin
+;            if (n_elements(sfhgrid) eq 0) then begin
+;               value = fix(strsplit(value1,',',/extract))
+;               if (n_elements(value) eq 1) then value = value[0]
+;            endif else value = sfhgrid ; overwrite the parameter file
+;         end
+;         'redcurve': begin
+;            value = strsplit(value1,',',/extract)
+;            if (n_elements(value) eq 1) then value = value[0]
+;         end
           'filterlist': value = strsplit(value1,',',/extract)
           'igm': value = fix(value1)
           'maxold': value = fix(value1)
@@ -76,16 +76,16 @@ function read_isedfit_paramfile, paramfile, sfhgrid=sfhgrid
           'h100': value = double(value1)
           'omega0': value = float(value1)
           'omegal': value = float(value1)
-          'redshift': begin
-             zsplit = im_double(strsplit(value1,',',/extract))
-             if (n_elements(zsplit) ne 4) then message, 'You are using an old parameter file'
-             minz = zsplit[0]
-             maxz = zsplit[1]
-             nz = zsplit[2]
-             zlog = zsplit[3]
-             value = range(minz,maxz,nz,log=keyword_set(zlog))
-;            value = im_array(minz,maxz,dz,/double)
-          end
+;          'redshift': begin
+;             zsplit = im_double(strsplit(value1,',',/extract))
+;             if (n_elements(zsplit) ne 4) then message, 'You are using an old parameter file'
+;             minz = zsplit[0]
+;             maxz = zsplit[1]
+;             nz = zsplit[2]
+;             zlog = zsplit[3]
+;             value = range(minz,maxz,nz,log=keyword_set(zlog))
+;;            value = im_array(minz,maxz,dz,/double)
+;          end
           else: value = value1
        endcase
        if (ii eq 0) then params = create_struct(name,value) else $
@@ -95,6 +95,13 @@ function read_isedfit_paramfile, paramfile, sfhgrid=sfhgrid
 ; add any missing keywords here    
     if (tag_exist(params,'maxold') eq 0) then params = $
       struct_addtags(params,{maxold: 0})
+    
+; build the redshift array
+;   if (tag_exist(params,'redshift') eq 0) then begin
+    if params.nzz eq 1 then params = struct_addtags(params,{redshift: 0D}) else $
+      params = struct_addtags(params,{redshift: dblarr(params.nzz)})
+    params.redshift = range(params.minz,params.maxz,params.nzz,log=params.zlog eq 1)
+;   endif
     
 return, params
 end

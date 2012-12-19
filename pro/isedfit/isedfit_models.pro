@@ -132,11 +132,13 @@
 ; General Public License for more details. 
 ;-
 
-pro isedfit_models, paramfile, params=params, isedpath=isedpath, $
-  isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, clobber=clobber
+pro isedfit_models, paramfile, params=params, super=super, $
+  isedpath=isedpath, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
+  clobber=clobber
 
-    if (n_elements(paramfile) eq 0) and $
-      (n_elements(params) eq 0) then begin
+    nsuper = n_elements(super)
+    if nsuper eq 0 or ((n_elements(paramfile) eq 0) and $
+      (n_elements(params) eq 0)) then begin
        doc_library, 'isedfit_models'
        return
     endif
@@ -147,26 +149,36 @@ pro isedfit_models, paramfile, params=params, isedpath=isedpath, $
     if (n_elements(params) eq 0) then params = $
       read_isedfit_paramfile(paramfile)
 
-; SFHGRID and REDCURVE can be vectors; however, if SFHGRID=3 (no
-; reddening) then ignore REDCURVE    
-    nsfhgrid = n_elements(params.sfhgrid)
-    nredcurve = n_elements(params.redcurve)
-    if (nsfhgrid gt 1) or (nredcurve gt 1) then begin
-       for ii = 0, nsfhgrid-1 do begin
-          newparams1 = struct_trimtags(params,except='sfhgrid')
-          newparams1 = struct_addtags(newparams1,{sfhgrid: params.sfhgrid[ii]})
-          if (newparams1.sfhgrid eq 3) then nredcurve = 1
-          for jj = 0, nredcurve-1 do begin
-             newparams2 = struct_trimtags(newparams1,except='redcurve')
-             newparams2 = struct_addtags(newparams2,{redcurve: params.redcurve[jj]})
-             isedfit_models, params=newparams2, isedpath=isedpath, $
-               isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, clobber=clobber
-          endfor
-       endfor 
-       return 
+; SUPER can be a vector
+    if nsuper gt 1 then begin
+       for ii = 0, nsuper-1 do begin
+          isedfit_models, params=params, super=super[ii], isedpath=isedpath, $
+            isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, clobber=clobber
+       endfor
+       return
     endif 
 
-    fp = isedfit_filepaths(params,isedpath=isedpath,isedfit_sfhgrid_dir=isedfit_sfhgrid_dir)
+;; SFHGRID and REDCURVE can be vectors; however, if SFHGRID=3 (no
+;; reddening) then ignore REDCURVE    
+;    nsfhgrid = n_elements(super.sfhgrid)
+;    nredcurve = n_elements(super.redcurve)
+;    if (nsfhgrid gt 1) or (nredcurve gt 1) then begin
+;       for ii = 0, nsfhgrid-1 do begin
+;          newparams1 = struct_trimtags(params,except='sfhgrid')
+;          newparams1 = struct_addtags(newparams1,{sfhgrid: params.sfhgrid[ii]})
+;          if (newparams1.sfhgrid eq 3) then nredcurve = 1
+;          for jj = 0, nredcurve-1 do begin
+;             newparams2 = struct_trimtags(newparams1,except='redcurve')
+;             newparams2 = struct_addtags(newparams2,{redcurve: params.redcurve[jj]})
+;             isedfit_models, params=newparams2, isedpath=isedpath, $
+;               isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, clobber=clobber
+;          endfor
+;       endfor 
+;       return 
+;    endif 
+
+    fp = isedfit_filepaths(params,super=super,$
+      isedpath=isedpath,isedfit_sfhgrid_dir=isedfit_sfhgrid_dir)
     if (file_test(fp.modelspath,/dir) eq 0) then begin
        splog, 'Creating directory '+fp.modelspath
        spawn, 'mkdir -p '+fp.modelspath, /sh
@@ -179,10 +191,10 @@ pro isedfit_models, paramfile, params=params, isedpath=isedpath, $
        return
     endif
     
-    splog, 'SYNTHMODELS='+params.synthmodels+', '+$
-      'REDCURVE='+strtrim(params.redcurve,2)+', IMF='+$
-      params.imf+', '+'SFHGRID='+$
-      string(params.sfhgrid,format='(I2.2)')
+    splog, 'SYNTHMODELS='+super.synthmodels+', '+$
+      'REDCURVE='+strtrim(super.redcurve,2)+', IMF='+$
+      super.imf+', '+'SFHGRID='+$
+      string(super.sfhgrid,format='(I2.2)')
 
 ; filters and redshift grid
     filterlist = strtrim(params.filterlist,2)

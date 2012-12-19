@@ -56,8 +56,10 @@ function maggies2mag, maggies, ivarmaggies=ivarmaggies, magerr=magerr, $
 
        snr = maggies*sqrt(ivarmaggies) ; fractional error
        good = where(snr ge nsigma,ngood)
-       upper = where((maggies ne 0.0) and (ivarmaggies ne 0.0) and snr lt nsigma,nupper)
-       nodata = where((maggies eq 0.0) and (ivarmaggies eq 0.0),nnodata)
+       upper = where((ivarmaggies ne 0.0) and snr lt nsigma,nupper)
+       nodata = where((ivarmaggies eq 0.0),nnodata)
+;      upper = where((maggies ne 0.0) and (ivarmaggies ne 0.0) and snr lt nsigma,nupper)
+;      nodata = where((maggies eq 0.0) and (ivarmaggies eq 0.0),nnodata)
 
 ; significant detections
        if (ngood ne 0L) then begin

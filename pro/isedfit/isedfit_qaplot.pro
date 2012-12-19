@@ -56,14 +56,16 @@
 ; General Public License for more details. 
 ;-
 
-pro isedfit_qaplot, paramfile, isedfit, params=params, isedpath=isedpath, $
+pro isedfit_qaplot, paramfile, isedfit, params=params, super=super, isedpath=isedpath, $
   galaxy=galaxy1, outprefix=outprefix, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
   sfhgrid=sfhgrid, psfile=psfile1, index=index, clobber=clobber, $
   xrange=in_xrange, yrange=in_yrange, xlog=xlog
 
     light = 2.99792458D18       ; speed of light [A/s]
 
-    if (n_elements(paramfile) eq 0L) and (n_elements(params) eq 0) then begin
+    nsuper = n_elements(super)
+    if nsuper eq 0 or ((n_elements(paramfile) eq 0) and $
+      (n_elements(params) eq 0)) then begin
        doc_library, 'isedfit_qaplot'
        return
     endif
@@ -74,27 +76,20 @@ pro isedfit_qaplot, paramfile, isedfit, params=params, isedpath=isedpath, $
     if (n_elements(params) eq 0) then params = $
       read_isedfit_paramfile(paramfile,sfhgrid=sfhgrid)
     
-    nsfhgrid = n_elements(params.sfhgrid)
-    nredcurve = n_elements(params.redcurve)
-    if (nsfhgrid gt 1) or (nredcurve gt 1) then begin
-       for ii = 0, nsfhgrid-1 do begin
-          newparams1 = struct_trimtags(params,except='sfhgrid')
-          newparams1 = struct_addtags(newparams1,{sfhgrid: params.sfhgrid[ii]})
-          for jj = 0, nredcurve-1 do begin
-             newparams2 = struct_trimtags(newparams1,except='redcurve')
-             newparams2 = struct_addtags(newparams2,{redcurve: params.redcurve[jj]})
-             isedfit_qaplot, params=newparams2, isedpath=isedpath, galaxy=galaxy1, $
-               outprefix=outprefix, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
-               psfile=psfile1, index=index, clobber=clobber, xrange=xrange1, $
-               yrange=yrange, xlog=xlog
-          endfor
-       endfor 
+; SUPER can be a vector
+    if nsuper gt 1 then begin
+       for ii = 0, nsuper-1 do begin
+          isedfit_qaplot, params=params, super=super, isedpath=isedpath, galaxy=galaxy1, $
+            outprefix=outprefix, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
+            psfile=psfile1, index=index, clobber=clobber, xrange=xrange1, $
+            yrange=yrange, xlog=xlog
+       endfor
        return
     endif
 
 ; allow the user to overwrite PSFILE
-    fp = isedfit_filepaths(params,outprefix=outprefix,isedpath=isedpath,$
-      isedfit_sfhgrid_dir=isedfit_sfhgrid_dir)
+    fp = isedfit_filepaths(params,super=super,outprefix=outprefix,$
+      isedpath=isedpath,isedfit_sfhgrid_dir=isedfit_sfhgrid_dir)
     if (n_elements(psfile1) eq 0) then $
       psfile = isedpath+strtrim(fp.qaplot_psfile,2) else $
         psfile = psfile1
@@ -109,7 +104,7 @@ pro isedfit_qaplot, paramfile, isedfit, params=params, isedpath=isedpath, $
     filtinfo = im_filterspecs(filterlist=filterlist)
     nfilt = n_elements(filterlist)
 
-    model = isedfit_restore(paramfile,isedfit,params=params,$
+    model = isedfit_restore(paramfile,isedfit,params=params,super=super,$
       isedpath=isedpath,index=index,isedfit_sfhgrid_dir=isedfit_sfhgrid_dir,$
       outprefix=outprefix,silent=silent)
     ngal = n_elements(isedfit)

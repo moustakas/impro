@@ -83,7 +83,7 @@ pro write_isedfit_paramfile, filterlist, prefix=prefix, minz=minz, maxz=maxz, $
     if im_double(minz) ge im_double(maxz) then $
       message, 'MINZ must be less than MAXZ!'
     
-    paramfile = prefix+'_paramfile.par'
+    paramfile = isedpath+prefix+'_paramfile.par'
     if im_file_test(paramfile,clobber=clobber) then return
     splog, 'Writing '+paramfile
 
