@@ -225,9 +225,15 @@ function integrate_mf, mf_vmax, mingal=mingal, minmass=minmass1, maxmass=maxmass
           endfor
 
           numlimit = [-5.0,-4.5,-4.0,-3.5,-3.0,-2.5];,-2.0]
-          linterp, alog10(cumuphi>1D-30), mass1, numlimit, mm
-          linterp, alog10(cumuphi_up>1D-30), mass1, numlimit, mmerrup
-          linterp, alog10(cumuphi_lo>1D-30), mass1, numlimit, mmerrlo
+;         gd = where(cumuphi gt 1D-30) & linterp, alog10(cumuphi[gd]), mass1[gd], numlimit, mm
+;         gd = where(cumuphi_up gt 1D-30) & linterp, alog10(cumuphi_up[gd]), mass1[gd], numlimit, mmerrup
+;         gd = where(cumuphi_lo gt 1D-30) & linterp, alog10(cumuphi_lo[gd]), mass1[gd], numlimit, mmerrlo
+;         linterp, alog10(cumuphi>1D-30), mass1, numlimit, mm
+;         linterp, alog10(cumuphi_up>1D-30), mass1, numlimit, mmerrup
+;         linterp, alog10(cumuphi_lo>1D-30), mass1, numlimit, mmerrlo
+          mm = interpol(mass1,alog10(cumuphi>1D-30),numlimit)
+          mmerrup = interpol(mass1,alog10(cumuphi_up>1D-30),numlimit)
+          mmerrlo = interpol(mass1,alog10(cumuphi_lo>1D-30),numlimit)
           mmerr = (mmerrup-mmerrlo)/2.0
 
           if keyword_set(debug) then begin

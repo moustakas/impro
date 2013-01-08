@@ -20,6 +20,8 @@ IF(strmatch(type,'d*') EQ 1) THEN $
   RETURN,double(val) $
 ELSE IF(strmatch(type,'i*') EQ 1) THEN $
   RETURN,long(val) $
+ELSE IF(strmatch(type,'l*') EQ 1) THEN $
+  RETURN,long(val) $
 else if(strmatch(type,'f*') eq 1) then $
   return,float(val) $
 else if(strmatch(type,'r*') eq 1) then $
@@ -82,7 +84,7 @@ FOR i=0L, n_elements(names)-1L DO BEGIN
 ENDFOR
 
 ; create table 
-nelem=numlines(file)-counter
+nelem=file_lines(file)-counter
 instr=replicate(instr1,nelem)
 
 ; now read in table
