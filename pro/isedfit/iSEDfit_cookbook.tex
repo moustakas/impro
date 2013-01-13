@@ -1,0 +1,157 @@
+\documentclass[12pt,preprint]{aastex}
+\usepackage{fancyhdr, mdwlist}
+
+\newcommand{\ised}{{\tt iSEDfit}}
+\newcommand{\sfhpro}{{\tt write\_sfhgrid\_paramfile}}
+\newcommand{\superpro}{{\tt write\_supergrid\_paramfile}}
+
+\pagestyle{fancy}
+\lhead{\ised{} Cookbook}
+\rhead{Version 0.1}
+
+\begin{document}
+
+\vspace*{-10mm} 
+\begin{center}
+{\Large {\bf \ised}} \\
+\vspace*{2mm} 
+{\Large {\bf\sc Version 0.1}} \\
+\vspace*{2mm} 
+{\Large {\bf\sc Cookbook}} \\
+\vspace*{0.1in} 
+{\Large {\bf\sc John Moustakas}} \\
+{\Large {\bf\sc Siena College}} \\
+\vspace*{0.1in} 
+\end{center}
+
+\section{What is \ised?}
+
+Table of contents, intro stuff.
+
+\section{License}
+
+\section{Installation}
+
+Define the requisite environment variables:
+
+\begin{verbatim}
+setenv ISEDFIT_SSP_DIR ${IM_DATA_DIR}/isedfit_ssp
+\end{verbatim}
+
+
+Download the prebuilt SSPs:
+
+\begin{verbatim}
+http://cass.ucsd.edu/~ioannis/isedfit/isedfit_ssp.tar.gz
+\end{verbatim}
+
+Make the directories
+montegrids
+isedfit
+
+Step-by-step instructions:
+
+Intro: iSEDfit requires three different parameter files.  A global
+parameter file that is tied to a particular dataset (e.g., it has
+filter information); a "sfhgrid" (star formation history grid)
+parameter file, which specifies the prior parameter choices on the
+star formation history, metallicity, attenuation, burst parameters,
+etc.; and a "supergrid" parameter file, which specifies the SPS
+models, IMF, and attenuation/reddening curve.
+
+This data model was chosen because it allows for significant
+flexibility in exploring different combinations of priors on the
+results.  In the first section I will describe the simplest possible
+setup to get the code up and running, and in subsequent sections I
+will give many other examples of how to run iSEDfit.
+
+\section{Getting Up and Running}
+
+1) First make the global parameter file.  Choose the filter list, and
+be sure they have been incorporated into K-correct.  Choose the
+minimum and maximum redshifts you will consider.  Choose a unique
+prefix for the project.
+
+Then run: 
+
+\begin{verbatim}
+write_isedfit_paramfile, filterlist, prefix=prefix, minz=minz, maxz=maxz, $
+  nzz=nzz, zlog=zlog, h100=h100, omega0=omega0, omegal=omegal, igm=igm, $
+  isedpath=isedpath, clobber=clobber
+\end{verbatim}
+
+This will write out a parameter file in some directory....
+
+2) Next build the "sfhgrid" parameter file.  This file specifies your
+choice of star formation history (SFH) priors.  You can have as many
+combinations of priors as you want and they will each be assigned a
+unique identifier.  The routine that will need to be called is
+
+\begin{verbatim}
+write_sfhgrid_paramfile, 
+\end{verbatim}
+
+
+This routine will need to be called once per SFHGRID (combination of
+priors).  An existing parameter file can either be overwritten or
+appended to.
+  
+
+Have the code output QAplots of the prior parameter distributions, or
+write a code that will do that.
+
+Note that for some models the stellar metallicity will be truncated
+outside the range where the models have been calibrated.
+
+Describe the gamma distributions used for $A_V$ and $\mu$; show some
+plots with the parameters varied.
+
+The code determines if bursts are desired if PBURST is greater than
+zero.  So even if the other burst parameters have values (sensible
+defaults), they are ignored if pburst is less than or equal to zero.
+And obviously pburst should be less than or equal to unity.
+  
+
+3) Next build the "supergrid" parameter file.  This file relates each
+SFHGRID to a particular choice of SPS models, IMF, and attenuation
+curve.  The strength of this data model is that you can easily explore
+the effect of different SPS models or attenuation curve on your
+results.
+
+\begin{verbatim}
+write_supergrid_paramfile, 
+\end{verbatim}
+
+
+%   # Parameter set describing the "supergrids" to consider
+%   
+%   typedef struct {
+%    int supergrid;        # supergrid number
+%    int sfhgrid;          # SFHgrid number (see clash_sfhgrid.par)
+%    char imf;             # IMF
+%    char synthmodels;     # choice of population synthesis models
+%    int redcurve;         # reddening curve (0=calzetti; 1=charlot)
+%   } GRID;
+%   
+%   GRID   1   1 chab     fsps      0
+
+
+Doing More Complication Things
+
+1) Exploring more than one SFHGRID.  Need to call \sfhpro{} more than
+once.  Example: bursts and no bursts.
+
+2) Exploring two different SPS models and two attenuation curves while
+keeping the SFHGRID priors fixed.  Call \superpro{} again.
+
+3) Changing your redshift range while keeping everything else
+constant.  Example: exploring a low-redshift solution.
+
+
+ToDo
+
+* read sfhgrid paramfile is probably not needed anymore; the ability
+to subscript to a sfhgrid was made obsolete by the supergrid formalism
+
+
+\end{document}

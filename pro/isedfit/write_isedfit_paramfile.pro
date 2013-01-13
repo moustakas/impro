@@ -28,8 +28,7 @@
 ;   clobber - overwrite existing parameter file
 ; 
 ; OUTPUTS: 
-;   This code writes a parameter file called PREFIX+'_paramfile.par'
-;   which is used by several iSEDfit routines.
+;   This code writes a parameter file called PREFIX+'_paramfile.par'. 
 ; 
 ; COMMENTS:
 ;   IGM attenuation should only be necessary if the bluest filters

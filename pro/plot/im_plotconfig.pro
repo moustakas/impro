@@ -362,7 +362,7 @@ pro im_plotconfig, plotnum, position, psfile=psfile, psclose=psclose, $
              if (n_elements(psfile) eq 0) then begin
                 splog, 'You must pass PSFILE to generate a PDF or PNG!' 
              endif else begin
-                if keyword_set(pdf) then begin
+                if keyword_set(pdf) or keyword_set(keynote) then begin
                    pdffile = repstr(repstr(psfile,'.eps','.pdf'),'.ps','.pdf')
                    spawn, 'ps2pdf -dEPSFitPage '+psfile+' '+pdffile, /sh
                 endif
