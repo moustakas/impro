@@ -144,7 +144,7 @@ function isedfit_reconstruct_sfh, info, useage=useage, outage=outage, mtau=mtau,
 ; truncate the last burst?
     dotruncate = 0
     ilast = -1
-    if (nb gt 0) and (info.tautrunc gt 0D) then begin
+    if (nb gt 0) and (info.trunctau gt 0D) then begin
        if (keyword_set(notruncate) eq 0) then begin
           dotruncate = 1
           ilast = (long(findex(age,tburst[nb-1])))>0
@@ -155,16 +155,16 @@ function isedfit_reconstruct_sfh, info, useage=useage, outage=outage, mtau=mtau,
           if (npost gt 0) then begin
 ; truncate the full SFH
              sfrpostburst = interpol(sfh,age,tburst[nb-1])
-             sfh[post] = sfrpostburst*exp(-(age[post]-tburst[nb-1])/info.tautrunc)
+             sfh[post] = sfrpostburst*exp(-(age[post]-tburst[nb-1])/info.trunctau)
              
 ; code below truncates SFHBURST and SFHTAU, and adjusts MBURST for the
 ; truncation; in general we don't use these quantities, so skip
 ; the extra work              
 ;             sfrpostburst1 = interpol(sfhburst1[*,nb-1],age,tburst[nb-1])
-;             sfhburst1[post,nb-1] = sfrpostburst1*exp(-(age[post]-tburst[nb-1])/info.tautrunc)
+;             sfhburst1[post,nb-1] = sfrpostburst1*exp(-(age[post]-tburst[nb-1])/info.trunctau)
 ;             mburst[nb-1] = im_integral(age*1D9,sfhburst1[*,nb-1]) ; [Msun]
-;;            mburst[nb-1] = 0.5D*mburst[nb-1] + sfrpostburst*info.tautrunc[nb-1]*1D9*$
-;;              exp(-tburst[nb-1]/info.tautrunc[nb-1]) ; [Msun]                
+;;            mburst[nb-1] = 0.5D*mburst[nb-1] + sfrpostburst*info.trunctau[nb-1]*1D9*$
+;;              exp(-tburst[nb-1]/info.trunctau[nb-1]) ; [Msun]                
 ;             sfhtau[post] = 0
 ;             sfhburst = total(sfhburst1,2,/double)
           endif
@@ -246,7 +246,7 @@ function isedfit_reconstruct_sfh, info, useage=useage, outage=outage, mtau=mtau,
 ;      djs_oplot, outage, outsfr100, psym=6, color='blue'
 ;      djs_oplot, outage, outsfhtau, color='blue', psym=-6, sym=0.5
 ;      djs_oplot, outage, outsfhburst, color='red', psym=-6, sym=0.5
-       if dotruncate then djs_oplot, tburst[nb-1]+info.tautrunc*[1,1], !y.crange, color='yellow'
+       if dotruncate then djs_oplot, tburst[nb-1]+info.trunctau*[1,1], !y.crange, color='yellow'
 ;      for ib = 0, nb-1 do djs_oplot, tburst[ib]*[1,1], !y.crange, color='yellow'
     endif
 

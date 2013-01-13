@@ -131,10 +131,8 @@ pro write_sfhgrid_paramfile, sfhgrid_paramfile, sfhgrid=sfhgrid, nage=nage, $
     endelse
 
     uu = uniq(params.sfhgrid,sort(params.sfhgrid))
-    if n_elements(uu) ne n_elements(params) then begin
-       splog, 'SFHGRID numbers must be unique'
-       return
-    endif
+    if n_elements(uu) ne n_elements(params) then message, $
+      'SFHGRID numbers must be unique'
     
     if im_file_test(sfhgrid_paramfile,clobber=keyword_set(clobber) or $
       keyword_set(append)) then return

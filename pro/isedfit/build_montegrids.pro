@@ -1,28 +1,35 @@
 ;+
 ; NAME:
-;   BUILD_ISEDFIT_SFHGRID
+;   BUILD_MONTEGRIDS
 ;
 ; PURPOSE:
-;   Build one or more star formation history grids for use with
-;   ISEDFIT.  These SFH grids should not be rebuilt unless you
-;   know what you're doing! 
+;   Build the Monte Carlo based star formation history grids for use
+;   with iSEDfit.  
 ;
 ; INPUTS: 
-;   sfhgrid - SFH grid number to build (default 1)
+;   sfhgrid_paramfile - parameter file describing the star formation
+;     history (SFH) priors
 ;
 ; OPTIONAL INPUTS: 
+;   supergrid_paramfile - file describing the supergrid parameters 
+;     (parameters can be overridden using SFHGRID, SYNTHMODELS, IMF,
+;     and REDCURVE optional inputs) 
+;
+;   thissupergrid - if SUPERGRID_PARAMFILE contains multiple
+;     supergrids then build this SUPERGRID (may be a vector)
+;
+;   sfhgrid - SFH grid number to build
 ;   synthmodels - population synthesis models to use (see the
 ;     corresponding BUILD_*_SSP routine for details)
-;       bc03 - (default)
+;       bc03 - 
 ;       bc03_lowres - low-resolution BC03 models
 ;       basti - solar-scaled models
 ;       basti_ae - alpha-enhanced models
 ;       pegase - 
 ;       maraston05 - 
 ;
-;   imf - initial mass function (default 'chab'=Chabrier); the
-;     available IMFs depend on which SYNTHMODELS are adopted, but as
-;     of 2011 Aug 24 they are:
+;   imf - initial mass function; the available IMFs depend on which
+;     SYNTHMODELS are adopted, but as of 2011 Aug 24 they are:
 ;       chab = Chabrier (2003): bc03, bc03_lowres, fsps
 ;       salp = Salpeter (1955): bc03, bc03_lowres, fsps, maraston05,
 ;         pegase 
@@ -32,26 +39,18 @@
 ;   redcurve - reddening curve; current options are: 
 ;    -1 = none
 ;     0 = Calzetti 2000 
-;     1 = Charlot & Fall 2000 (default)
+;     1 = Charlot & Fall 2000
 ;     2 = O'Donnell 1994 (i.e., standard Milky Way)
 ;     3 = SMC
 ; 
-;   sfhgrid_paramfile - parameter file describing the the SFH grid to
-;     be built (default ${IMPRO_DIR}+/isedfit/isedfit_sfhgrid.par)  
-;
-;   isedfit_sfhgrid_dir - pathname indicating where the grid should be
-;     written, which allows the grids to be project-specific (default
-;     ${ISEDFIT_SFHGRID_DIR})  
+;   isedfit_dir - base pathname for iSEDfit files; the Monte Carlo
+;     grids themselves are written to ISEDFIT_DIR/MONTEGRIDS; note
+;     that a directory will be created if none exists
+;   montegrids_dir - override ISEDFIT_DIR+MONTEGRIDS
 ;
 ; KEYWORD PARAMETERS: 
-;   make_montegrids - (re)build the Monte Carlo distribution of
-;     parameter values; if the Monte Carlo grid does not exist then
-;     this keyword is implicitly set
-;
-;   clobber - delete old files from a previous call to this routine
-;     (only do this if you know what you're doing!!); the default 
-;     is to prompt before deleting files
-; 
+;   clobber - delete old files from a previous call to this routine,
+;     including all the Monte Carlo distributions of parameter values
 ;   debug - make some debugging plots and wait for a keystroke 
 ;
 ; OUTPUTS: 
@@ -59,9 +58,8 @@
 ;   understands, and which should be transparent to the user. 
 ;
 ; COMMENTS:
-;   If both ISEDFIT_SFHGRID_DIR and the environment variable
-;   ${ISEDFIT_SFHGRID_DIR} are not defined then the code will still
-;   build the SFH grids *in the current working directory*!
+;   Using SUPERGRID_PARAMFILE is the recommended way to call this
+;   routine. 
 ;
 ; TODO:
 ;   Build diagnostic plots showing the range of parameters spanned by
@@ -74,8 +72,10 @@
 ;     birthrate parameter at each age
 ;   jm10nov12ucsd - streamlined and parameter file adopted
 ;   jm11aug24ucsd - documentation updated
+;   jm13jan13siena - semi-major changes in preparation for public
+;     release 
 ;
-; Copyright (C) 2009-2011, John Moustakas
+; Copyright (C) 2009-2011, 2013, John Moustakas
 ; 
 ; This program is free software; you can redistribute it and/or modify 
 ; it under the terms of the GNU General Public License as published by 
@@ -105,7 +105,7 @@ function init_montegrid, nmodel, nage, imf=imf, nmaxburst=nmaxburst
       av:                       0.0,$ ; always initialize with zero to accommodate the dust-free models!
       mu:                       1.0,$ ; always default to 1.0!
       nburst:                     0,$
-      tautrunc:                -1.0,$ ; burst truncation time scale
+      trunctau:                -1.0,$ ; burst truncation time scale
       minage:                  -1.0,$
       maxage:                  -1.0,$
       mintburst:               -1.0,$
@@ -263,33 +263,50 @@ pro build_grid, montegrid, chunkinfo, ssppath=ssppath, $
 return
 end    
 
-pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
-  redcurve=redcurve, sfhgrid_paramfile=sfhgrid_paramfile, $
-  isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, make_montegrid=make_montegrid, $
+pro build_montegrids, sfhgrid_paramfile, supergrid_paramfile=supergrid_paramfile, $
+  thissupergrid=thissupergrid, sfhgrid=sfhgrid, synthmodels=synthmodels, imf=imf, $
+  redcurve=redcurve, isedfit_dir=isedfit_dir, montegrids_dir=montegrids_dir, $
   clobber=clobber, debug=debug
 
-; some defaults
-    if (n_elements(synthmodels) eq 0) then synthmodels = 'bc03'
-    if (n_elements(imf) eq 0) then imf = 'chab' ; 'salp'
-    if (n_elements(sfhgrid) eq 0) then sfhgrid = 1
-    if (n_elements(redcurve) eq 0) then redcurve = 1 ; charlot & fall
+; read the SFHGRID parameter file
+    if n_elements(sfhgrid_paramfile) eq 0 then begin
+       doc_library, 'build_montegrids'
+       return
+    endif
 
-; call this routine iteratively    
-    if (n_elements(sfhgrid) gt 1) or (n_elements(redcurve) gt 1) then begin
+; read the SUPERGRID parameter file, if given    
+    if n_elements(supergrid_paramfile) ne 0 then begin
+       super = read_supergrid_paramfile(supergrid_paramfile,supergrid=thissupergrid)
+       if n_elements(sfhgrid) eq 0 then sfhgrid = super.sfhgrid
+       if n_elements(synthmodels) eq 0 then synthmodels = super.synthmodels
+       if n_elements(imf) eq 0 then imf = super.imf
+       if n_elements(redcurve) eq 0 then redcurve = super.redcurve
+    endif else begin
+       if (n_elements(sfhgrid) eq 0) or (n_elements(synthmodels) eq 0) or $
+         (n_elements(imf) eq 0) or (n_elements(redcurve) eq 0) then begin
+          splog, 'You must either provide SUPERGRID_PARAMFILE or *all* of '+$
+            'SFHGRID, SYNTHMODELS, IMF, and REDCURVE'
+          return
+       endif
+    endelse
+       
+; call this routine iteratively
+    nsfh = n_elements(sfhgrid)
+    if nsfh gt 1 then begin
+       if nsfh ne n_elements(synthmodels) or nsfh ne n_elements(imf) or $
+         nsfh ne n_elements(redcurve) then message, 'SFHGRID, SYNTHMODELS, '+$
+         'IMF, and REDCURVE must have the same number of elements!'
        for ii = 0, n_elements(sfhgrid)-1 do begin
-          for jj = 0, n_elements(redcurve)-1 do begin
-             build_isedfit_sfhgrid, sfhgrid[ii], synthmodels=synthmodels, imf=imf, $
-               redcurve=redcurve[jj], sfhgrid_paramfile=sfhgrid_paramfile, $
-               isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, clobber=clobber, $
-               make_montegrid=make_montegrid, debug=debug
-          endfor
+          build_montegrids, sfhgrid_paramfile, sfhgrid=sfhgrid[ii], $
+            synthmodels=synthmodels[ii], imf=imf[ii], redcurve=redcurve[ii], $
+            isedfit_dir=isedfit_dir, montegrids_dir=montegrids_dir, $
+            clobber=clobber, debug=debug
        endfor
        return
     endif
 
-; read the parameter file describing each of the grids and get the
-; reddening curve
-    params = read_sfhgrid_paramfile(sfhgrid,sfhgrid_paramfile=sfhgrid_paramfile)
+; read the SFHGRID parameter file and get the reddening curve
+    params = read_sfhgrid_paramfile(sfhgrid_paramfile,sfhgrid=sfhgrid)
     redcurvestring = redcurve2string(redcurve)
 
 ; read the SSP information structure    
@@ -297,8 +314,8 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
     if (file_test(ssppath,/dir) eq 0) then begin
        splog, 'Verify that ${ISEDFIT_SSP_DIR} environment variable is defined!'
        return
-   endif
-   ssppath=ssppath+'/'
+    endif
+    ssppath=ssppath+'/'
     sspinfofile = ssppath+'info_'+synthmodels+'_'+imf+'.fits.gz'
     if (file_test(sspinfofile) eq 0) then begin
        splog, 'SSP info file '+sspinfofile+' not found!'
@@ -308,10 +325,12 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
     sspinfo = mrdfits(sspinfofile,1,/silent)
     
 ; make directories and delete old files
-    if (n_elements(isedfit_sfhgrid_dir) eq 0) then isedfit_sfhgrid_dir = $
-      '${ISEDFIT_SFHGRID_DIR}/'
+    if (n_elements(isedfit_dir) eq 0) then isedfit_dir = './'
+    if (n_elements(montegrids_dir) eq 0) then montegrids_dir = isedfit_dir+'montegrids/'
+;   if (n_elements(montegrids_dir) eq 0) then montegrids_dir = $
+;     '${MONTEGRIDS_DIR}/'
     sfhgridstring = 'sfhgrid'+string(sfhgrid,format='(I2.2)')
-    sfhgridpath = isedfit_sfhgrid_dir+sfhgridstring+$
+    sfhgridpath = montegrids_dir+sfhgridstring+$
       '/'+synthmodels+'/'+redcurvestring+'/'
 
     if (file_test(sfhgridpath,/dir) eq 0) then begin
@@ -323,7 +342,7 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
 ; first major step: build the Monte Carlo grid, if it doesn't
 ; already exist 
     montefile = sfhgridpath+imf+'_montegrid.fits'
-    if (file_test(montefile+'.gz') eq 0) or keyword_set(make_montegrid) then begin
+    if (file_test(montefile+'.gz') eq 0) or keyword_set(clobber) then begin
        cc = 'N'
        if (keyword_set(clobber) eq 0) then begin
           splog, 'Delete all *'+imf+'* files from '+sfhgridpath+' [Y/N]?'
@@ -337,9 +356,9 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
 
 ; compute the maximum number of bursts, if any
        if (params.pburst le 0.0) then nmaxburst = 0 else $
-         nmaxburst = ceil(long(100D*(params.maxtburst-params.mintburst)/params.pburstinterval)/100D)
+         nmaxburst = ceil(long(100D*(params.maxtburst-params.mintburst)/params.interval_pburst)/100D)
 ;      if (params.pburst le 0.0) then nmaxburst = 0 else $
-;        nmaxburst = ceil(long(100D*(params.maxage-params.minage)/params.pburstinterval)/100D)
+;        nmaxburst = ceil(long(100D*(params.maxage-params.minage)/params.interval_pburst)/100D)
 
        montegrid = init_montegrid(params.nmonte,params.nage,imf=imf,nmaxburst=nmaxburst)
 
@@ -349,8 +368,9 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
 
 ; draw uniformly from linear TAU, or 1/TAU?
        tau = randomu(seed,params.nmonte)*(params.tau[1]-params.tau[0])+params.tau[0]
-       if params.oneovertau and params.delayed then message, 'DELAYED and ONEOVERTAU may not work well together.'
-       if params.oneovertau then tau = 1D/tau
+       if params.oneovertau eq 1 and params.delayed eq 1 then $
+         message, 'DELAYED and ONEOVERTAU may not work well together.'
+       if params.oneovertau eq 1 then tau = 1D/tau
        montegrid.tau = tau
 
 ; metallicity; check to make sure that the prior boundaries do not
@@ -396,7 +416,7 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
 
 ; now assign bursts; note that the bursts can occur outside
 ; (generally, before) the AGE vector; divide the time vector into
-; NMAXBURST intervals of width PBURSTINTERVAL [Gyr]
+; NMAXBURST intervals of width INTERVAL_PBURST [Gyr]
        ntime = 100
 ;      ntime = params.nage
        
@@ -412,10 +432,10 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
           ran = randomu(seed,nmaxburst,params.nmonte)
           for imod = 0L, params.nmonte-1 do begin
              for ib = 0, nmaxburst-1 do begin
-                tmin = params.mintburst+ib*params.pburstinterval
-                tmax = (params.mintburst+(ib+1)*params.pburstinterval)<params.maxtburst
-;               tmin = params.minage+ib*params.pburstinterval
-;               tmax = (params.minage+(ib+1)*params.pburstinterval)<params.maxage
+                tmin = params.mintburst+ib*params.interval_pburst
+                tmax = (params.mintburst+(ib+1)*params.interval_pburst)<params.maxtburst
+;               tmin = params.minage+ib*params.interval_pburst
+;               tmax = (params.minage+(ib+1)*params.interval_pburst)<params.maxage
 
                 if (tmax le tmin) then message, 'This violates causality!'
                 time1 = randomu(seed,ntime)*(tmax-tmin)+tmin
@@ -426,7 +446,7 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
                 dtimeleft[0] = time1[0]-tmin
                 dtimeright = (shift(time1,-1)-time1)/2.0
                 dtimeright[ntime-1] = tmax-time1[ntime-1]
-                prob = params.pburst*total([[dtimeleft],[dtimeright]],2)/params.pburstinterval
+                prob = params.pburst*total([[dtimeleft],[dtimeright]],2)/params.interval_pburst
                 if (prob[0] le 0) then message, 'This should not happen!'
 
                 this = where(total(prob,/cum) gt ran[ib,imod])
@@ -476,9 +496,9 @@ pro build_isedfit_sfhgrid, sfhgrid, synthmodels=synthmodels, imf=imf, $
           endif else ntrunc = 0L
           if (ntrunc gt 0L) then begin
              if (montegrid[0].bursttype ne 1) then message, 'Should use truncated *Gaussian* bursts.'
-;            montegrid[hasburst[trunc]].tautrunc = params.tautrunc ; [Gyr]
-             montegrid[hasburst[trunc]].tautrunc = randomu(seed,ntrunc)*(params.tautrunc[1]-$
-               params.tautrunc[0])+params.tautrunc[0] ; [Gyr]
+;            montegrid[hasburst[trunc]].trunctau = params.trunctau ; [Gyr]
+             montegrid[hasburst[trunc]].trunctau = randomu(seed,ntrunc)*(params.trunctau[1]-$
+               params.trunctau[0])+params.trunctau[0] ; [Gyr]
           endif
        endif  
 

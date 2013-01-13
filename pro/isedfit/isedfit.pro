@@ -7,14 +7,14 @@
 ;   population synthesis models to infer their physical properties. 
 ;
 ; INPUTS:
-;   paramfile - iSEDfit parameter file see README_ISEDFIT for details) 
+;   isedfit_paramfile - iSEDfit parameter file see README_ISEDFIT for details) 
 ;   maggies - photometry [NFILT,NGAL]
 ;   ivarmaggies - inverse variance array for MAGGIES [NFILT,NGAL]  
 ;   zobj - galaxy redshift [NGAL] 
 ;
 ; OPTIONAL INPUTS:
 ;   params - data structure with the same information contained in
-;     PARAMFILE (over-rides PARAMFILE)
+;     ISEDFIT_PARAMFILE (over-rides ISEDFIT_PARAMFILE)
 ;   isedpath - full path name to the input and output files (default ./) 
 ;   nminphot - require at least NMINPHOT bandpasses of well-measured
 ;     photometry (i.e., excluding upper limits) before fitting
@@ -22,11 +22,11 @@
 ;   galchunksize - split the sample into GALCHUNKSIZE sized chunks,
 ;     which is necessary if the sample is very large (default 5000)
 ;   outprefix - optionally write out files with a different prefix
-;     from that specified in PARAMFILE (or PARAMS)
+;     from that specified in ISEDFIT_PARAMFILE (or PARAMS)
 ;   sfhgrid_paramfile - parameter file name giving details on all the
 ;     available SFH grids (needed to initialize the output data
 ;     structure) 
-;   isedfit_sfhgrid_dir - full pathname to the precomputed SFH grids 
+;   isedfit_montegrids_dir - full pathname to the precomputed SFH grids 
 ;   index - use this optional input to fit a zero-indexed subset of
 ;     the full sample (default is to fit everything)
 ;
@@ -206,14 +206,14 @@ function init_isedfit, ngal, nfilt, sfhgrid, sfhgrid_paramfile=sfhgrid_paramfile
 return, isedfit
 end
 
-pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfit_post, $
-  params=params, super=super, isedpath=isedpath, nminphot=nminphot, galchunksize=galchunksize, $
-  outprefix=outprefix, sfhgrid_paramfile=sfhgrid_paramfile, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
+pro isedfit, isedfit_paramfile, maggies, ivarmaggies, zobj, isedfit, $
+  isedfit_post=isedfit_post, params=params, super=super, isedpath=isedpath, nminphot=nminphot, galchunksize=galchunksize, $
+  outprefix=outprefix, sfhgrid_paramfile=sfhgrid_paramfile, isedfit_montegrids_dir=isedfit_montegrids_dir, $
   index=index, allages=allages, write_chi2grid=write_chi2grid, silent=silent, $
   nowrite=nowrite, clobber=clobber
 
     nsuper = n_elements(super)
-    if nsuper eq 0 or ((n_elements(paramfile) eq 0) and $
+    if nsuper eq 0 or ((n_elements(isedfit_paramfile) eq 0) and $
       (n_elements(params) eq 0)) then begin
        doc_library, 'isedfit'
        return
@@ -254,40 +254,24 @@ pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfi
 ; filenames
     if (n_elements(isedpath) eq 0) then isedpath = './'
     if (n_elements(params) eq 0) then params = $
-      read_isedfit_paramfile(paramfile)
+      read_isedfit_paramfile(isedfit_paramfile)
 
 ; SUPER can be a vector
     if nsuper gt 1 then begin
        for ii = 0, nsuper-1 do begin
-          isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfit_post, $
+          isedfit, isedfit_paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfit_post, $
             params=newparams1, super=super[ii], isedpath=isedpath, nminphot=nminphot, $
             galchunksize=galchunksize, outprefix=outprefix, index=index, $
-            sfhgrid_paramfile=sfhgrid_paramfile, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
+            sfhgrid_paramfile=sfhgrid_paramfile, isedfit_montegrids_dir=isedfit_montegrids_dir, $
             allages=allages, clobber=clobber, write_chi2grid=write_chi2grid, $
             nowrite=nowrite, silent=silent
        endfor
        return
     endif
 
-;; SFHGRID can be a vector
-;    nsfhgrid = n_elements(params.sfhgrid)
-;    if (nsfhgrid gt 1) then begin
-;       for ii = 0, nsfhgrid-1 do begin
-;          newparams1 = struct_trimtags(params,except='sfhgrid')
-;          newparams1 = struct_addtags(newparams1,{sfhgrid: params.sfhgrid[ii]})
-;          isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfit_post, $
-;            params=newparams1, isedpath=isedpath, nminphot=nminphot, $
-;            galchunksize=galchunksize, outprefix=outprefix, index=index, $
-;            sfhgrid_paramfile=sfhgrid_paramfile, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
-;            allages=allages, clobber=clobber, write_chi2grid=write_chi2grid, $
-;            nowrite=nowrite, silent=silent
-;       endfor
-;       return
-;    endif
-
     fp = isedfit_filepaths(params,super=super,outprefix=outprefix,isedpath=isedpath,$
       ngalaxy=ngal,ngalchunk=ngalchunk,galchunksize=galchunksize,$
-      isedfit_sfhgrid_dir=isedfit_sfhgrid_dir)
+      isedfit_montegrids_dir=isedfit_montegrids_dir)
 
     outfile = fp.isedpath+fp.isedfit_outfile
     if file_test(outfile+'.gz',/regular) and $
@@ -299,11 +283,11 @@ pro isedfit, paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfi
 
 ; fit the requested subset of objects and return
     if (n_elements(index) ne 0L) then begin
-       isedfit, paramfile, maggies[*,index], ivarmaggies[*,index], zobj[index], $
+       isedfit, isedfit_paramfile, maggies[*,index], ivarmaggies[*,index], zobj[index], $
          isedfit1, isedfit_post=isedfit_post1, params=params, super=super, nminphot=nminphot, $
          outprefix=outprefix, allages=allages, isedpath=isedpath, clobber=clobber, $
          write_chi2grid=write_chi2grid, /nowrite, silent=silent, $
-         sfhgrid_paramfile=sfhgrid_paramfile, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir
+         sfhgrid_paramfile=sfhgrid_paramfile, isedfit_montegrids_dir=isedfit_montegrids_dir
        isedfit = init_isedfit(ngal,nfilt,params.sfhgrid,sfhgrid_paramfile=sfhgrid_paramfile,$
          isedfit_post=isedfit_post)
        isedfit[index] = isedfit1

@@ -122,15 +122,15 @@ function build_isedfit_agegrid, info, inage=inage1, nage=nage, $
 
 ; truncate the last burst?  require at least 5 age samplings of the
 ; exponential tail
-    if (info.tautrunc gt 0.0) then begin
+    if (info.trunctau gt 0.0) then begin
        if info.bursttype eq 1 then $
          post = where(outage ge tb[nb-1],npost,comp=pre,ncomp=npre) else $ ; after the peak of the burst
            post = where(outage ge tb[nb-1]+dtb[nb-1],npost,comp=pre,ncomp=npre) ; after the full width of the burst
        if (npost gt 0) then begin
           npad = 5
           if info.bursttype eq 1 then $
-            padage = tb[nb-1]-im_double(info.tautrunc)*alog((1D0-(range(0.1D,1D,npad,/log)-0.1D))) else $
-              padage = (tb[nb-1]+dtb[nb-1])-im_double(info.tautrunc)*alog((1D0-(range(0.001D,1D,npad,/log)-0.001D)))
+            padage = tb[nb-1]-im_double(info.trunctau)*alog((1D0-(range(0.1D,1D,npad,/log)-0.1D))) else $
+              padage = (tb[nb-1]+dtb[nb-1])-im_double(info.trunctau)*alog((1D0-(range(0.001D,1D,npad,/log)-0.001D)))
 
           keep = where(padage lt maxage,nkeep) ; could break if TB=MAXAGE
           if (nkeep gt 0) then begin

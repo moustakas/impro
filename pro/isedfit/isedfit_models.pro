@@ -132,58 +132,59 @@
 ; General Public License for more details. 
 ;-
 
-pro isedfit_models, paramfile, params=params, super=super, $
-  isedpath=isedpath, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
-  clobber=clobber
+pro isedfit_models, isedfit_paramfile, params=params, supergrid_paramfile=supergrid_paramfile, $
+  thissupergrid=thissupergrid, sfhgrid=sfhgrid, synthmodels=synthmodels, imf=imf, $
+  redcurve=redcurve, isedfit_dir=isedfit_dir, montegrids_dir=montegrids_dir, clobber=clobber
 
-    nsuper = n_elements(super)
-    if nsuper eq 0 or ((n_elements(paramfile) eq 0) and $
-      (n_elements(params) eq 0)) then begin
+    if n_elements(isedfit_paramfile) eq 0 and n_elements(params) eq 0 then begin
        doc_library, 'isedfit_models'
        return
     endif
 
 ; read the parameter file; parse to get the relevant path and
 ; filenames
-    if (n_elements(isedpath) eq 0) then isedpath = './'
+    if (n_elements(isedfit_dir) eq 0) then isedfit_dir = './'
+    if (n_elements(montegrids_dir) eq 0) then montegrids_dir = isedfit_dir+'montegrids/'
     if (n_elements(params) eq 0) then params = $
-      read_isedfit_paramfile(paramfile)
+      read_isedfit_paramfile(isedfit_paramfile)
 
-; SUPER can be a vector
-    if nsuper gt 1 then begin
-       for ii = 0, nsuper-1 do begin
-          isedfit_models, params=params, super=super[ii], isedpath=isedpath, $
-            isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, clobber=clobber
+; read the SUPERGRID parameter file, if given    
+    if n_elements(supergrid_paramfile) ne 0 then begin
+       super = read_supergrid_paramfile(supergrid_paramfile,supergrid=thissupergrid)
+       if n_elements(sfhgrid) eq 0 then sfhgrid = super.sfhgrid
+       if n_elements(synthmodels) eq 0 then synthmodels = super.synthmodels
+       if n_elements(imf) eq 0 then imf = super.imf
+       if n_elements(redcurve) eq 0 then redcurve = super.redcurve
+    endif else begin
+       if (n_elements(sfhgrid) eq 0) or (n_elements(synthmodels) eq 0) or $
+         (n_elements(imf) eq 0) or (n_elements(redcurve) eq 0) then begin
+          splog, 'You must either provide SUPERGRID_PARAMFILE or *all* of '+$
+            'SFHGRID, SYNTHMODELS, IMF, and REDCURVE'
+          return
+       endif
+    endelse
+       
+; call this routine iteratively
+    nsfh = n_elements(sfhgrid)
+    if nsfh gt 1 then begin
+       if nsfh ne n_elements(synthmodels) or nsfh ne n_elements(imf) or $
+         nsfh ne n_elements(redcurve) then message, 'SFHGRID, SYNTHMODELS, '+$
+         'IMF, and REDCURVE must have the same number of elements!'
+       for ii = 0, n_elements(sfhgrid)-1 do begin
+          isedfit_models, params=params, sfhgrid=sfhgrid[ii], synthmodels=synthmodels[ii], $
+            imf=imf[ii], redcurve=redcurve[ii], isedfit_dir=isedfit_dir, $
+            montegrids_dir=montegrids_dir, clobber=clobber
        endfor
        return
     endif 
 
-;; SFHGRID and REDCURVE can be vectors; however, if SFHGRID=3 (no
-;; reddening) then ignore REDCURVE    
-;    nsfhgrid = n_elements(super.sfhgrid)
-;    nredcurve = n_elements(super.redcurve)
-;    if (nsfhgrid gt 1) or (nredcurve gt 1) then begin
-;       for ii = 0, nsfhgrid-1 do begin
-;          newparams1 = struct_trimtags(params,except='sfhgrid')
-;          newparams1 = struct_addtags(newparams1,{sfhgrid: params.sfhgrid[ii]})
-;          if (newparams1.sfhgrid eq 3) then nredcurve = 1
-;          for jj = 0, nredcurve-1 do begin
-;             newparams2 = struct_trimtags(newparams1,except='redcurve')
-;             newparams2 = struct_addtags(newparams2,{redcurve: params.redcurve[jj]})
-;             isedfit_models, params=newparams2, isedpath=isedpath, $
-;               isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, clobber=clobber
-;          endfor
-;       endfor 
-;       return 
-;    endif 
-
-    fp = isedfit_filepaths(params,super=super,$
-      isedpath=isedpath,isedfit_sfhgrid_dir=isedfit_sfhgrid_dir)
+    fp = isedfit_filepaths(params,sfhgrid=sfhgrid,synthmodels=synthmodels,$
+      imf=imf,redcurve=redcurve,isedfit_dir=isedfit_dir,montegrids_dir=montegrids_dir)
     if (file_test(fp.modelspath,/dir) eq 0) then begin
        splog, 'Creating directory '+fp.modelspath
        spawn, 'mkdir -p '+fp.modelspath, /sh
     endif
-    
+
     chunkfile = fp.modelspath+fp.isedfit_models_chunkfiles[0] ; check the first file
     if file_test(chunkfile+'.gz',/regular) and $
       (keyword_set(clobber) eq 0) then begin
@@ -191,10 +192,10 @@ pro isedfit_models, paramfile, params=params, super=super, $
        return
     endif
     
-    splog, 'SYNTHMODELS='+super.synthmodels+', '+$
-      'REDCURVE='+strtrim(super.redcurve,2)+', IMF='+$
-      super.imf+', '+'SFHGRID='+$
-      string(super.sfhgrid,format='(I2.2)')
+    splog, 'SYNTHMODELS='+synthmodels+', '+$
+      'REDCURVE='+strtrim(redcurve,2)+', IMF='+$
+      imf+', '+'SFHGRID='+$
+      string(sfhgrid,format='(I2.2)')
 
 ; filters and redshift grid
     filterlist = strtrim(params.filterlist,2)

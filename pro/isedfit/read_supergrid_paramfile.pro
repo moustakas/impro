@@ -1,15 +1,15 @@
 ;+
 ; NAME:
-;   READ_SFHGRID_PARAMFILE() 
+;   READ_SUPERGRID_PARAMFILE() 
 ;
 ; PURPOSE:
-;   Read a SFHGRID parameter file.
+;   Read a SUPERGRID parameter file.
 ;
 ; INPUTS: 
-;   sfhgrid_paramfile - parameter file to read
+;   supergrid_paramfile - parameter file to read
 ;
 ; OPTIONAL INPUTS: 
-;   sfhgrid - subscript the file to this SFH grid (default is to read
+;   supergrid - subscript the file to this SUPERGRID (default is to read
 ;     them all)
 ;
 ; OUTPUTS: 
@@ -19,7 +19,7 @@
 ;
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2010 Nov 12, UCSD
-;   jm13jan13siena - SFHGRID_PARAMFILE now required input
+;   jm13jan13siena - SUPERGRID_PARAMFILE now required input
 ;
 ; Copyright (C) 2010, 2013, John Moustakas
 ; 
@@ -34,19 +34,19 @@
 ; General Public License for more details. 
 ;-
 
-function read_sfhgrid_paramfile, sfhgrid_paramfile, sfhgrid=sfhgrid
+function read_supergrid_paramfile, supergrid_paramfile, supergrid=supergrid
 
-    if (n_elements(sfhgrid_paramfile) eq 0) then message, $
-      'SFHGRID_PARAMFILE input required!'
-    if (file_test(sfhgrid_paramfile,/regular) eq 0) then $
-      message, 'SFHGRID parameter file '+sfhgrid_paramfile+' not found'
+    if (n_elements(supergrid_paramfile) eq 0) then message, $
+      'SUPERGRID_PARAMFILE input required!'
+    if (file_test(supergrid_paramfile,/regular) eq 0) then $
+      message, 'SUPERGRID parameter file '+supergrid_paramfile+' not found'
 
-    allparams = yanny_readone(sfhgrid_paramfile)
+    allparams = yanny_readone(supergrid_paramfile)
 
-; build the parameter arrays for the specified SFHGRID
-    if (n_elements(sfhgrid) ne 0) then begin
-       match = where(allparams.sfhgrid eq sfhgrid)
-       if (match[0] eq -1) then message, 'Please update '+sfhgrid_paramfile
+; build the parameter arrays for the specified SUPERGRID
+    if (n_elements(supergrid) ne 0) then begin
+       match = where(allparams.supergrid eq supergrid)
+       if (match[0] eq -1) then message, 'Please update '+supergrid_paramfile
        params = allparams[match]
        return, params
     endif

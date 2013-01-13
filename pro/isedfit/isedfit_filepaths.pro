@@ -11,7 +11,7 @@
 ;
 ; OPTIONAL INPUTS: 
 ;   outprefix - 
-;   isedpath - 
+;   isedfit_dir - 
 ;
 ; KEYWORD PARAMETERS: 
 ;
@@ -35,48 +35,55 @@
 ; General Public License for more details. 
 ;-
 
-function isedfit_filepaths, params, super=super, outprefix=outprefix1, $
-  isedpath=isedpath, ngalaxy=ngalaxy, ngalchunk=ngalchunk, $
-  galchunksize=galchunksize, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir
+function isedfit_filepaths, params, supergrid_paramfile=supergrid_paramfile, $
+  thissupergrid=thissupergrid, sfhgrid=sfhgrid, synthmodels=synthmodels, imf=imf, $
+  redcurve=redcurve, outprefix=outprefix1, ngalaxy=ngalaxy, ngalchunk=ngalchunk, $
+  galchunksize=galchunksize, isedfit_dir=isedfit_dir, montegrids_dir=montegrids_dir
 
-    if (n_elements(isedpath) eq 0L) then isedpath = './'
     if (n_elements(params) eq 0L) then $
       message, 'PARAMS input required'
     if (n_elements(galchunksize) eq 0L) then $
       galchunksize = 500L ; can play with this number
 
-    if (n_elements(isedfit_sfhgrid_dir) eq 0) then isedfit_sfhgrid_dir = $
-      '${ISEDFIT_SFHGRID_DIR}/'
-    
-; read the output from build_isedfit_sfhgrid based on the specified
-; spectral synthesis models and SFH grid
-    synthmodels = strtrim(super.synthmodels,2)
-    imf = strtrim(super.imf,2)
-    redcurvestring = strtrim(redcurve2string(super.redcurve),2)
-    sfhgrid = super.sfhgrid
+    if (n_elements(isedfit_dir) eq 0) then isedfit_dir = './'
+    if (n_elements(montegrids_dir) eq 0) then montegrids_dir = isedfit_dir+'montegrids/'
 
-;   synthmodels = strtrim(params.synthmodels,2)
-;   imf = strtrim(params.imf,2)
-;   redcurvestring = strtrim(params.redcurve,2)
-;   sfhgrid = params.sfhgrid
+; read the SUPERGRID parameter file, if given    
+    if n_elements(supergrid_paramfile) ne 0 then begin
+       super = read_supergrid_paramfile(supergrid_paramfile,supergrid=thissupergrid)
+       if n_elements(sfhgrid) eq 0 then sfhgrid = super.sfhgrid
+       if n_elements(synthmodels) eq 0 then synthmodels = super.synthmodels
+       if n_elements(imf) eq 0 then imf = super.imf
+       if n_elements(redcurve) eq 0 then redcurve = super.redcurve
+    endif else begin
+       if (n_elements(sfhgrid) eq 0) or (n_elements(synthmodels) eq 0) or $
+         (n_elements(imf) eq 0) or (n_elements(redcurve) eq 0) then begin
+          splog, 'You must either provide SUPERGRID_PARAMFILE or *all* of '+$
+            'SFHGRID, SYNTHMODELS, IMF, and REDCURVE'
+          return, -1
+       endif
+    endelse
+
     if (n_elements(sfhgrid) ne 1) then $
       message, 'SFHGRID must be a scalar'
 
+    redcurvestring = strtrim(redcurve2string(redcurve),2)
+    
 ; if CHUNKINFO file does not exist, try dropping the reddening curve 
     sfhgridstring = 'sfhgrid'+string(sfhgrid,format='(I2.2)')
-    sfhgridpath = isedfit_sfhgrid_dir+sfhgridstring+$
+    sfhgridpath = montegrids_dir+sfhgridstring+$
       '/'+synthmodels+'/'+redcurvestring+'/'
     chunkinfofile = sfhgridpath+imf+'_chunkinfo.fits.gz'
     if (file_test(chunkinfofile) eq 0) then begin
        redcurvestring = ''
-       sfhgridpath = isedfit_sfhgrid_dir+sfhgridstring+$
+       sfhgridpath = montegrids_dir+sfhgridstring+$
          '/'+synthmodels+'/'
        chunkinfofile = sfhgridpath+imf+'_chunkinfo.fits.gz'
     endif
     if (file_test(chunkinfofile) eq 0) then $
       message, 'CHUNKINFOFILE '+chunkinfofile+' not found!'
 
-    modelspath = isedpath+sfhgridstring+'/'+redcurvestring+'/'
+    modelspath = isedfit_dir+sfhgridstring+'/'+redcurvestring+'/'
 
 ; needs error checking here to make sure the directories exist    
 
@@ -130,7 +137,7 @@ function isedfit_filepaths, params, super=super, outprefix=outprefix1, $
     filepaths = {$
       synthmodels:               synthmodels,        $
       sfhgrid:                   sfhgrid,            $
-      isedpath:                    isedpath,             $
+      isedfit_dir:               isedfit_dir,        $
       modelspath:                modelspath,         $
       sfhgrid_dir:               sfhgridpath,        $
       sfhgrid_chunkinfo:         chunkinfofile,      $ 

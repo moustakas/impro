@@ -22,7 +22,7 @@
 ;   omegal - vacuum energy density (default 0.7)
 ;   igm - include IGM attenuation in all calculations? [0=no, 1=yes]
 ;     (default 1)
-;   isedpath - full path name to the input and output files (default ./) 
+;   isedfit_dir - full path name to the input and output files (default ./) 
 ;
 ; KEYWORD PARAMETERS:
 ;   clobber - overwrite existing parameter file
@@ -54,7 +54,7 @@
 
 pro write_isedfit_paramfile, filterlist, prefix=prefix, minz=minz, maxz=maxz, $
   nzz=nzz, zlog=zlog, h100=h100, omega0=omega0, omegal=omegal, igm=igm, $
-  isedpath=isedpath, clobber=clobber
+  isedfit_dir=isedfit_dir, clobber=clobber
 
     if n_elements(filterlist) eq 0 then begin
        doc_library, 'write_isedfit_paramfile'
@@ -82,7 +82,7 @@ pro write_isedfit_paramfile, filterlist, prefix=prefix, minz=minz, maxz=maxz, $
     if im_double(minz) ge im_double(maxz) then $
       message, 'MINZ must be less than MAXZ!'
     
-    paramfile = isedpath+prefix+'_paramfile.par'
+    paramfile = isedfit_dir+prefix+'_paramfile.par'
     if im_file_test(paramfile,clobber=clobber) then return
     splog, 'Writing '+paramfile
 
