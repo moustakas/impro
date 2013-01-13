@@ -201,6 +201,17 @@ function im_wise2lir, redshift, maggies, ivarmaggies, chi2=chi2, $
           if (minchi2 le 0) then message, 'Negative chi^2'
           minchi2 = minchi2-chi2offset
           chi2[igal] = minchi2
+
+          
+          
+          kk = im_simple_kcorrect(redshift[igal],reform(maggies[*,igal],nfilt,1),$
+            reform(ivarmaggies[*,igal],nfilt,1),filt,filt,model.wave,$
+            interpolate(model.flux,modelindx1,/grid)/1D40,$;/(4.0*!dpi*idlum[igal]^2),$
+            absmag=absmag,ivarabsmag=ivarabsmag,scale=scale)
+          
+          
+          
+stop          
           
 ; debugging QAplots
           if keyword_set(debug) then begin
