@@ -6,14 +6,20 @@
 ;   Initialize the supergrid parameter file for iSEDfit.
 ;
 ; INPUTS: 
+;   supergrid_paramfile - 
 ;
 ; OPTIONAL INPUTS: 
+;   supergrid - (default 1)
+;   sfhgrid - (default 1)
+;   imf - (default 'chab')
+;   synthmodels - (default 'fsps')
+;   redcurve - default (1 = charlot & fall)
 ;
 ; KEYWORD PARAMETERS:
-;   clobber - overwrite existing parameter file
+;   clobber - overwrite any existing parameter file
 ; 
 ; OUTPUTS: 
-;   This code writes a parameter file called SUPERGRID_PARAMFILE.par
+;   This code writes a parameter file called SUPERGRID_PARAMFILE.par 
 ; 
 ; COMMENTS:
 ;

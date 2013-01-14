@@ -7,7 +7,7 @@
 ;   population synthesis models to infer their physical properties. 
 ;
 ; INPUTS:
-;   isedfit_paramfile - iSEDfit parameter file see README_ISEDFIT for details) 
+;   isedfit_paramfile - iSEDfit parameter file
 ;   maggies - photometry [NFILT,NGAL]
 ;   ivarmaggies - inverse variance array for MAGGIES [NFILT,NGAL]  
 ;   zobj - galaxy redshift [NGAL] 
@@ -15,7 +15,13 @@
 ; OPTIONAL INPUTS:
 ;   params - data structure with the same information contained in
 ;     ISEDFIT_PARAMFILE (over-rides ISEDFIT_PARAMFILE)
-;   isedpath - full path name to the input and output files (default ./) 
+;   supergrid_paramfile - file describing the supergrid parameters 
+;   thissupergrid - if SUPERGRID_PARAMFILE contains multiple
+;     supergrids then build this SUPERGRID (may be a vector)
+;   sfhgrid_paramfile - parameter file name giving details on all the
+;     available SFH grids (needed to initialize the output data
+;     structure) 
+;
 ;   nminphot - require at least NMINPHOT bandpasses of well-measured
 ;     photometry (i.e., excluding upper limits) before fitting
 ;     (default 3)  
@@ -23,10 +29,10 @@
 ;     which is necessary if the sample is very large (default 5000)
 ;   outprefix - optionally write out files with a different prefix
 ;     from that specified in ISEDFIT_PARAMFILE (or PARAMS)
-;   sfhgrid_paramfile - parameter file name giving details on all the
-;     available SFH grids (needed to initialize the output data
-;     structure) 
-;   isedfit_montegrids_dir - full pathname to the precomputed SFH grids 
+;   isedfit_dir - base pathname for iSEDfit files; the Monte Carlo
+;     grids can be found in ISEDFIT_DIR/MONTEGRIDS, or in
+;     MONTEGRIDS_DIR
+;   montegrids_dir - override ISEDFIT_DIR+'/'+MONTEGRIDS
 ;   index - use this optional input to fit a zero-indexed subset of
 ;     the full sample (default is to fit everything)
 ;
@@ -43,20 +49,23 @@
 ;     gracefully)  
 ;
 ; OUTPUTS:
-;   
+;   Binary FITS tables containing the fitting results are written
+;   to ISEDFIT_DIR. 
 ;
 ; OPTIONAL OUTPUTS:
 ;   isedfit - output data structure containing all the results; see
-;     README_ISEDFIT for a detailed breakdown and explanation of all
-;     the outputs
+;     the iSEDfit documentation for a detailed breakdown and
+;     explanation of all the outputs
 ;   isedfit_post - output data structure containing the random draws
 ;     from the posterior distribution function, which can be used to
 ;     rebuild the posterior distributions of any of the output
 ;     parameters 
 ;
 ; COMMENTS:
-;   maggies, ivarmaggies, and zobj are copied into the output
-;   structure and then the variables are deleted from memory
+;   WARNING: maggies, ivarmaggies, and zobj are copied into the output
+;   structure and then the variables are deleted from memory.
+;
+;   Better documentation of the output data structures would be good. 
 ;
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2011 Sep 01, UCSD - I began writing iSEDfit in 2005
@@ -64,8 +73,10 @@
 ;     however, the code has evolved so much that the old modification
 ;     history became obsolete!  Future changes to the officially
 ;     released code will be documented here.
+;   jm13jan13siena - documentation rewritten and updated to reflect
+;     many major changes
 ;
-; Copyright (C) 2011, John Moustakas
+; Copyright (C) 2011, 2013, John Moustakas
 ; 
 ; This program is free software; you can redistribute it and/or modify 
 ; it under the terms of the GNU General Public License as published by 
@@ -78,16 +89,16 @@
 ; General Public License for more details. 
 ;-
 
-function init_isedfit, ngal, nfilt, sfhgrid, sfhgrid_paramfile=sfhgrid_paramfile, $
-  isedfit_post=isedfit_post
+function init_isedfit, ngal, nfilt, sfhgrid_paramfile=sfhgrid_paramfile, $
+  thissfhgrid=thissfhgrid, isedfit_post=isedfit_post
 ; ISEDFIT support routine - initialize the output structure 
 
-    params = read_sfhgrid_paramfile(sfhgrid,sfhgrid_paramfile=sfhgrid_paramfile)
+    params = read_sfhgrid_paramfile(sfhgrid_paramfile,thissfhgrid=thissfhgrid)
     ndraw = isedfit_ndraw() ; number of random draws
 
 ; compute the maximum number of bursts, if any
     if (params.pburst le 0D) then nmaxburst = 0 else $
-      nmaxburst = ceil((params.maxage-params.minage)/params.pburstinterval)
+      nmaxburst = ceil((params.maxage-params.minage)/params.interval_pburst)
 
     burstarray1 = -1.0
     if (nmaxburst gt 1) then burstarray1 = fltarr(nmaxburst)-1.0
@@ -112,7 +123,7 @@ function init_isedfit, ngal, nfilt, sfhgrid, sfhgrid_paramfile=sfhgrid_paramfile
       av:                       0.0,$ ; always initialize with zero to accommodate the dust-free models!
       mu:                       1.0,$ ; always default to 1.0!
       nburst:                     0,$
-      tautrunc:                -1.0,$ ; burst truncation time scale
+      trunctau:                -1.0,$ ; burst truncation time scale
       minage:                  -1.0,$
       maxage:                  -1.0,$
       mintburst:               -1.0,$
@@ -207,24 +218,40 @@ return, isedfit
 end
 
 pro isedfit, isedfit_paramfile, maggies, ivarmaggies, zobj, isedfit, $
-  isedfit_post=isedfit_post, params=params, super=super, isedpath=isedpath, nminphot=nminphot, galchunksize=galchunksize, $
-  outprefix=outprefix, sfhgrid_paramfile=sfhgrid_paramfile, isedfit_montegrids_dir=isedfit_montegrids_dir, $
-  index=index, allages=allages, write_chi2grid=write_chi2grid, silent=silent, $
+  isedfit_post=isedfit_post, params=params, supergrid_paramfile=supergrid_paramfile, $
+  thissupergrid=thissupergrid, sfhgrid_paramfile=sfhgrid_paramfile, $
+  nminphot=nminphot, galchunksize=galchunksize, outprefix=outprefix, $
+  isedfit_dir=isedfit_dir, montegrids_dir=montegrids_dir, index=index, $
+  allages=allages, write_chi2grid=write_chi2grid, silent=silent, $
   nowrite=nowrite, clobber=clobber
 
-    nsuper = n_elements(super)
-    if nsuper eq 0 or ((n_elements(isedfit_paramfile) eq 0) and $
-      (n_elements(params) eq 0)) then begin
+    if n_elements(isedfit_paramfile) eq 0 and n_elements(params) eq 0 then begin
        doc_library, 'isedfit'
        return
     endif
 
+; read the parameter file; parse to get the relevant path and
+; filenames
+    if (n_elements(isedfit_dir) eq 0) then isedfit_dir = './'
+    if (n_elements(montegrids_dir) eq 0) then montegrids_dir = isedfit_dir+'montegrids/'
+    if (n_elements(params) eq 0) then params = $
+      read_isedfit_paramfile(isedfit_paramfile)
+
+; read the SUPERGRID parameter file
+    if n_elements(supergrid_paramfile) eq 0 or n_elements(sfhgrid_paramfile) eq 0 then begin
+       splog, 'SUPERGRID and SFHGRID parameter files required'
+       return
+    endif
+    
+    super = read_supergrid_paramfile(supergrid_paramfile,supergrid=thissupergrid)
+    if n_elements(thissupergrid) eq 0 then thissupergrid = super.supergrid
+       
+; error checking on the input photometry    
     ndim = size(maggies,/n_dim)
     dims = size(maggies,/dim)
     if (ndim eq 1) then ngal = 1 else ngal = dims[1]  ; number of galaxies
     nfilt = dims[0] ; number of filters
 
-; error checking on the input photometry    
     nmaggies = n_elements(maggies)
     nivarmaggies = n_elements(ivarmaggies)
     nzobj = n_elements(zobj)
@@ -250,30 +277,26 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, zobj, isedfit, $
        return
     endif
 
-; read the parameter file; parse to get the relevant path and
-; filenames
-    if (n_elements(isedpath) eq 0) then isedpath = './'
-    if (n_elements(params) eq 0) then params = $
-      read_isedfit_paramfile(isedfit_paramfile)
-
-; SUPER can be a vector
+; fit each SUPERGRID separately
+    nsuper = n_elements(thissupergrid)
     if nsuper gt 1 then begin
        for ii = 0, nsuper-1 do begin
-          isedfit, isedfit_paramfile, maggies, ivarmaggies, zobj, isedfit, isedfit_post=isedfit_post, $
-            params=newparams1, super=super[ii], isedpath=isedpath, nminphot=nminphot, $
-            galchunksize=galchunksize, outprefix=outprefix, index=index, $
-            sfhgrid_paramfile=sfhgrid_paramfile, isedfit_montegrids_dir=isedfit_montegrids_dir, $
-            allages=allages, clobber=clobber, write_chi2grid=write_chi2grid, $
-            nowrite=nowrite, silent=silent
-       endfor
+          isedfit, isedfit_paramfile, maggies, ivarmaggies, zobj, isedfit, $
+            isedfit_post=isedfit_post, params=params, supergrid_paramfile=supergrid_paramfile, $
+            thissupergrid=thissupergrid[ii], sfhgrid_paramfile=sfhgrid_paramfile, $
+            nminphot=nminphot, galchunksize=galchunksize, outprefix=outprefix, $
+            isedfit_dir=isedfit_dir, montegrids_dir=montegrids_dir, index=index, $
+            allages=allages, write_chi2grid=write_chi2grid, silent=silent, $
+            nowrite=nowrite, clobber=clobber
+       endfor 
        return
     endif
 
-    fp = isedfit_filepaths(params,super=super,outprefix=outprefix,isedpath=isedpath,$
-      ngalaxy=ngal,ngalchunk=ngalchunk,galchunksize=galchunksize,$
-      isedfit_montegrids_dir=isedfit_montegrids_dir)
+    fp = isedfit_filepaths(params,supergrid_paramfile=supergrid_paramfile,$
+      thissupergrid=thissupergrid,isedfit_dir=isedfit_dir,montegrids_dir=montegrids_dir,$
+      ngalaxy=ngal,ngalchunk=ngalchunk,galchunksize=galchunksize)
 
-    outfile = fp.isedpath+fp.isedfit_outfile
+    outfile = fp.isedfit_dir+fp.isedfit_outfile
     if file_test(outfile+'.gz',/regular) and $
       (keyword_set(clobber) eq 0) and $
       (keyword_set(nowrite) eq 0) then begin
@@ -284,17 +307,19 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, zobj, isedfit, $
 ; fit the requested subset of objects and return
     if (n_elements(index) ne 0L) then begin
        isedfit, isedfit_paramfile, maggies[*,index], ivarmaggies[*,index], zobj[index], $
-         isedfit1, isedfit_post=isedfit_post1, params=params, super=super, nminphot=nminphot, $
-         outprefix=outprefix, allages=allages, isedpath=isedpath, clobber=clobber, $
-         write_chi2grid=write_chi2grid, /nowrite, silent=silent, $
-         sfhgrid_paramfile=sfhgrid_paramfile, isedfit_montegrids_dir=isedfit_montegrids_dir
-       isedfit = init_isedfit(ngal,nfilt,params.sfhgrid,sfhgrid_paramfile=sfhgrid_paramfile,$
-         isedfit_post=isedfit_post)
+         isedfit1, isedfit_post=isedfit_post1, params=params, supergrid_paramfile=supergrid_paramfile, $
+         thissupergrid=thissupergrid, sfhgrid_paramfile=sfhgrid_paramfile, $
+         nminphot=nminphot, galchunksize=galchunksize, outprefix=outprefix, $
+         isedfit_dir=isedfit_dir, montegrids_dir=montegrids_dir, index=index, $
+         allages=allages, write_chi2grid=write_chi2grid, silent=silent, $
+         /nowrite, clobber=clobber
+       isedfit = init_isedfit(ngal,nfilt,sfhgrid_paramfile=sfhgrid_paramfile,$
+         thissfhgrid=super.sfhgrid,isedfit_post=isedfit_post)
        isedfit[index] = isedfit1
        isedfit_post[index] = isedfit_post1
        if (keyword_set(nowrite) eq 0) then begin
           im_mwrfits, isedfit, outfile, /clobber
-          im_mwrfits, isedfit_post, fp.isedpath+fp.post_outfile, /clobber
+          im_mwrfits, isedfit_post, fp.isedfit_dir+fp.post_outfile, /clobber
        endif
        return
     endif
@@ -330,8 +355,8 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, zobj, isedfit, $
     endif
 
 ; initialize the output structure(s)
-    isedfit = init_isedfit(ngal,nfilt,super.sfhgrid,isedfit_post=isedfit_post,$
-      sfhgrid_paramfile=sfhgrid_paramfile)
+    isedfit = init_isedfit(ngal,nfilt,isedfit_post=isedfit_post,$
+      sfhgrid_paramfile=sfhgrid_paramfile,thissfhgrid=super.sfhgrid)
     isedfit.isedfit_id = lindgen(ngal)
     isedfit.maggies = maggies
     isedfit.ivarmaggies = ivarmaggies
@@ -397,7 +422,7 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, zobj, isedfit, $
 ; write out the final structure and the full posterior distributions
     if (keyword_set(nowrite) eq 0) then begin
        im_mwrfits, isedfit, outfile, silent=silent, /clobber
-       im_mwrfits, isedfit_post, fp.isedpath+fp.post_outfile, silent=silent, /clobber
+       im_mwrfits, isedfit_post, fp.isedfit_dir+fp.post_outfile, silent=silent, /clobber
     endif
 
 return

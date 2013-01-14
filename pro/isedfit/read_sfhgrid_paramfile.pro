@@ -9,8 +9,8 @@
 ;   sfhgrid_paramfile - parameter file to read
 ;
 ; OPTIONAL INPUTS: 
-;   sfhgrid - subscript the file to this SFH grid (default is to read
-;     them all)
+;   thissfhgrid - subscript the file to this SFH grid (default is to
+;     read them all)
 ;
 ; OUTPUTS: 
 ;   allparams - data structure with all the parameters 
@@ -34,7 +34,7 @@
 ; General Public License for more details. 
 ;-
 
-function read_sfhgrid_paramfile, sfhgrid_paramfile, sfhgrid=sfhgrid
+function read_sfhgrid_paramfile, sfhgrid_paramfile, thissfhgrid=thissfhgrid
 
     if (n_elements(sfhgrid_paramfile) eq 0) then message, $
       'SFHGRID_PARAMFILE input required!'
@@ -44,8 +44,8 @@ function read_sfhgrid_paramfile, sfhgrid_paramfile, sfhgrid=sfhgrid
     allparams = yanny_readone(sfhgrid_paramfile)
 
 ; build the parameter arrays for the specified SFHGRID
-    if (n_elements(sfhgrid) ne 0) then begin
-       match = where(allparams.sfhgrid eq sfhgrid)
+    if (n_elements(thissfhgrid) ne 0) then begin
+       match = where(allparams.sfhgrid eq thissfhgrid)
        if (match[0] eq -1) then message, 'Please update '+sfhgrid_paramfile
        params = allparams[match]
        return, params

@@ -46,7 +46,7 @@
 ;   isedfit_dir - base pathname for iSEDfit files; the Monte Carlo
 ;     grids themselves are written to ISEDFIT_DIR/MONTEGRIDS; note
 ;     that a directory will be created if none exists
-;   montegrids_dir - override ISEDFIT_DIR+MONTEGRIDS
+;   montegrids_dir - override ISEDFIT_DIR+'/'+MONTEGRIDS
 ;
 ; KEYWORD PARAMETERS: 
 ;   clobber - delete old files from a previous call to this routine,
@@ -306,7 +306,7 @@ pro build_montegrids, sfhgrid_paramfile, supergrid_paramfile=supergrid_paramfile
     endif
 
 ; read the SFHGRID parameter file and get the reddening curve
-    params = read_sfhgrid_paramfile(sfhgrid_paramfile,sfhgrid=sfhgrid)
+    params = read_sfhgrid_paramfile(sfhgrid_paramfile,thissfhgrid=sfhgrid)
     redcurvestring = redcurve2string(redcurve)
 
 ; read the SSP information structure    

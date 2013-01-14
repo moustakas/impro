@@ -46,7 +46,8 @@ function read_supergrid_paramfile, supergrid_paramfile, supergrid=supergrid
 ; build the parameter arrays for the specified SUPERGRID
     if (n_elements(supergrid) ne 0) then begin
        match = where(allparams.supergrid eq supergrid)
-       if (match[0] eq -1) then message, 'Please update '+supergrid_paramfile
+       if (match[0] eq -1) then message, 'No matching SUPERGRID '+$
+         strtrim(supergrid,2)+' in parameter file '+supergrid_paramfile
        params = allparams[match]
        return, params
     endif
