@@ -1,6 +1,6 @@
 ;+
 ; NAME:
-;   MAG2MAGGIES()
+;   MAGGIES2MAG()
 ;
 ; PURPOSE:
 ;   Convert from maggies to AB magnitude.

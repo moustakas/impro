@@ -187,7 +187,7 @@ function im_simple_kcorrect, redshift, maggies, ivarmaggies, in_filterlist, $
        endfor
     endfor
 
-; compute the K-correction    
+; compute the K-correction
     kcorrect = fltarr(out_nband,nredshift)
     for i = 0L, nredshift-1L do $
       for j = 0L, out_nband-1L do $

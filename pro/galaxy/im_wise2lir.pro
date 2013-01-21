@@ -27,7 +27,14 @@
 ;   err_lir - *statistical* uncertainty on LIR [L_sun, NGAL]
 ;   model_indx - fractional index number of the best-fitting model 
 ;     [NGAL] 
-
+;   nuLnu - rest-frame (K-corrected) luminosities in the WISE 12- and
+;     22-micron bands and the Spitzer 24-micron band [erg/s, NGAL]
+;   ivar_nulnu - statistical uncertainty on nuLnu [erg/s, NGAL] 
+;   modelmab - observed-frame best-fitting IR SED for each galaxy in
+;     AB magnitudes [NPIX,NGAL]
+;   modelwave - observed-frame wavelength array corresponding to
+;     MODELMAB [Angstrom]
+;
 ; COMMENTS:
 ;   By default the code uses the Chary & Elbaz (2001) models, unless
 ;   either /RIEKE or /DALE are set.  The statistical uncertainty on
@@ -37,8 +44,10 @@
 ;
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2011 Apr 19, UCSD
+;   jm13jan14siena - added NULNU, IVAR_NULNU, MODELMAB, and MODELWAVE
+;     optional outputs 
 ;
-; Copyright (C) 2010, John Moustakas
+; Copyright (C) 2011, 2013, John Moustakas
 ; 
 ; This program is free software; you can redistribute it and/or modify 
 ; it under the terms of the GNU General Public License as published by 
@@ -52,31 +61,31 @@
 ;-
 
 function wise2lir_model_maggies, model, zref, dlum=dlum
-; compute model photometry on a fiducial redshift grid    
+; compute model photometry on a fiducial redshift grid
+    obsfilt = wise_filterlist(/long)
     nmodel = n_elements(model.lir)
     nzref = n_elements(zref)
 ; k_projection_table can't deal with the units so we have to
 ; loop and call k_project_filters    
-;   k_projection_table, rmatrix, model.flux, model.wave, $
-;     zref, (wise_filterlist())[2:3]
+;   k_projection_table, rmatrix, model.flux, model.wave, zref, obsfilt
 ;   model_maggies = dblarr(4,nmodel,nzref)
     model_maggies = dblarr(2,nmodel,nzref)
     for ii = 0, nmodel-1 do begin
        for jj = 0, nzref-1 do begin
           model_maggies[*,ii,jj] = k_project_filters(k_lambda_to_edges($
             model.wave*(1.0+zref[jj])),model.flux[*,ii]/(4.0*!dpi*dlum[jj]^2)/$
-            (1.0+zref[jj]),filterlist=(wise_filterlist())[2:3])
+            (1.0+zref[jj]),filterlist=obsfilt)
        endfor
     endfor
 return, model_maggies
 end
 
 function im_wise2lir, redshift, maggies, ivarmaggies, chi2=chi2, $
-  model_indx=model_indx, err_lir=err_lir, chary=chary, $
-  dale=dale, rieke=rieke, debug=debug, zlog=zlog
+  model_indx=model_indx, err_lir=err_lir, nuLnu=nuLnu, ivar_nulnu=ivar_nulnu, $
+  modelmab=modelmab, modelwave=modelwave, chary=chary, dale=dale, $
+  rieke=rieke, debug=debug, zlog=zlog
 
-    common com_wise2lir, chary_maggies, dale_maggies, $
-      rieke_maggies
+    common com_wise2lir, chary_maggies, dale_maggies, rieke_maggies
     
     ngal = n_elements(redshift)
     if (ngal eq 0L) then begin
@@ -84,17 +93,9 @@ function im_wise2lir, redshift, maggies, ivarmaggies, chi2=chi2, $
        return, -1
     endif
 
-;   if (ngal ne n_elements(f24)) then begin
-;      splog, 'Dimensions of REDSHIFT and F24 do not agree'
-;      return, -1
-;   endif
-;   if (n_elements(f24_err) ne 0L) then begin
-;      if (ngal ne n_elements(f24_err)) then begin
-;         splog, 'Dimensions of REDSHIFT and F24_ERR do not agree'
-;         return, -1
-;      endif
-;   endif
-
+    pc10 = 10.0*3.085678D18 ; =10 pc in cm
+    light = im_light(/Ang)  ; [Ang/s]
+    
 ; define the fiducial redshift grid
     zrefmin = min(redshift)
     zrefmax = max(redshift)
@@ -135,15 +136,11 @@ function im_wise2lir, redshift, maggies, ivarmaggies, chi2=chi2, $
     nmodel = n_elements(model.lir)
     npix = n_elements(model.wave)
 
-    filt = (wise_filterlist())[2:3]
-    weff = k_lambda_eff(filterlist=filt)
-    nfilt = n_elements(filt)
-    
 ; interpolate the models at the redshifts of interest
     zindx = findex(zref,redshift)
     model_maggies = interpolate(model_maggies_grid,zindx)
     idlum = interpolate(dlum,zindx)
-    
+
 ; give the 12- and 22-micron bands equal statistical weight
     new_ivarmaggies = ivarmaggies
     new_ivarmaggies[0,*] = max(ivarmaggies,dim=1)
@@ -156,14 +153,28 @@ function im_wise2lir, redshift, maggies, ivarmaggies, chi2=chi2, $
 ;;   new_ivarmaggies[2,*] = 0.0
 ;    new_ivarmaggies[2,*] = max(ivarmaggies,dim=1)
 ;    new_ivarmaggies[3,*] = max(ivarmaggies,dim=1)
+
+; define some filters we'll need below
+    obsfilt = wise_filterlist(/long)
+    obsweff = k_lambda_eff(filterlist=obsfilt)
+    nobsfilt = n_elements(obsfilt)
+
+    restfilt = [wise_filterlist(/long),'spitzer_mips_24.par']
+    restweff = k_lambda_eff(filterlist=restfilt)
+    nrestfilt = n_elements(restfilt)
     
-; need to loop, unfortunately...  derive the uncertainties on L(IR)
-; and L(24) using a simple Monte Carlo method
+; derive the uncertainties on L(IR) and NULNU using a simple Monte
+; Carlo method; need to loop, unfortunately...
     model_indx = fltarr(ngal)-1.0
     lir = model_indx*0.0-1.0
     err_lir = model_indx*0.0-1.0
     chi2 = model_indx*0.0-1.0
 
+    nuLnu = dblarr(nrestfilt,ngal)-1.0
+    ivar_nulnu = nuLnu
+    modelwave = fltarr(npix,ngal)
+    modelmab = modelwave
+    
     nmonte = 100
     nfine = 20
 
@@ -175,8 +186,8 @@ function im_wise2lir, redshift, maggies, ivarmaggies, chi2=chi2, $
 ;      if (total((nmaggies gt 0) and (nivarmaggies gt 0)) ge 1) then begin
 ; compute and minimize chi2 (see MFINDCHI2MIN)
           vmodelmaggies = model_maggies[*,*,igal]
-          vmaggies = rebin(reform(nmaggies,nfilt,1),nfilt,nmodel)
-          vivarmaggies = rebin(reform(nivarmaggies,nfilt,1),nfilt,nmodel)
+          vmaggies = rebin(reform(nmaggies,nobsfilt,1),nobsfilt,nmodel)
+          vivarmaggies = rebin(reform(nivarmaggies,nobsfilt,1),nobsfilt,nmodel)
           vchi2 = total(vivarmaggies*(vmaggies-vmodelmaggies)^2,1,/double)
 
 ; add a floor to prevent negative minima, which can occur          
@@ -202,50 +213,51 @@ function im_wise2lir, redshift, maggies, ivarmaggies, chi2=chi2, $
           minchi2 = minchi2-chi2offset
           chi2[igal] = minchi2
 
+; rebuild the best-fitting model, then compute K-corrections and
+; NULNU; it's a little slow to call IM_SIMPLE_KCORRECT in this
+; loop but oh well
+          flamrest = interpolate(model.flux,modelindx1,/grid)/(4.0*!dpi*pc10^2) ; [erg/s/cm^2] at 10 pc
+          flamobs = interpolate(model.flux,modelindx1,/grid)/$ ; observed-frame SED [erg/s/cm^2]
+            (4.0*!dpi*idlum[igal]^2)/(1.0+redshift[igal])
+          modelwave[*,igal] = model.wave*(1.0+redshift[igal])
+          modelmab[*,igal] = -2.5*alog10(flamobs*rebin(reform(modelwave[*,igal],npix,1),$
+            npix,nmodel)^2/light)-48.6
           
-          
-          kk = im_simple_kcorrect(redshift[igal],reform(maggies[*,igal],nfilt,1),$
-            reform(ivarmaggies[*,igal],nfilt,1),filt,filt,model.wave,$
-            interpolate(model.flux,modelindx1,/grid)/1D40,$;/(4.0*!dpi*idlum[igal]^2),$
-            absmag=absmag,ivarabsmag=ivarabsmag,scale=scale)
-          
-          
-          
-stop          
+          kk = im_simple_kcorrect(redshift[igal],reform(maggies[*,igal],nobsfilt,1),$
+            reform(ivarmaggies[*,igal],nobsfilt,1),obsfilt,restfilt,model.wave,$
+            flamrest,absmag=absmag,ivarabsmag=ivarabsmag,scale=scale)
+          Lnu = 4.0*!dpi*pc10^2*10^(-0.4*(absmag+48.6)) ; [erg/s/Hz]
+          nuLnu[*,igal] = Lnu*(light/restweff)          ; [erg/s]
+          ivar_nulnu[*,igal] = ivarabsmag/(nuLnu[*,igal]*alog(10))^2
           
 ; debugging QAplots
           if keyword_set(debug) then begin
              splog, minchi2, modelindx1, lir[igal]
-
              djs_plot, x2, chi2fit, psym=-6, sym=0.5, xsty=3, ysty=3, /ylog, $
-               xrange=modelindx1+5*[-1,1]
+               xrange=modelindx1+5*[-1,1], xtitle='Model Index Number', ytitle='\chi^2'
              djs_oplot, xx, vchi2, psym=-6, sym=3, color='red'
              djs_oplot, modelindx1*[1,1], 10^!y.crange, color='dark green'
              djs_oplot, !x.crange, minchi2*[1,1], color='dark green'
              cc = get_kbrd(1)
              
-             modelflam = interpolate(model.flux,modelindx1,/grid)/(4.0*!dpi*idlum[igal]^2)/(1.0+redshift[igal])
-             good = where(modelflam gt 0.0,ngood)
-             modelwave = model.wave[good]*(1.0+redshift[igal])
-             modelmab = -2.5*alog10(modelflam[good]*rebin(reform(modelwave,ngood,1),$
-               ngood,nmodel)^2/im_light(/ang))-48.6
-
-             djs_plot, weff/1D4, -2.5*alog10(maggies[*,igal]), psym=7, color='yellow', $
-               sym=3, xr=[1,500], /xlog, yr=[max(modelmab),min(modelmab)], xsty=3, ysty=3
-             djs_oplot, weff/1D4, -2.5*alog10(interpolate(vmodelmaggies,modelindx1)), $
+             djs_plot, obsweff/1D4, -2.5*alog10(maggies[*,igal]), psym=7, color='yellow', $
+               sym=3, xr=[1,500], /xlog, yr=[max(modelmab[*,igal]),min(modelmab[*,igal])], xsty=3, ysty=3, $
+               xtitle='Wavelength (\mu'+'m)', ytitle='AB magnitude'
+             djs_oplot, obsweff/1D4, -2.5*alog10(interpolate(vmodelmaggies,modelindx1)), $
                psym=6, sym=3
 ;            djs_plot, weff*(1.0+redshift[igal])/1D4, -2.5*alog10(maggies[*,igal]), psym=7, color='yellow', $
 ;              sym=3, xr=[1,500], /xlog, yr=[max(modelmab),min(modelmab)], xsty=3, ysty=3
 ;            djs_oplot, weff*(1.0+redshift[igal])/1D4, -2.5*alog10(interpolate(vmodelmaggies,modelindx1)), $
 ;              psym=6, sym=3
-             djs_oplot, modelwave/1D4, modelmab, color='orange'
+             djs_oplot, modelwave[*,igal]/1D4, modelmab[*,igal], color='orange'
 
 ;            plot, findgen(nmodel), vchi2, xsty=3, ysty=3, psym=6, /ylog, $
 ;              position=[2.0,max(modelmab)+2,9.0,min(modelmab)-2], /noerase, $
 ;              xrange=[0.0,nmodel], yrange=[minmax(vchi2)], /data
 ;            niceprint, nmaggies, nivarmaggies
              cc = get_kbrd(1)
-          endif
+
+          endif 
 
 ;      if arg_present(err_lir) then begin
 ;         maggies_monte = maggies[igal] + errmaggies[igal]*randomn(seed,nmonte)
@@ -256,7 +268,7 @@ stop
 ;         endfor
 ;         err_lir[igal] = djsig(lir_monte)
        endif 
-    endfor
-
+    endfor 
+    
 return, lir
 end
