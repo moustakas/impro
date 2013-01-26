@@ -225,8 +225,8 @@ function im_kcorrect, redshift, maggies, ivarmaggies, in_filterlist, $
     if (keyword_set(not_closest) eq 0) then begin
        lambda_in = k_lambda_eff(filterlist=in_filterlist)
        lambda_out = k_lambda_eff(filterlist=out_filterlist,band_shift=band_shift)
-       for ii = 0L, nredshift-1L do begin
-          for jj = 0L, n_elements(lambda_out)-1L do begin
+       for ii = 0L, nredshift-1 do begin
+          for jj = 0L, n_elements(lambda_out)-1 do begin
              lambdadist = abs(lambda_in/(1.0+redshift[ii])-lambda_out[jj])
              dmin = min(lambdadist + (ivarmaggies[*,ii] eq 0)*1D6,imin)
 ;            dmin = min(lambdadist,imin) ; old code

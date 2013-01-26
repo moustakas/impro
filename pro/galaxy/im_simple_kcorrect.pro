@@ -180,10 +180,12 @@ function im_simple_kcorrect, redshift, maggies, ivarmaggies, in_filterlist, $
     obands = lindgen(out_nband)#replicate(1L,nredshift)
     lambda_in = k_lambda_eff(filterlist=in_filterlist)
     lambda_out = k_lambda_eff(filterlist=out_filterlist,band_shift=band_shift)
-    for i = 0L, nredshift-1L do begin
-       for j = 0L, n_elements(lambda_out)-1L do begin
-          dmin=min(abs(lambda_in/(1.0+redshift[i])-lambda_out[j]),imin)
-          obands[j,i]= imin
+    for ii = 0L, nredshift-1 do begin
+       for jj = 0L, n_elements(lambda_out)-1 do begin
+          lambdadist = abs(lambda_in/(1.0+redshift[ii])-lambda_out[jj])
+          dmin = min(lambdadist + (ivarmaggies[*,ii] eq 0)*1D6,imin)
+;         dmin = min(lambdadist,imin) ; old code
+          obands[jj,ii]= imin
        endfor
     endfor
 
@@ -193,16 +195,14 @@ function im_simple_kcorrect, redshift, maggies, ivarmaggies, in_filterlist, $
       for j = 0L, out_nband-1L do $
         kcorrect[j,i]=synth_outmaggies_rest[j,i]/bestmaggies[obands[j,i],i]
     kcorrect = +2.5*alog10(kcorrect)
-
 ; convert to Vega magnitudes if requested (code stolen from
 ; SDSS2BESSELL) 
     if keyword_set(vega) then begin
        for i = 0L, out_nband-1L do begin
           v2ab = k_vega2ab(filterlist=out_filterlist[i], /kurucz, $
             band_shift=band_shift,silent=silent)
-          ;; you need to convert FROM AB TO VEGA. the K-correction is
-          ;; M=m-DM-K, so adding v2ab to K makes M=m-DM-K-v2ab,
-          ;; equivalent to M=m-DM-K+ab2v
+; you need to convert FROM AB TO VEGA. the K-correction is M=m-DM-K,
+; so adding v2ab to K makes M=m-DM-K-v2ab, equivalent to M=m-DM-K+ab2v
           kcorrect[i,*] = kcorrect[i,*]+v2ab[0]
        endfor
     endif
@@ -216,9 +216,9 @@ function im_simple_kcorrect, redshift, maggies, ivarmaggies, in_filterlist, $
          lf_distmod(redshift, omega0=omega0, omegal0=omegal0)
        absmag = synth_absmag
        for j=0L, nredshift-1L do begin
-          igood=where(ivarmaggies[obands[*,j],j] gt 0. and $
-            maggies[obands[*,j],j] gt 0., ngood)
-          if(ngood gt 0) then begin
+          igood = where(ivarmaggies[obands[*,j],j] gt 0.0 and $
+            maggies[obands[*,j],j] gt 0.0, ngood)
+          if (ngood gt 0) then begin
              absmag[igood,j] = -2.5*alog10(maggies[obands[igood,j],j])- $
                lf_distmod(redshift[j],omega0=omega0,omegal0=omegal0)- $
                kcorrect[igood,j]
