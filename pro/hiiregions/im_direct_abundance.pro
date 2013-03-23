@@ -120,9 +120,7 @@ function im_direct_abundance, data, snrcut=snrcut, oii_temp=oii_temp, oiii_temp=
     nii_indx = where(strmatch(datatags,'*'+oii_ion+'*',/fold),nii_indx)
 
 ; compute O+/H    
-    
     if (noii_indx eq 1L) then begin
-
        good = where((((data.(oii_indx))[0,*])/((data.(oii_indx))[1,*]) gt snrcut) and $
          (oii_temp gt 0.0) and (dens gt 0.0),ngood)
        if (ngood ne 0L) then begin
@@ -141,11 +139,8 @@ function im_direct_abundance, data, snrcut=snrcut, oii_temp=oii_temp, oiii_temp=
              endcase
 
              result[good[ii]].zt_oh_p = oii_flux[ii]/oii_emissivity
-
           endfor
-             
        endif
-          
     endif
 
 ; compute O++/H    

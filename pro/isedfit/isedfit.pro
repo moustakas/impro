@@ -294,7 +294,7 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, zobj, isedfit, $
 
     fp = isedfit_filepaths(params,supergrid_paramfile=supergrid_paramfile,$
       thissupergrid=thissupergrid,isedfit_dir=isedfit_dir,montegrids_dir=montegrids_dir,$
-      ngalaxy=ngal,ngalchunk=ngalchunk,galchunksize=galchunksize)
+      ngalaxy=ngal,ngalchunk=ngalchunk,galchunksize=galchunksize,outprefix=outprefix)
 
     outfile = fp.isedfit_dir+fp.isedfit_outfile
     if file_test(outfile+'.gz',/regular) and $

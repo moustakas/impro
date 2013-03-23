@@ -56,42 +56,54 @@
 ; General Public License for more details. 
 ;-
 
-pro isedfit_qaplot, paramfile, isedfit, params=params, super=super, isedpath=isedpath, $
-  galaxy=galaxy1, outprefix=outprefix, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
-  sfhgrid=sfhgrid, psfile=psfile1, index=index, clobber=clobber, $
+pro isedfit_qaplot, isedfit_paramfile, isedfit, params=params, $
+  supergrid_paramfile=supergrid_paramfile, thissupergrid=thissupergrid, $
+  isedfit_dir=isedfit_dir, montegrids_dir=montegrids_dir, $
+  galaxy=galaxy1, outprefix=outprefix, psfile=psfile1, index=index, clobber=clobber, $
   xrange=in_xrange, yrange=in_yrange, xlog=xlog
 
     light = 2.99792458D18       ; speed of light [A/s]
 
-    nsuper = n_elements(super)
-    if nsuper eq 0 or ((n_elements(paramfile) eq 0) and $
-      (n_elements(params) eq 0)) then begin
+    if n_elements(isedfit_paramfile) eq 0 and n_elements(params) eq 0 then begin
        doc_library, 'isedfit_qaplot'
        return
     endif
 
 ; read the parameter file and parse to get the relevant path and
 ; filenames; optionally overwrite SFHGRID in the parameter file
-    if (n_elements(isedpath) eq 0) then isedpath = './'
+    if (n_elements(isedfit_dir) eq 0) then isedfit_dir = './'
+    if (n_elements(montegrids_dir) eq 0) then montegrids_dir = isedfit_dir+'montegrids/'
     if (n_elements(params) eq 0) then params = $
-      read_isedfit_paramfile(paramfile,sfhgrid=sfhgrid)
+      read_isedfit_paramfile(isedfit_paramfile)
+
+; read the SUPERGRID parameter file
+    if n_elements(supergrid_paramfile) eq 0 then begin
+       splog, 'SUPERGRID parameter file required'
+       return
+    endif
     
-; SUPER can be a vector
+    super = read_supergrid_paramfile(supergrid_paramfile,supergrid=thissupergrid)
+    if n_elements(thissupergrid) eq 0 then thissupergrid = super.supergrid
+       
+; treat each SUPERGRID separately
+    nsuper = n_elements(thissupergrid)
     if nsuper gt 1 then begin
        for ii = 0, nsuper-1 do begin
-          isedfit_qaplot, params=params, super=super, isedpath=isedpath, galaxy=galaxy1, $
-            outprefix=outprefix, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
-            psfile=psfile1, index=index, clobber=clobber, xrange=xrange1, $
-            yrange=yrange, xlog=xlog
+          isedfit_qaplot, isedfit_paramfile, isedfit, params=params, $
+            supergrid_paramfile=supergrid_paramfile, thissupergrid=thissupergrid[ii], $
+            isedfit_dir=isedfit_dir, montegrids_dir=montegrids_dir, $
+            galaxy=galaxy1, outprefix=outprefix, psfile=psfile1, index=index, clobber=clobber, $
+            xrange=in_xrange, yrange=in_yrange, xlog=xlog
        endfor
        return
     endif
 
 ; allow the user to overwrite PSFILE
-    fp = isedfit_filepaths(params,super=super,outprefix=outprefix,$
-      isedpath=isedpath,isedfit_sfhgrid_dir=isedfit_sfhgrid_dir)
+    fp = isedfit_filepaths(params,supergrid_paramfile=supergrid_paramfile,$
+      thissupergrid=thissupergrid,isedfit_dir=isedfit_dir,montegrids_dir=montegrids_dir,$
+      outprefix=outprefix)
     if (n_elements(psfile1) eq 0) then $
-      psfile = isedpath+strtrim(fp.qaplot_psfile,2) else $
+      psfile = isedfit_dir+strtrim(fp.qaplot_psfile,2) else $
         psfile = psfile1
     if file_test(psfile+'.gz',/regular) and $
       (keyword_set(clobber) eq 0) then begin
@@ -104,8 +116,9 @@ pro isedfit_qaplot, paramfile, isedfit, params=params, super=super, isedpath=ise
     filtinfo = im_filterspecs(filterlist=filterlist)
     nfilt = n_elements(filterlist)
 
-    model = isedfit_restore(paramfile,isedfit,params=params,super=super,$
-      isedpath=isedpath,index=index,isedfit_sfhgrid_dir=isedfit_sfhgrid_dir,$
+    model = isedfit_restore(isedfit_paramfile,isedfit,params=params,$
+      isedfit_dir=isedfit_dir,supergrid_paramfile=supergrid_paramfile,$
+      thissupergrid=thissupergrid,montegrids_dir=montegrids_dir,index=index,$
       outprefix=outprefix,silent=silent)
     ngal = n_elements(isedfit)
 

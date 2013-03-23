@@ -112,7 +112,7 @@ function iunred_linedust, linedust, snrcut_linedust=snrcut_linedust, $
 
     if (n_elements(use_HaHb) ne 0L) then R_HaHb = use_HaHb else R_HaHb = 2.86
     if keyword_set(allow_r_min) then this_R_HaHb = R_HaHb_min else this_R_HaHb = R_HaHb
-    
+
     newtags = {hahb:  0.0, hahb_err:  -1.0, ebv_hahb: 0.0, $
       ebv_hahb_err: -1.0, ehbha: 0.0, ehbha_err: -1.0}
     newtags = replicate(newtags,nspec)
@@ -148,7 +148,7 @@ function iunred_linedust, linedust, snrcut_linedust=snrcut_linedust, $
 
              linenodust[goodsnr[keep]].ebv_hahb = get_ebv(linenodust[goodsnr[keep]].hahb,$
                decrement_err=linenodust[goodsnr[keep]].hahb_err,ebv_err=ebv_err,color=color,$
-               err_color=color_err,/HaHb,_extra=extra)
+               err_color=color_err,/HaHb,_extra=extra,use_HaHb=use_HaHb)
 
              linenodust[goodsnr[keep]].ebv_hahb_err = ebv_err
              linenodust[goodsnr[keep]].ehbha = color

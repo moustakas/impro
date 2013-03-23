@@ -6,6 +6,8 @@
 ;   Initialize the global parameter file for iSEDfit.
 ;
 ; INPUTS: 
+;   sfhgrid_paramfile - output parameter file name (e.g.,
+;     PREFIX+'_sfhgrid.par')
 ;
 ; OPTIONAL INPUTS: 
 ;   zlog - distribute redshifts logarithmically in the range
@@ -21,7 +23,8 @@
 ;   clobber - overwrite existing parameter file
 ; 
 ; OUTPUTS: 
-;   This code writes a parameter file called PREFIX+'_sfhgrid.par'.
+;   This code writes a parameter file called SFHGRID_PARAMETER.PAR and
+;   will also optionally return the PARAMS structure. 
 ; 
 ; COMMENTS:
 ;   IGM attenuation should only be necessary if the bluest filters
@@ -60,8 +63,8 @@ function init_sfhgrid
       trunctau: [-1.0,-1.0],$
       minage:           0.1,$ ; [Gyr]
       maxage:          13.0,$ ; [Gyr]
-      mintburst:        0.1,$
-      maxtburst:       13.0,$
+      mintburst:       -1.0,$
+      maxtburst:       -1.0,$
       pburst:          -1.0,$
       interval_pburst:  2.0,$ ; [Gyr]
       fractrunc:       -1.0,$
@@ -75,7 +78,7 @@ function init_sfhgrid
 return, params
 end    
 
-pro write_sfhgrid_paramfile, sfhgrid_paramfile, sfhgrid=sfhgrid, nage=nage, $
+pro write_sfhgrid_paramfile, sfhgrid_paramfile, params, sfhgrid=sfhgrid, nage=nage, $
   nmonte=nmonte, tau=tau, Z=Z, AV=AV, mu=mu, fburst=fburst, dtburst=dtburst, $
   trunctau=trunctau, minage=minage, maxage=maxage, mintburst=mintburst, $
   maxtburst=maxtburst, pburst=pburst, interval_pburst=interval_pburst, $
@@ -99,20 +102,63 @@ pro write_sfhgrid_paramfile, sfhgrid_paramfile, sfhgrid=sfhgrid, nage=nage, $
     if n_elements(nmonte) ne 0 then params.nmonte = nmonte
     if n_elements(mintburst) ne 0 then params.mintburst = mintburst
     if n_elements(maxtburst) ne 0 then params.maxtburst = maxtburst
+    if n_elements(pburst) ne 0 then params.pburst = pburst
+    if n_elements(interval_pburst) ne 0 then params.interval_pburst = interval_pburst
+    if n_elements(fractrunc) ne 0 then params.fractrunc = fractrunc
+    if n_elements(bursttype) ne 0 then params.bursttype = bursttype
+
+    if keyword_set(delayed) then begin
+       params.delayed = 1
+       params.oneovertau = 0
+    endif
+    params.oneovertau = keyword_set(oneovertau)
+    params.flatAV = keyword_set(flatAV)
+    params.flatmu = keyword_set(flatmu)
+    params.flatfburst = keyword_set(flatfburst)
+    params.flatdtburst = keyword_set(flatdtburst)
+
     if n_elements(minage) ne 0 then begin
        params.minage = minage
-       if n_elements(mintburst) eq 0 then params.mintburst = minage
+       if n_elements(mintburst) eq 0 and params.pburst gt 0 then params.mintburst = minage
     endif
     if n_elements(maxage) ne 0 then begin
        params.maxage = maxage
-       if n_elements(maxtburst) eq 0 then params.maxtburst = maxage
+       if n_elements(maxtburst) eq 0 and params.pburst gt 0 then params.maxtburst = maxage
     endif
-    if n_elements(pburst) ne 0 then params.pburst = pburst
-    if n_elements(interval_pburst) ne 0 then params.interval_pburst = interval_pburst
-;   ...
-;   ...
-;   ...
-;   ...
+
+    if params.delayed and params.oneovertau then begin
+       splog, 'DELAYED and ONEOVERTAU may not work well together; choose one!'
+       return
+    endif
+
+    if n_elements(tau) ne 0 then begin
+       if n_elements(tau) ne 2 then message, 'TAU must be a 2-element array!'
+       params.tau = tau
+    endif
+    if n_elements(AV) ne 0 then begin
+       if n_elements(AV) ne 2 then message, 'AV must be a 2-element array!'
+       params.AV = AV
+    endif
+    if n_elements(Z) ne 0 then begin
+       if n_elements(Z) ne 2 then message, 'Z must be a 2-element array!'
+       params.Z = Z
+    endif
+    if n_elements(mu) ne 0 then begin
+       if n_elements(mu) ne 2 then message, 'MU must be a 2-element array!'
+       params.mu = mu
+    endif
+    if n_elements(fburst) ne 0 then begin
+       if n_elements(fburst) ne 2 then message, 'FBURST must be a 2-element array!'
+       params.fburst = fburst
+    endif
+    if n_elements(dtburst) ne 0 then begin
+       if n_elements(dtburst) ne 2 then message, 'DTBURST must be a 2-element array!'
+       params.dtburst = dtburst
+    endif
+    if n_elements(trunctau) ne 0 then begin
+       if n_elements(trunctau) ne 2 then message, 'TRUNCTAU must be a 2-element array!'
+       params.trunctau = trunctau
+    endif
     
 ; overwrite or append?  assign unique SFHGRID numbers
     if keyword_set(append) then begin

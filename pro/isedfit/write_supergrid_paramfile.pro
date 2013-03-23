@@ -6,14 +6,26 @@
 ;   Initialize the supergrid parameter file for iSEDfit.
 ;
 ; INPUTS: 
-;   supergrid_paramfile - 
+;   supergrid_paramfile - output parameter file name (e.g.,
+;     PREFIX+'_supergrid.par')
+;   supergrid - supergrid number (e.g., 1) [NSUPER]
 ;
 ; OPTIONAL INPUTS: 
-;   supergrid - (default 1)
-;   sfhgrid - (default 1)
-;   imf - (default 'chab')
-;   synthmodels - (default 'fsps')
-;   redcurve - default (1 = charlot & fall)
+;   sfhgrid - SFHgrid number (see WRITE_SFHGRID_PARAMFILE)
+;     corresponding to each SUPERGRID [NSUPER]
+;   imf - scalar or NSUPER-element array indicating the IMF to use for
+;     each supergrid (default 'chab')
+;   synthmodels - scalar or NSUPER-element array indicating the
+;     population synthesis models to use for each supergrid (default
+;     'fsps') 
+;   redcurve - scalar or NSUPER-element array indicating the reddening
+;     curve to use for each supergrid (default 1); the current options
+;     are:  
+;       -1 = none
+;        0 = Calzetti 2000 
+;        1 = Charlot & Fall 2000
+;        2 = O'Donnell 1994 (i.e., standard Milky Way)
+;        3 = SMC
 ;
 ; KEYWORD PARAMETERS:
 ;   clobber - overwrite any existing parameter file

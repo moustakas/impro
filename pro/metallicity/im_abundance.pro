@@ -84,6 +84,22 @@
 ; General Public License for more details. 
 ;-
 
+function get_r23lines, line, ew=ew
+; support routine for when we call, e.g., MONTE_LOG12OH_KK04
+    r23lines = replicate({oii: [-999.0,-999.0], oiii: [-999.0,-999.0], $
+      hbeta: [-999.0,-999.0]},n_elements(line))
+    if keyword_set(ew) then begin
+       r23lines.oii = line.oii_3727_ew
+       r23lines.oiii = line.oiii_4959_5007_ew
+       r23lines.hbeta = line.h_beta_ew
+    endif else begin
+       r23lines.oii = line.oii_3727
+       r23lines.oiii = line.oiii_4959_5007
+       r23lines.hbeta = line.h_beta
+    endelse
+return, r23lines
+end    
+
 function im_abundance, line, snrcut_abundance=snrcut_abundance, $
   ewalpha=ewalpha1, justew=justew, justflux=justflux, justratios=justratios, $
   nmonte=nmonte, getdensity=getdensity, use_4959=use_4959, silent=silent

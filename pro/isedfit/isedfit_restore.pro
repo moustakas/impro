@@ -54,29 +54,30 @@
 ; General Public License for more details. 
 ;-
 
-function isedfit_restore, paramfile, isedfit, params=params, isedpath=isedpath, $
-  super=super, index=index, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, outprefix=outprefix, $
-  flambda=flambda, fnu=fnu, nomodels=nomodels, noigm=noigm, silent=silent, $
-  in_isedfit=in_isedfit
+function isedfit_restore, paramfile, isedfit, params=params, isedfit_dir=isedfit_dir, $
+  supergrid_paramfile=supergrid_paramfile, thissupergrid=thissupergrid, $
+  montegrids_dir=montegrids_dir, index=index, outprefix=outprefix, flambda=flambda, $
+  fnu=fnu, nomodels=nomodels, noigm=noigm, silent=silent, in_isedfit=in_isedfit
 
     if (n_elements(paramfile) eq 0L) and (n_elements(params) eq 0) then begin
        doc_library, 'isedfit_restore'
        return, -1
     endif
 
-    if (n_elements(isedpath) eq 0) then isedpath = './'
+    if (n_elements(isedfit_dir) eq 0) then isedfit_dir = './'
     if (n_elements(params) eq 0) then params = $
       read_isedfit_paramfile(paramfile)
-    fp = isedfit_filepaths(params,outprefix=outprefix,super=super,$
-      isedpath=isedpath,isedfit_sfhgrid_dir=isedfit_sfhgrid_dir)
+    fp = isedfit_filepaths(params,supergrid_paramfile=supergrid_paramfile,$
+      thissupergrid=thissupergrid,isedfit_dir=isedfit_dir,montegrids_dir=montegrids_dir,$
+      outprefix=outprefix)
 
 ; restore the ISEDFIT output; optionally take ISEDFIT as an input
 ; structure
     if (n_elements(in_isedfit) eq 0L) then begin
-       if (file_test(fp.isedpath+fp.isedfit_outfile+'.gz',/regular) eq 0L) then $
+       if (file_test(fp.isedfit_dir+fp.isedfit_outfile+'.gz',/regular) eq 0L) then $
          message, 'ISEDFIT output not found!'
-       splog, 'Reading '+fp.isedpath+fp.isedfit_outfile+'.gz'
-       isedfit1 = mrdfits(fp.isedpath+fp.isedfit_outfile+'.gz',1,/silent)
+       splog, 'Reading '+fp.isedfit_dir+fp.isedfit_outfile+'.gz'
+       isedfit1 = mrdfits(fp.isedfit_dir+fp.isedfit_outfile+'.gz',1,/silent)
 
 ; only restore a subset of the objects    
        if (n_elements(index) eq 0L) then isedfit = isedfit1 else $

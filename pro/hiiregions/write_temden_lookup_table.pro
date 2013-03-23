@@ -123,7 +123,7 @@ pro write_temden_lookup_table, table, max_temp=max_temp, min_temp=min_temp, $
 
 ; write out    
     
-    tablefile = getenv('IMPRO_DIR')+'/im_nebular/temden_table.fits'
+    tablefile = getenv('IMPRO_DIR')+'/etc/temden_table.fits'
     if file_test(tablefile,/regular) and (not keyword_set(force)) then begin
        splog, 'Overwrite '+tablefile+' [Y/N]? '
        cc = get_kbrd(1)

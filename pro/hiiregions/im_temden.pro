@@ -96,7 +96,7 @@ function im_temden, ionlist, ratio, ratio_err=ratio_err, $
 ; has changed on disk; see WRITE_TEMDEN_LOOKUP_TABLE for more details 
 
     if (n_elements(temden_table) eq 0L) then begin
-       temden_table_file = getenv('IMPRO_DIR')+'/im_nebular/temden_table.fits'
+       temden_table_file = getenv('IMPRO_DIR')+'/etc/temden_table.fits'
        if (file_test(temden_table_file,/regular) eq 0L) then begin
           splog, 'TEMDEN lookup table '+temden_table_file+' not found.'
           return, -1L

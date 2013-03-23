@@ -95,7 +95,6 @@ function im_compute_te, data, nmonte=nmonte, snrcut=snrcut
     for iobj = 0L, nobject-1L do begin
 
 ; compute the [S II] line ratio
-       
        if tag_exist(data,'SII_6716') and tag_exist(data,'SII_6731') then begin
 
           if (data[iobj].sii_6716[0]/data[iobj].sii_6716[1] gt snrcut) and $
@@ -113,7 +112,6 @@ function im_compute_te, data, nmonte=nmonte, snrcut=snrcut
        endif else sii_ratio_err = -2.0
        
 ; compute the (density-dependent) [O II] line ratio
-       
        if tag_exist(data,'OII_3726') and tag_exist(data,'OII_3729') then begin
 
           if (data[iobj].oii_3726[0]/data[iobj].oii_3726[1] gt snrcut) and $
