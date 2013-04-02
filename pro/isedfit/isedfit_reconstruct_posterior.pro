@@ -10,7 +10,7 @@
 ;
 ; OPTIONAL INPUTS:
 ;   params - iSEDfit parameter data structure (over-rides PARAMFILE) 
-;   isedpath - I/O path
+;   isedfit_dir - I/O path
 ;
 ; KEYWORD PARAMETERS:
 ;   maxold - see ISEDFIT
@@ -53,39 +53,53 @@
 ; General Public License for more details. 
 ;-
 
-function isedfit_reconstruct_posterior, paramfile, post=post, params=params, $
-  super=super, isedpath=isedpath, index=index, isedfit_sfhgrid_dir=isedfit_sfhgrid_dir, $
+function isedfit_reconstruct_posterior, isedfit_paramfile, post=post, params=params, $
+  supergrid_paramfile=supergrid_paramfile, thissupergrid=thissupergrid, $
+  isedfit_dir=isedfit_dir, montegrids_dir=montegrids_dir, index=index, $
   outprefix=outprefix, age=age, sfrage=sfrage, tau=tau, Z=Z, av=av, nburst=nburst, $
   sfr0=sfr0, sfr100=sfr100, b100=b100, mgal=mgal, chunkindx=chunkindx, $
   modelindx=modelindx, indxage=ageindx, bigsfr0=bigsfr, bigmass=bigmass, bigsfrage=bigsfrage
 
-    nsuper = n_elements(super)
-    if nsuper eq 0 or ((n_elements(paramfile) eq 0) and $
-      (n_elements(params) eq 0)) then begin
+    if n_elements(isedfit_paramfile) eq 0 and n_elements(params) eq 0 then begin
        doc_library, 'isedfit_reconstruct_posterior'
        return, -1
     endif
 
-    if (n_elements(isedpath) eq 0) then isedpath = './'
+    if (n_elements(isedfit_dir) eq 0) then isedfit_dir = './'
+    if (n_elements(montegrids_dir) eq 0) then montegrids_dir = isedfit_dir+'montegrids/'
     if (n_elements(params) eq 0) then params = $
-      read_isedfit_paramfile(paramfile)
-    fp = isedfit_filepaths(params,outprefix=outprefix,isedpath=isedpath,$
-      super=super,isedfit_sfhgrid_dir=isedfit_sfhgrid_dir)
+      read_isedfit_paramfile(isedfit_paramfile)
+
+; read the required SUPERGRID parameter file
+    if n_elements(supergrid_paramfile) eq 0 then begin
+       splog, 'SUPERGRID parameter file required'
+       return, -1
+    endif
+
+    if n_elements(thissupergrid) eq 0 then begin
+       splog, 'THISSUPERGRID must be specified!'
+       return, -1
+    endif
+    super = read_supergrid_paramfile(supergrid_paramfile,supergrid=thissupergrid)
+
+    fp = isedfit_filepaths(params,supergrid_paramfile=supergrid_paramfile,$
+      thissupergrid=thissupergrid,isedfit_dir=isedfit_dir,montegrids_dir=montegrids_dir,$
+      outprefix=outprefix)
 
 ; restore the POSTERIOR output if not passes
     if (n_elements(post) eq 0L) then begin
-       if (file_test(fp.isedpath+fp.post_outfile+'.gz',/regular) eq 0L) then $
+       if (file_test(fp.isedfit_dir+fp.post_outfile+'.gz',/regular) eq 0L) then $
          message, 'POSTERIOR output not found!'
-       splog, 'Reading '+fp.isedpath+fp.post_outfile+'.gz'
-       post = mrdfits(fp.isedpath+fp.post_outfile+'.gz',1,/silent,rows=index)
+       splog, 'Reading '+fp.isedfit_dir+fp.post_outfile+'.gz'
+       post = mrdfits(fp.isedfit_dir+fp.post_outfile+'.gz',1,/silent,rows=index)
     endif
     ngal = n_elements(post)
 
 ;   if (n_elements(isedfit) eq 0L) then begin
-;      if (file_test(fp.isedpath+fp.isedfit_outfile+'.gz',/regular) eq 0L) then $
+;      if (file_test(fp.isedfit_dir+fp.isedfit_outfile+'.gz',/regular) eq 0L) then $
 ;        message, 'ISEDFIT output not found!'
-;      splog, 'Reading '+fp.isedpath+fp.isedfit_outfile+'.gz'
-;      isedfit = mrdfits(fp.isedpath+fp.isedfit_outfile+'.gz',1,/silent,rows=index)
+;      splog, 'Reading '+fp.isedfit_dir+fp.isedfit_outfile+'.gz'
+;      isedfit = mrdfits(fp.isedfit_dir+fp.isedfit_outfile+'.gz',1,/silent,rows=index)
 ;   endif
     
 ; need all the chunks in memory!

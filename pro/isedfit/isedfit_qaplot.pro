@@ -146,8 +146,8 @@ pro isedfit_qaplot, isedfit_paramfile, isedfit, params=params, $
     endelse 
     
 ; generate the QA-plot
-    xtitle1 = 'Observed Wavelength (\AA)'
-    xtitle2 = 'Rest Wavelength (\AA)'
+    xtitle1 = 'Observed-Frame Wavelength (\AA)'
+    xtitle2 = 'Rest-Frame Wavelength (\AA)'
     ytitle1 = 'm_{AB}'
 
     im_plotconfig, 0, pos, psfile=psfile, ymargin=[1.0,1.1], height=5
@@ -245,18 +245,20 @@ pro isedfit_qaplot, isedfit_paramfile, isedfit, params=params, $
           label = [$
             'log (M/M'+sunsymbol()+') = '+strtrim(string(isedfit[igal].mass,format='(F12.2)'),2)+$
             ' ('+strtrim(string(isedfit[igal].mass_50,format='(F12.2)'),2)+')',$
-            'A_{V} = '+strtrim(string(isedfit[igal].av*isedfit[igal].mu,format='(F12.3)'),2)+$
-            ' ('+strtrim(string(isedfit[igal].av_50*isedfit[igal].mu_50,format='(F12.3)'),2)+')',$
-            'Z/Z'+sunsymbol()+' = '+strtrim(string(isedfit[igal].Z/0.02,format='(F12.2)'),2)+$
-            ' ('+strtrim(string(isedfit[igal].Z_50/0.02,format='(F12.2)'),2)+')',$
+            'log SFR_{100} = '+strtrim(string(isedfit[igal].sfr100,format='(F12.2)'),2)+$
+            ' ('+strtrim(string(isedfit[igal].sfr100_50,format='(F12.2)'),2)+') M'+sunsymbol()+' yr^{-1}',$
+            'A_{V} = '+strtrim(string(isedfit[igal].av*isedfit[igal].mu,format='(F12.2)'),2)+$
+            ' ('+strtrim(string(isedfit[igal].av_50*isedfit[igal].mu_50,format='(F12.2)'),2)+') mag',$
             '\tau = '+strtrim(string(isedfit[igal].tau,format='(F12.1)'),2)+$
             ' ('+strtrim(string(isedfit[igal].tau_50,format='(F12.2)'),2)+') Gyr',$
             'Age = '+strtrim(string(isedfit[igal].age,format='(F12.2)'),2)+$
             ' ('+strtrim(string(isedfit[igal].age_50,format='(F12.2)'),2)+') Gyr',$
-            'log \psi_{100} = '+strtrim(string(isedfit[igal].sfr100,format='(F12.3)'),2)+$
-            ' ('+strtrim(string(isedfit[igal].sfr100_50,format='(F12.3)'),2)+') M'+sunsymbol()+' yr^{-1}',$
-            'b_{100} = '+strtrim(string(isedfit[igal].b100,format='(F12.3)'),2)+$
-            ' ('+strtrim(string(isedfit[igal].b100_50,format='(F12.3)'),2)+')']
+            'Age_{SFR} = '+strtrim(string(isedfit[igal].sfrage,format='(F12.2)'),2)+$
+            ' ('+strtrim(string(isedfit[igal].sfrage_50,format='(F12.2)'),2)+') Gyr',$
+            'Z/Z'+sunsymbol()+' = '+strtrim(string(isedfit[igal].Z/0.02,format='(F12.2)'),2)+$
+            ' ('+strtrim(string(isedfit[igal].Z_50/0.02,format='(F12.2)'),2)+')']
+;           'b_{100} = '+strtrim(string(isedfit[igal].b100,format='(F12.3)'),2)+$
+;           ' ('+strtrim(string(isedfit[igal].b100_50,format='(F12.3)'),2)+')']
           legend, textoidl(label), /left, /top, box=0, spacing=1.7, charsize=1.1, margin=0
           label = textoidl([strtrim(repstr(galaxy[igal],'_',' '),2),$
             'z = '+strtrim(string(zobj,format='(F12.4)'),2),'\chi_{\nu}^{2} = '+$
