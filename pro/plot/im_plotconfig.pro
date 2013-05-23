@@ -364,7 +364,8 @@ pro im_plotconfig, plotnum, position, psfile=psfile, psclose=psclose, $
              endif else begin
                 if keyword_set(pdf) or keyword_set(keynote) then begin
                    pdffile = repstr(repstr(psfile,'.eps','.pdf'),'.ps','.pdf')
-                   spawn, 'ps2pdf -dEPSFitPage '+psfile+' '+pdffile, /sh
+; dEPSCrop respects the bounding box
+                   spawn, 'ps2pdf -dEPSFitPage -dEPSCrop '+psfile+' '+pdffile, /sh
                 endif
                 if keyword_set(png) then begin
                    pngfile = repstr(repstr(psfile,'.eps','.png'),'.ps','.png')
