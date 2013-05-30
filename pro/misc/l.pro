@@ -8,6 +8,6 @@
 ;-
 
 pro l
-spawn, 'ls -l | more', /sh
+spawn, 'ls -lG | grep -v "~" | more', /sh
 return
 end

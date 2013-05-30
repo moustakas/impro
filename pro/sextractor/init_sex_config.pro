@@ -18,7 +18,7 @@
 function init_sex_config, ncopies
 ; jm08aug06nyu - support routine for IM_SEX
 
-    if (n_elements(ncopies) eq 0L) then ncopies = 1L
+    if (n_elements(ncopies) eq 0) then ncopies = 1
 
     etcpath = getenv('IMPRO_DIR')+'/etc/'
     config = {$

@@ -37,8 +37,9 @@
 ;                       files
 ;       jm04nov05uofa - updated the HEADER string array from 500 to
 ;                       1000 elements
+;       jm13may27siena - use GZ_MRDFITS in lieu of READFITS()
 ;
-; Copyright (C) 2001-2002, 2004, John Moustakas
+; Copyright (C) 2001-2002, 2004, 2013, John Moustakas
 ; 
 ; This program is free software; you can redistribute it and/or modify 
 ; it under the terms of the GNU General Public License as published by 
@@ -70,12 +71,12 @@ function im_fits_cube, flist, path=path, _extra=extra
     
 ; read in the first image
 
-    if file_test(flist[0],/regular) eq 0L then begin
+    if file_test(flist[0]+'*',/regular) eq 0L then begin
        splog, 'FITS file '+flist[0]+' not found.'
        return, -1L
     endif
 
-    image = readfits(flist[0],head,_extra=extra,/silent)
+    image = gz_mrdfits(flist[0],0,head,_extra=extra,/silent)
     ndim = size(image,/n_dim)
     imsz = size(image,/dim)
     
@@ -88,13 +89,17 @@ function im_fits_cube, flist, path=path, _extra=extra
 ; store the headers in an array of pointers
 
     if ndim eq 1L then $
-      template = {fname: '', image: make_array(imsz[0],/float), header: strarr(1000)} else $
-      template = {fname: '', image: make_array(imsz[0],imsz[1],/float), header: strarr(1000)}
+      template = {fname: '', image: make_array(imsz[0],/float), nhead: 0, $
+      header: strarr(1000)} else $
+      template = {fname: '', image: make_array(imsz[0],imsz[1],/float), nhead: 0, $
+      header: strarr(1000)}
     cube = replicate(template,nflist)
 
+    nhead = n_elements(head)
     cube[0].fname = flist[0]
     cube[0].image = image
-    cube[0].header[0:n_elements(head)-1L] = head
+    cube[0].nhead = nhead
+    cube[0].header[0:nhead-1] = head
 
     for i = 1L, nflist-1L do begin
 
@@ -103,7 +108,7 @@ function im_fits_cube, flist, path=path, _extra=extra
           return, -1L
        endif
     
-       image = readfits(flist[i],head,_extra=extra,/silent)
+       image = gz_mrdfits(flist[i],0,head,_extra=extra,/silent)
 
        szt = size(image,/dim)
        sdim = size(image,/n_dim)
@@ -125,9 +130,10 @@ function im_fits_cube, flist, path=path, _extra=extra
           endif
        endelse 
 
+       nhead = n_elements(head)
        cube[i].fname = flist[i]
        cube[i].image = image
-       cube[i].header[0:n_elements(head)-1L] = head
+       cube[i].header[0:nhead-1] = head
        
     endfor
 
