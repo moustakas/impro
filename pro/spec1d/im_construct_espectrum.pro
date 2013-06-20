@@ -64,6 +64,23 @@
 ; General Public License for more details. 
 ;-
 
+function gconvolve, x, sigma, _extra=extra
+; gaussian convolution
+; taken from VDISPFIT
+
+; special case for no smoothing
+
+    if (sigma EQ 0) then return, x
+
+    ksize = round(4*sigma+1) * 2
+    xx = findgen(ksize) - ksize/2
+
+    kernel = exp(-xx^2 / (2*sigma^2))
+    kernel = kernel / total(kernel)
+
+return, convol(x,kernel,_extra=extra)
+end
+
 function onegauss, xval, pp, sigmares=sigmares
 ; the sigma line-width is comprised of the fixed spectral resolution
 ; width and the variable intrinsic line width
@@ -240,8 +257,11 @@ function im_construct_espectrum, wave, sfr=sfr, redshift=redshift, oiiha=oiiha, 
        restespec = espectrum*(1+redshift)
        norm = max(restespec)
 
-       linefit = ilinefit(restespec/norm,restwave,linewave,vsigres,$
-         invvar=espectrum*0.0+0.1,specfit=specfit,zguess=0.0)
+       
+       
+       linefit = ilinefit(restwave,restespec/norm,espectrum*0.0+0.1,$
+         linewave,vsigres,$
+         ,specfit=specfit,zguess=0.0)
 ;      linefit = ilinefit(espectrum/norm,wave,linewave,vsigres,$
 ;    invvar=espectrum*0.0+0.1,specfit=specfit,zguess=redshift)
 

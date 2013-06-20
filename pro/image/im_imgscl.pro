@@ -58,6 +58,7 @@ function im_imgscl, image, losig=losig, hisig=hisig, boxfrac=boxfrac, log=log, $
     xbox = fix(xsize*boxfrac)/2L
     ybox = fix(ysize*boxfrac)/2L
 
+    im = image
     if keyword_set(log) then im = alog10(float(image))
     if keyword_set(sqrroot) then im = sqrt(float(image>0))
 

@@ -123,18 +123,18 @@ pro airmass_plots, date, ra, dec, object=object, obsname=obsname, $
     for iobj = 0L, nobj-1L do begin
        galaxy = strtrim(object[iobj],2)
        if (size(ra[iobj],/type) eq 7) then begin ; RA [degree]
-          radd = 15.0*im_hms2dec(ra[iobj])
+          radd = 15.0*hms2dec(ra[iobj])
           rastr = ra[iobj]
        endif else begin
           radd = ra[iobj]
-          rastr = im_dec2hms(ra[iobj]/15.0,/colon)
+          rastr = dec2hms(ra[iobj]/15.0,/colon)
        endelse
        if (size(dec[iobj],/type) eq 7) then begin ; DEC [degree]
-          ddec = im_hms2dec(dec[iobj])
+          ddec = hms2dec(dec[iobj])
           decstr = dec[iobj]
        endif else begin
           ddec = dec[iobj]
-          decstr = im_dec2hms(dec[iobj],/colon)
+          decstr = dec2hms(dec[iobj],/colon)
        endelse
 
 ; calculate sunset time and sunrise time
@@ -147,7 +147,7 @@ pro airmass_plots, date, ra, dec, object=object, obsname=obsname, $
        best_jd = jd[mindx]
        caldat, best_jd, month, day, $
          year, hour, minute, second
-       best_time = strmid(strjoin(strsplit((im_dec2hms($
+       best_time = strmid(strjoin(strsplit((dec2hms($
          hour+minute/(60D)+second/(3600D)))[0],' ',/extract),':'),0,5)
        thedate = strjoin(strcompress(date,/remove),'-')
 

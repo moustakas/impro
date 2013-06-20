@@ -60,18 +60,24 @@ function im_stats, array, verbose=verbose, baremin=baremin, $
     
     farray = array[finite]
 
-    djs_iterstat, farray, mean=amean_rej, median=amedian_rej, $
-      sigma=asigma_rej, mask=mask, sigrej=sigrej, _extra=extra
-
-    good = where(mask,ngood)
-    
-    amin = min(array,/nan,_extra=extra)
-    amax = max(array,/nan,_extra=extra)
-    amean = mean(array,/nan,_extra=extra)
-    amedian = median(array,_extra=extra)
-    asigma = stddev(array,/nan)
-
+    amin = min(farray,_extra=extra)
+    amax = max(farray,_extra=extra)
+    amean = mean(farray,_extra=extra)
+    amedian = djs_median(farray,_extra=extra)
+    asigma = djsig(farray)
     amad = total(abs(farray-amedian))/float(nfinite)
+
+    if narray eq 1 then begin
+       amean_rej = amean
+       amedian_rej = amedian
+       asigma_rej = asigma
+       good = 0 & ngood = 1
+    endif else begin
+       djs_iterstat, farray, mean=amean_rej, median=amedian_rej, $
+         sigma=asigma_rej, mask=mask, sigrej=sigrej, _extra=extra
+       good = where(mask,ngood)
+    endelse
+    
     
     if (ngood ne 0L) then begin
        aminrej = min(array[good],/nan)
@@ -84,14 +90,20 @@ function im_stats, array, verbose=verbose, baremin=baremin, $
 ; compute the lower and upper intervals that include 68% and 95% of
 ; the data    
     histarray = farray[sort(farray)]
-    linterp, findgen(nfinite)/float(nfinite), histarray, [0.025,0.16,0.84,0.975], dist
-
-    sig68lo = dist[1]
-    sig68up = dist[2]
-    sig95lo = dist[0]
-    sig95up = dist[3]
-
-    sig68mean = (dist[2]-dist[1]) / 2.0 ; mean 68% interval
+    if narray gt 1 then begin
+       linterp, findgen(nfinite)/float(nfinite), histarray, [0.025,0.16,0.84,0.975], dist
+       sig68lo = dist[1]
+       sig68up = dist[2]
+       sig95lo = dist[0]
+       sig95up = dist[3]
+       sig68mean = (dist[2]-dist[1]) / 2.0 ; mean 68% interval
+    endif else begin
+       sig68lo = 0.0
+       sig68up = 0.0
+       sig95lo = 0.0
+       sig95up = 0.0
+       sig68mean = 0.0
+    endelse
     
     stats = {$
       min:        amin,        $

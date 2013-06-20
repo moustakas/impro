@@ -40,8 +40,9 @@
 ; General Public License for more details. 
 ;-
 
-function mf_schechter, logmass, phistar, logmstar, alpha, schechter=schechter
-
+function mf_schechter, logmass, phistar, logmstar, alpha, $
+  schechter=schechter, numden=numden, rhoden=rhoden
+    
     if (n_elements(logmass) eq 0L) then begin
        doc_library, 'mf_schechter'
        return, -1
@@ -71,5 +72,12 @@ function mf_schechter, logmass, phistar, logmstar, alpha, schechter=schechter
     mratio = 10D^(logmass-use_logmstar)
     model = alog(10)*exp(-mratio)*use_phistar*mratio^(use_alpha+1)
 
+; integrate the number and mass density
+;   if arg_present(numden) then numden = use_phistar*igamma(use_alpha+1,10D^((7D)-use_logmstar))
+;   if arg_present(numden) then numden = use_phistar*gamma(use_alpha+1)*$
+;     (1-igamma(use_alpha+1,10D^((5D)-use_logmstar)))
+;   if arg_present(rhoden) then rhoden = use_phistar*gamma(use_alpha+2)*$
+;     (1-igamma(use_alpha+2,10D^((5D)-use_logmstar)))
+    
 return, model
 end

@@ -18,9 +18,13 @@
 ;     REGIONSFILE was produced 
 ;	
 ; KEYWORD PARAMETERS:
+;   inverse - return the indices of the pixels *outside* the mask 
 ;
 ; OUTPUTS:
 ;   indices - indices of the pixels enclosed by the polygon
+;
+; OUTPUTS:
+;   xvert, yvert - X and Y vertices (pixels)
 ;
 ; COMMENTS:
 ;   If the regions file is in celestial (ra,dec) coordinates then the
@@ -53,7 +57,7 @@
 ;-
 
 function ds9polygon_indices, regionsfile, xsize=xsize, ysize=ysize, $
-  header=header
+  header=header, xvert=xx, yvert=yy, inverse=inverse
 
     if n_elements(regionsfile) eq 0 then begin
        doc_library, 'ds9polygon_indices'
@@ -85,11 +89,11 @@ function ds9polygon_indices, regionsfile, xsize=xsize, ysize=ysize, $
           xy = double(strsplit(strmid(str,8,strlen(str)-9),',',/extract))
           nvert = n_elements(xy)/2
           ind = lindgen(nvert)
-          xx1 = xy[ind*2]-1
-          yy1 = xy[ind*2+1]-1
+          xx1 = xy[ind*2]
+          yy1 = xy[ind*2+1]
           if nhead eq 0 then begin ; no header
-             xx = xx1
-             yy = yy1
+             xx = xx1-1 ; ds9 is 1-indexed
+             yy = yy1-1
           endif else begin ; has header
              extast, header, astr
              xsize = astr.naxis[0]
@@ -105,6 +109,11 @@ function ds9polygon_indices, regionsfile, xsize=xsize, ysize=ysize, $
              endelse
           endelse
           indices = polyfillv(xx,yy,xsize,ysize)
+          if keyword_set(inverse) then begin
+             all = lindgen(float(xsize)*float(ysize))
+             remove, indices, all
+             indices = temporary(all)
+          endif
        endif 
     endwhile
     free_lun, lun

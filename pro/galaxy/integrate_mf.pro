@@ -311,7 +311,9 @@ function integrate_mf, mf_vmax, mingal=mingal, minmass=minmass1, maxmass=maxmass
 ;      result.rho_model = schechter.phistar*10D^schechter.logmstar*gamma(schechter.alpha+2)*$
 ;        (1-igamma(schechter.alpha+2,10D^(minmass-schechter.logmstar)))
 ;      result.num_model = schechter.phistar*gamma(schechter.alpha+2)*$
-;        (1-igamma(schechter.alpha+2,10D^(minmass-schechter.logmstar)))
+;       (1-igamma(schechter.alpha+1,10D^(minmass-schechter.logmstar)))
+ ;     print, schechter.phistar*gamma(schechter.alpha+2)*$
+;       (1-igamma(schechter.alpha+2,10D^(minmass-schechter.logmstar)))
 ;      result.rhotot_model = schechter.phistar*10D^schechter.logmstar*gamma(schechter.alpha+2)
     endif 
     

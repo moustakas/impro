@@ -60,7 +60,7 @@ pro write_ds9_regionfile, ra, dec, filename=filename, symbol=symbol, $
     
     openw, lun, filename, /get_lun
     printf, lun , 'global color='+color+' font="helvetica 10 normal" '+$
-      'select=1 highlite=1 edit=1 move=1 delete=1 include=1 fixed=0 source'
+      'select=1 highlite=1 edit=1 move=0 width=3 delete=0 include=1 fixed=0 source'
     printf, lun, 'fk5'
     for ii = 0L, nobj-1L do printf, lun, 'point('+string(ra[ii],$
       format='(E16.10)')+','+string(dec[ii],format='(E17.10)')+$
