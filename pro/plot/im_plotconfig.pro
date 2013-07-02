@@ -29,6 +29,7 @@
 ;     file 
 ;   pskeep - when using /PDF do not delete the postscript file 
 ;   silent - do not print messages to the screen
+;   landscape - 
 ;
 ; OUTPUTS: 
 ;   position - position vector to pass to PLOT
@@ -62,8 +63,44 @@ pro im_plotconfig, plotnum, position, psfile=psfile, psclose=psclose, $
   xmargin=xmargin, ymargin=ymargin, xspace=xspace, yspace=yspace, $
   width=width, height=height, xpage=xpage, ypage=ypage, keynote=keynote, $
   blackwhite=blackwhite, gzip=gzip, pdf=pdf, png=png, pskeep=pskeep, $
-  silent=silent, _extra=extra
-    
+  silent=silent, landscape=landscape1, _extra=extra
+
+; close the PS file 
+    if keyword_set(psclose) then begin
+       if (!d.name ne 'X') then begin
+          device, /close
+          set_plot, 'X'
+;         !p.font = -1 ; sans-serif fonts
+          im_plotfaves
+;         !p.color = defcolor
+          if keyword_set(png) or keyword_set(pdf) or keyword_set(keynote) then begin
+             if (n_elements(psfile) eq 0) then begin
+                splog, 'You must pass PSFILE to generate a PDF or PNG!' 
+             endif else begin
+; fix the landscape business
+                if keyword_set(landscape1) then cgfixps, psfile, /quiet
+                if keyword_set(pdf) or keyword_set(keynote) then begin
+                   pdffile = repstr(repstr(psfile,'.eps','.pdf'),'.ps','.pdf')
+; dEPSCrop respects the bounding box
+                   spawn, 'ps2pdf -dEPSFitPage -dEPSCrop '+psfile+' '+pdffile, /sh
+                endif
+                if keyword_set(png) then begin
+                   pngfile = repstr(repstr(psfile,'.eps','.png'),'.ps','.png')
+                   spawn, 'convert '+psfile+' '+pngfile, /sh
+                endif
+                if (keyword_set(pskeep) eq 0) then rmfile, psfile
+             endelse
+             return
+          endif 
+          if keyword_set(gzip) and (n_elements(psfile) ne 0) then begin
+             spawn, 'gzip -f '+psfile, /sh
+             return
+          endif
+       endif else splog, 'Postscript device not open!'
+       return
+    endif 
+
+; make the plot    
     if (n_elements(plotnum) eq 0) then plotnum = 0
     case plotnum of
        0: begin ; 1x1 portrait
@@ -349,38 +386,6 @@ pro im_plotconfig, plotnum, position, psfile=psfile, psclose=psclose, $
     position = im_getposition(nx=nx1,ny=ny1,xmargin=xmargin1,$
       ymargin=ymargin1,width=width1,height=height1,xspace=xspace1,$
       yspace=yspace1,xpage=xpage1,ypage=ypage1,landscape=landscape1)
-
-; close the PS file    
-    if keyword_set(psclose) then begin
-       if (!d.name ne 'X') then begin
-          device, /close
-          set_plot, 'X'
-;         !p.font = -1 ; sans-serif fonts
-          im_plotfaves
-;         !p.color = defcolor
-          if keyword_set(png) or keyword_set(pdf) or keyword_set(keynote) then begin
-             if (n_elements(psfile) eq 0) then begin
-                splog, 'You must pass PSFILE to generate a PDF or PNG!' 
-             endif else begin
-                if keyword_set(pdf) or keyword_set(keynote) then begin
-                   pdffile = repstr(repstr(psfile,'.eps','.pdf'),'.ps','.pdf')
-; dEPSCrop respects the bounding box
-                   spawn, 'ps2pdf -dEPSFitPage -dEPSCrop '+psfile+' '+pdffile, /sh
-                endif
-                if keyword_set(png) then begin
-                   pngfile = repstr(repstr(psfile,'.eps','.png'),'.ps','.png')
-                   spawn, 'convert '+psfile+' '+pngfile, /sh
-                endif
-                if (keyword_set(pskeep) eq 0) then rmfile, psfile
-             endelse
-             return
-          endif 
-          if keyword_set(gzip) and (n_elements(psfile) ne 0) then begin
-             spawn, 'gzip -f '+psfile, /sh
-             return
-          endif
-       endif else splog, 'Postscript device not open!'
-    endif
 
 ; write out
     if (n_elements(psfile) ne 0) and (keyword_set(psclose) eq 0) then begin

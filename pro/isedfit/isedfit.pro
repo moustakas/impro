@@ -60,6 +60,7 @@
 ;     from the posterior distribution function, which can be used to
 ;     rebuild the posterior distributions of any of the output
 ;     parameters 
+;   isedfit_outfile - output file name for ISEDFIT
 ;
 ; COMMENTS:
 ;   WARNING: maggies, ivarmaggies, and zobj are copied into the output
@@ -218,12 +219,12 @@ return, isedfit
 end
 
 pro isedfit, isedfit_paramfile, maggies, ivarmaggies, zobj, isedfit, $
-  isedfit_post=isedfit_post, params=params, supergrid_paramfile=supergrid_paramfile, $
-  thissupergrid=thissupergrid, sfhgrid_paramfile=sfhgrid_paramfile, $
-  nminphot=nminphot, galchunksize=galchunksize, outprefix=outprefix, $
-  isedfit_dir=isedfit_dir, montegrids_dir=montegrids_dir, index=index, $
-  allages=allages, write_chi2grid=write_chi2grid, silent=silent, $
-  nowrite=nowrite, clobber=clobber
+  isedfit_post=isedfit_post, params=params, isedfit_outfile=isedfit_outfile, $
+  supergrid_paramfile=supergrid_paramfile, thissupergrid=thissupergrid, $
+  sfhgrid_paramfile=sfhgrid_paramfile, nminphot=nminphot, $
+  galchunksize=galchunksize, outprefix=outprefix, isedfit_dir=isedfit_dir, $
+  montegrids_dir=montegrids_dir, index=index, allages=allages, $
+  write_chi2grid=write_chi2grid, silent=silent, nowrite=nowrite, clobber=clobber
 
     if n_elements(isedfit_paramfile) eq 0 and n_elements(params) eq 0 then begin
        doc_library, 'isedfit'
@@ -296,11 +297,11 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, zobj, isedfit, $
       thissupergrid=thissupergrid,isedfit_dir=isedfit_dir,montegrids_dir=montegrids_dir,$
       ngalaxy=ngal,ngalchunk=ngalchunk,galchunksize=galchunksize,outprefix=outprefix)
 
-    outfile = fp.isedfit_dir+fp.isedfit_outfile
-    if file_test(outfile+'.gz',/regular) and $
+    isedfit_outfile = fp.isedfit_dir+fp.isedfit_outfile
+    if file_test(isedfit_outfile+'.gz',/regular) and $
       (keyword_set(clobber) eq 0) and $
       (keyword_set(nowrite) eq 0) then begin
-       splog, 'Output file '+outfile+' exists; use /CLOBBER'
+       splog, 'Output file '+isedfit_outfile+' exists; use /CLOBBER'
        return
     endif
 
@@ -318,7 +319,7 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, zobj, isedfit, $
        isedfit[index] = isedfit1
        isedfit_post[index] = isedfit_post1
        if (keyword_set(nowrite) eq 0) then begin
-          im_mwrfits, isedfit, outfile, /clobber
+          im_mwrfits, isedfit, isedfit_outfile, /clobber
           im_mwrfits, isedfit_post, fp.isedfit_dir+fp.post_outfile, /clobber
        endif
        return
@@ -411,17 +412,17 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, zobj, isedfit, $
        isedfit_post[gthese] = temporary(temp_isedfit_post) ; pass-by-value
        if (keyword_set(silent) eq 0) and (gchunk eq 0) then begin
           splog, 'First GalaxyChunk = '+string((systime(1)-t0)/60.0,format='(G0)')+$
-            ' minutes, '+strtrim(string((memory(/high)-mem0)/1.07374D9,format='(F12.3)'),2)+' GB'
+            ' min, '+strtrim(string((memory(/high)-mem0)/1.07374D9,format='(F12.3)'),2)+' GB'
        endif 
     endfor ; close GalaxyChunk
     if (keyword_set(silent) eq 0) then begin
        splog, 'All GalaxyChunks = '+string((systime(1)-t1)/60.0,format='(G0)')+$
-         ' minutes, '+strtrim(string((memory(/high)-mem1)/1.07374D9,format='(F12.3)'),2)+' GB'
+         ' min, '+strtrim(string((memory(/high)-mem1)/1.07374D9,format='(F12.3)'),2)+' GB'
     endif
     
 ; write out the final structure and the full posterior distributions
     if (keyword_set(nowrite) eq 0) then begin
-       im_mwrfits, isedfit, outfile, silent=silent, /clobber
+       im_mwrfits, isedfit, isedfit_outfile, silent=silent, /clobber
        im_mwrfits, isedfit_post, fp.isedfit_dir+fp.post_outfile, silent=silent, /clobber
     endif
 

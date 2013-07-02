@@ -25,7 +25,7 @@ function redcurve2string, redcurve
     endif
     
     case redcurve of
-       -1: redcurvestring = ''
+       -1: redcurvestring = 'none'
        0: redcurvestring = 'calzetti'
        1: redcurvestring = 'charlot'
        2: redcurvestring = 'odonnell'

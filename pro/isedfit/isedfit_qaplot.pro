@@ -166,10 +166,10 @@ pro isedfit_qaplot, isedfit_paramfile, isedfit, params=params, $
           djs_plot, [0], [0], /nodata, xsty=1, ysty=1, yrange=yrange, $
             xtitle=xtitle1, ytitle=ytitle1, ytickname=replicate(' ',10), $
             position=pos        ; ymargin=[4,3], 
-          legend, ['No mass estimate available'], /left, /top, $
+          im_legend, ['No mass estimate available'], /left, /top, $
             box=0, spacing=1.5, charsize=1.6
           label = [strtrim(galaxy[igal],2),'z = '+strtrim(string(zobj,format='(F12.4)'),2)]
-          legend, label, /right, /bottom, box=0, spacing=1.5, charsize=1.6
+          im_legend, label, /right, /bottom, box=0, spacing=1.5, charsize=1.6
        endif else begin
           if (n_elements(in_xrange) eq 2) then xrange1 = in_xrange else begin
              xrange1 = [min(filtinfo.weff-1.3*filtinfo.fwhm),$
@@ -259,11 +259,11 @@ pro isedfit_qaplot, isedfit_paramfile, isedfit, params=params, $
             ' ('+strtrim(string(isedfit[igal].Z_50/0.02,format='(F12.2)'),2)+')']
 ;           'b_{100} = '+strtrim(string(isedfit[igal].b100,format='(F12.3)'),2)+$
 ;           ' ('+strtrim(string(isedfit[igal].b100_50,format='(F12.3)'),2)+')']
-          legend, textoidl(label), /left, /top, box=0, spacing=1.7, charsize=1.1, margin=0
+          im_legend, textoidl(label), /left, /top, box=0, spacing=1.7, charsize=1.1, margin=0
           label = textoidl([strtrim(repstr(galaxy[igal],'_',' '),2),$
             'z = '+strtrim(string(zobj,format='(F12.4)'),2),'\chi_{\nu}^{2} = '+$
             strtrim(string(isedfit[igal].chi2,format='(F12.2)'),2)])
-          legend, label, /right, /bottom, box=0, spacing=1.5, charsize=1.4, margin=0
+          im_legend, label, /right, /bottom, box=0, spacing=1.5, charsize=1.4, margin=0
        endelse
     endfor 
     im_plotconfig, psfile=psfile, /psclose, /pdf;, /gzip

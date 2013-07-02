@@ -9,6 +9,11 @@
 ;   isedfit_paramfile - parameter file name
 ;
 ; OPTIONAL INPUTS: 
+;   use_redshift - use this redshift array instead of constructing the
+;     redshift array from the parameters given in the
+;     ISEDFIT_PARAMFILE parameter file; useful for when you have a
+;     relatively sample of objects with well-determined redshifts
+;     spanning a wide redshift range [NZZ]
 ;
 ; OUTPUTS: 
 ;   params - data structure containing the specified parameters 
@@ -35,7 +40,7 @@
 ; General Public License for more details. 
 ;-
 
-function read_isedfit_paramfile, isedfit_paramfile
+function read_isedfit_paramfile, isedfit_paramfile, use_redshift=use_redshift
 
     if (file_test(isedfit_paramfile,/regular) eq 0) then $
       message, 'PARAMFILE '+isedfit_paramfile+' not found'
@@ -74,10 +79,19 @@ function read_isedfit_paramfile, isedfit_paramfile
     if (tag_exist(params,'maxold') eq 0) then params = $
       struct_addtags(params,{maxold: 0})
     
-; build the redshift array
-    if params.nzz eq 1 then params = struct_addtags(params,{redshift: 0D}) else $
-      params = struct_addtags(params,{redshift: dblarr(params.nzz)})
-    params.redshift = range(params.minz,params.maxz,params.nzz,log=params.zlog eq 1)
-    
+; build the redshift array, with the option of overwriting the default
+; parameters 
+    nzz = n_elements(use_redshift)
+    if nzz ne 0 then begin
+       params.nzz = nzz
+       params.minz = min(use_redshift)
+       params.maxz = max(use_redshift)
+       params = struct_addtags(params,{redshift: use_redshift})
+    endif else begin
+       if params.nzz eq 1 then params = struct_addtags(params,{redshift: 0D}) else $
+         params = struct_addtags(params,{redshift: dblarr(params.nzz)})
+       params.redshift = range(params.minz,params.maxz,params.nzz,log=params.zlog eq 1)
+    endelse
+
 return, params
 end

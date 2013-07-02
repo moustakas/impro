@@ -42,8 +42,9 @@
 ; General Public License for more details. 
 ;-
 
-function im_imgscl, image, losig=losig, hisig=hisig, boxfrac=boxfrac, log=log, $
-  sqrroot=sqrroot, negative=negative, topvalue=topvalue, minvalue=minvalue
+function im_imgscl, image, losig=losig, hisig=hisig, boxfrac=boxfrac, $
+  log=log, sqrroot=sqrroot, negative=negative, topvalue=topvalue, $
+  minvalue=minvalue, sigrej=sigrej
     
     imsize = size(image,/dimension)
     xsize = imsize[0] & xcen = xsize/2.0
@@ -54,6 +55,7 @@ function im_imgscl, image, losig=losig, hisig=hisig, boxfrac=boxfrac, log=log, $
     if (n_elements(boxfrac) eq 0L) then boxfrac = 0.20
     if (n_elements(topvalue) eq 0L) then topvalue = 239L ; !d.table_size-2
     if (n_elements(minvalue) eq 0L) then minvalue = -10L
+    if (n_elements(sigrej) eq 0) then sigrej = 5.0
     
     xbox = fix(xsize*boxfrac)/2L
     ybox = fix(ysize*boxfrac)/2L
@@ -62,8 +64,8 @@ function im_imgscl, image, losig=losig, hisig=hisig, boxfrac=boxfrac, log=log, $
     if keyword_set(log) then im = alog10(float(image))
     if keyword_set(sqrroot) then im = sqrt(float(image>0))
 
-    stats = im_stats(im,sigrej=5.0)
-    substats = im_stats(im[xcen-xbox+1L:xcen+xbox-1L,ycen-ybox+1L:ycen+ybox-1L],sigrej=5.0)
+    stats = im_stats(im,sigrej=sigrej)
+    substats = im_stats(im[xcen-xbox+1L:xcen+xbox-1L,ycen-ybox+1L:ycen+ybox-1L],sigrej=sigrej)
 
     mmin = stats.minrej
     mmax = stats.maxrej

@@ -22,6 +22,11 @@
 ;     grids can be found in ISEDFIT_DIR/MONTEGRIDS, or in
 ;     MONTEGRIDS_DIR
 ;   montegrids_dir - override ISEDFIT_DIR+'/'+MONTEGRIDS
+;   use_redshift - use this redshift array instead of constructing the
+;     redshift array from the parameters given in the
+;     ISEDFIT_PARAMFILE parameter file; useful for when you have a
+;     relatively sample of objects with well-determined redshifts
+;     spanning a wide redshift range [NZZ]
 ;
 ; KEYWORD PARAMETERS:
 ;   clobber - overwrite existing files of the same name (the default
@@ -63,7 +68,7 @@
 
 pro isedfit_models, isedfit_paramfile, params=params, supergrid_paramfile=supergrid_paramfile, $
   thissupergrid=thissupergrid, isedfit_dir=isedfit_dir, montegrids_dir=montegrids_dir, $
-  clobber=clobber
+  use_redshift=use_redshift, clobber=clobber
 
     if n_elements(isedfit_paramfile) eq 0 and n_elements(params) eq 0 then begin
        doc_library, 'isedfit_models'
@@ -75,7 +80,7 @@ pro isedfit_models, isedfit_paramfile, params=params, supergrid_paramfile=superg
     if (n_elements(isedfit_dir) eq 0) then isedfit_dir = './'
     if (n_elements(montegrids_dir) eq 0) then montegrids_dir = isedfit_dir+'montegrids/'
     if (n_elements(params) eq 0) then params = $
-      read_isedfit_paramfile(isedfit_paramfile)
+      read_isedfit_paramfile(isedfit_paramfile,use_redshift=use_redshift)
 
 ; read the SUPERGRID parameter file
     if n_elements(supergrid_paramfile) eq 0 then begin
