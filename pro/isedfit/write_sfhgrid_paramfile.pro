@@ -3,23 +3,18 @@
 ;   WRITE_SFHGRID_PARAMFILE()
 ;
 ; PURPOSE:
-;   Initialize the global parameter file for iSEDfit.
+;   Write the SFHgrid parameter file.
 ;
 ; INPUTS: 
 ;   sfhgrid_paramfile - output parameter file name (e.g.,
 ;     PREFIX+'_sfhgrid.par')
 ;
 ; OPTIONAL INPUTS: 
-;   zlog - distribute redshifts logarithmically in the range
-;     [MINZ,MAXZ]? [0=no, 1=yes] (default 0)
-;   h100 - Hubble constant relative to 100 km/s/Mpc (default 0.7)
-;   omega0 - matter density (default 0.3)
-;   omegal - vacuum energy density (default 0.7)
-;   igm - include IGM attenuation in all calculations? [0=no, 1=yes]
-;     (default 1)
-;   isedpath - full path name to the input and output files (default ./) 
+;   oiiihb - if /NEBULAR then include draw the [OIII]/H-beta emission
+;   line ratios from a uniform distribution
 ;
 ; KEYWORD PARAMETERS:
+;   nebular - include nebular emission lines
 ;   clobber - overwrite existing parameter file
 ; 
 ; OUTPUTS: 
@@ -27,10 +22,8 @@
 ;   will also optionally return the PARAMS structure. 
 ; 
 ; COMMENTS:
-;   IGM attenuation should only be necessary if the bluest filters
-;   under consideration lie blueward of 1215 A at the highest
-;   redshifts.  Note that some calculations are slower if IGM
-;   attenuation is included.
+;   Need error checking to be sure minima are smaller than maxima
+;   (e.g., OIIIHB).
 ;
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2012 Sep 19, Siena 
@@ -56,8 +49,9 @@ function init_sfhgrid
       nmonte:         1000L,$
       tau:       [0.01,1.0],$
       Z:       [0.004,0.04],$
-      AV:        [0.35,2.0],$ ; gamma-distribution parameters
-      mu:           [0.1,4],$ ; gamma-distribution parameters
+      AV:        [0.35,2.0],$ ; Gamma-distribution parameters
+      mu:           [0.1,4],$ ; Gamma-distribution parameters
+      oiiihb:    [-1.0,1.0],$ ; flat distribution
       fburst:    [0.03,4.0],$ ; 
       dtburst:   [0.03,0.3],$ ; [Gyr]
       trunctau: [-1.0,-1.0],$
@@ -68,8 +62,9 @@ function init_sfhgrid
       pburst:          -1.0,$
       interval_pburst:  2.0,$ ; [Gyr]
       fractrunc:       -1.0,$
-      oneovertau:        1L,$ ; note!
+      oneovertau:        1L,$ ; these have to be type long!
       delayed:          -1L,$
+      nebular:          -1L,$
       flatAV:           -1L,$
       flatmu:           -1L,$
       flatfburst:       -1L,$
@@ -79,12 +74,12 @@ return, params
 end    
 
 pro write_sfhgrid_paramfile, sfhgrid_paramfile, params, sfhgrid=sfhgrid, nage=nage, $
-  nmonte=nmonte, tau=tau, Z=Z, AV=AV, mu=mu, fburst=fburst, dtburst=dtburst, $
+  nmonte=nmonte, tau=tau, Z=Z, AV=AV, mu=mu, oiiihb=oiiihb, fburst=fburst, dtburst=dtburst, $
   trunctau=trunctau, minage=minage, maxage=maxage, mintburst=mintburst, $
   maxtburst=maxtburst, pburst=pburst, interval_pburst=interval_pburst, $
-  fractrunc=fractrunc, oneovertau=oneovertau, delayed=delayed, flatAV=flatAV, $
-  flatmu=flatmu, flatfburst=flatfburst, flatdtburst=flatdtburst, bursttype=bursttype, $
-  append=append, clobber=clobber, preset_bursts=preset_bursts
+  fractrunc=fractrunc, oneovertau=oneovertau, delayed=delayed, nebular=nebular, $
+  flatAV=flatAV, flatmu=flatmu, flatfburst=flatfburst, flatdtburst=flatdtburst, $
+  bursttype=bursttype, append=append, clobber=clobber, preset_bursts=preset_bursts
 
     if n_elements(sfhgrid_paramfile) eq 0 then begin
        doc_library, 'write_sfhgrid_paramfile'
@@ -111,6 +106,7 @@ pro write_sfhgrid_paramfile, sfhgrid_paramfile, params, sfhgrid=sfhgrid, nage=na
        params.delayed = 1
        params.oneovertau = 0
     endif
+    params.nebular = keyword_set(nebular)
     params.oneovertau = keyword_set(oneovertau)
     params.flatAV = keyword_set(flatAV)
     params.flatmu = keyword_set(flatmu)
@@ -146,6 +142,10 @@ pro write_sfhgrid_paramfile, sfhgrid_paramfile, params, sfhgrid=sfhgrid, nage=na
     if n_elements(mu) ne 0 then begin
        if n_elements(mu) ne 2 then message, 'MU must be a 2-element array!'
        params.mu = mu
+    endif
+    if n_elements(oiiihb) ne 0 then begin
+       if n_elements(oiiihb) ne 2 then message, 'OIIIHB must be a 2-element array!'
+       params.oiiihb = oiiihb
     endif
     if n_elements(fburst) ne 0 then begin
        if n_elements(fburst) ne 2 then message, 'FBURST must be a 2-element array!'

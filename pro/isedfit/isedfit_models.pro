@@ -141,6 +141,14 @@ pro isedfit_models, isedfit_paramfile, params=params, supergrid_paramfile=superg
        return
     endif
     
+; if REDSHIFT is not monotonic then FINDEX(), below, can't be
+; used to interpolate the model grids properly; this only really
+; matters if USE_REDSHIFT is passed    
+    if monotonic(redshift) eq 0 then begin
+       splog, 'REDSHIFT should be a monotonically increasing or decreasing array!'
+       return
+    endif
+    
     pc10 = 3.085678D19 ; fiducial distance [10 pc in cm]
     dlum = pc10*10D^(lf_distmod(redshift,omega0=params.omega0,$ ; [cm]
       omegal0=params.omegal)/5D)/params.h100 
@@ -148,8 +156,13 @@ pro isedfit_models, isedfit_paramfile, params=params, supergrid_paramfile=superg
 
 ; IGM attenuation    
     if params.igm then begin
-       splog, 'Reading IGM attenuation lookup table'
-       igmgrid = mrdfits(getenv('IMPRO_DIR')+'/etc/igmtau_grid.fits.gz',1)
+       igmfile = getenv('IMPRO_DIR')+'/etc/igmtau_grid.fits.gz'
+       splog, 'Reading IGM attenuation lookup table '+igmfile
+       if file_test(igmfile) eq 0 then begin
+          splog, 'File '+igmfile+' not found!'
+          return
+       endif
+       igmgrid = mrdfits(igmfile,1)
     endif else begin
        splog, 'Neglecting IGM absorption'
     endelse 

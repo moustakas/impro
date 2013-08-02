@@ -65,7 +65,7 @@ function im_read_fsps, metallicity=metallicity, basti=basti, $
   miles=miles, kroupa=kroupa, chabrier=chabrier, abmag=abmag, $
   flambda=flambda, fnu=fnu
 
-    fspspath = getenv('IM_DATA_DIR')+'/synthesis/fsps/'
+    fspspath = getenv('IM_RESEARCH_DIR')+'/synthesis/fsps/'
     ssppath = fspspath+'SSP/'
 
 ; defaults
@@ -144,9 +144,13 @@ function im_read_fsps, metallicity=metallicity, basti=basti, $
 
     wave = fltarr(npix)
     readf, lun, wave
+
+; convert to air!
+    airwave = wave
+    vactoair, airwave
     
     fsps = {Z: zz, age: dblarr(nage), mstar: fltarr(nage), $
-      lbol: fltarr(nage), wave: wave, $
+      lbol: fltarr(nage), wave: airwave, $
       flux: fltarr(npix,nage)}
 
     tspec = fltarr(npix)
@@ -158,7 +162,7 @@ function im_read_fsps, metallicity=metallicity, basti=basti, $
        fsps.age[ii]  = 10.0^t  ; [yr]
        fsps.mstar[ii] = 10.0^m ; [Msun]
        fsps.lbol[ii] = l
-       fsps.flux[*,ii] = 3.826D33*tspec*im_light(/ang)/wave^2 ; [Lsun/Hz]-->[erg/s/A]
+       fsps.flux[*,ii] = 3.826D33*tspec*im_light(/ang)/airwave^2 ; [Lsun/Hz]-->[erg/s/A]
     endfor
     free_lun,lun
 

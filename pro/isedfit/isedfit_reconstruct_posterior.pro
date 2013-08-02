@@ -55,8 +55,8 @@
 
 function isedfit_reconstruct_posterior, isedfit_paramfile, post=post, params=params, $
   supergrid_paramfile=supergrid_paramfile, thissupergrid=thissupergrid, $
-  isedfit_dir=isedfit_dir, montegrids_dir=montegrids_dir, index=index, $
-  outprefix=outprefix, age=age, sfrage=sfrage, tau=tau, Z=Z, av=av, nburst=nburst, $
+  isedfit_dir=isedfit_dir, montegrids_dir=montegrids_dir, $
+  index=index, outprefix=outprefix, age=age, sfrage=sfrage, tau=tau, Z=Z, av=av, nburst=nburst, $
   sfr0=sfr0, sfr100=sfr100, b100=b100, mgal=mgal, chunkindx=chunkindx, $
   modelindx=modelindx, indxage=ageindx, bigsfr0=bigsfr, bigmass=bigmass, bigsfrage=bigsfrage
 
@@ -70,17 +70,14 @@ function isedfit_reconstruct_posterior, isedfit_paramfile, post=post, params=par
     if (n_elements(params) eq 0) then params = $
       read_isedfit_paramfile(isedfit_paramfile)
 
-; read the required SUPERGRID parameter file
+; read the SUPERGRID parameter file
     if n_elements(supergrid_paramfile) eq 0 then begin
        splog, 'SUPERGRID parameter file required'
        return, -1
     endif
-
-    if n_elements(thissupergrid) eq 0 then begin
-       splog, 'THISSUPERGRID must be specified!'
-       return, -1
-    endif
+    
     super = read_supergrid_paramfile(supergrid_paramfile,supergrid=thissupergrid)
+    if n_elements(thissupergrid) eq 0 then thissupergrid = super.supergrid
 
     fp = isedfit_filepaths(params,supergrid_paramfile=supergrid_paramfile,$
       thissupergrid=thissupergrid,isedfit_dir=isedfit_dir,montegrids_dir=montegrids_dir,$

@@ -22,11 +22,13 @@
 ; OPTIONAL INPUTS:
 ;   time - desired output age vector (Gyr)
 ;   mstar - stellar mass of the SSP with time [NAGE]
+;   nlyc - SSP evolution in the number of Ly-continuum photons [NAGE] 
 ;   nsamp - time oversampling factor (default 2)
 ;
 ; OPTIONAL OUTPUTS:
 ;   sfh - star formation rate at each TIME [NSFH]
 ;   cspmstar - stellar mass of the CSP with time [NSFH]
+;   cspnlyc - CSP evolution in the number of Ly-continuum photons [NSFH]
 ;
 ; KEYWORD PARAMETERS:
 ;
@@ -43,8 +45,10 @@
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2011 Jan 27, UCSD
 ;   jm11mar07ucsd - better age resolution; various other bug fixes
+;   jm13aug01siena - added support for the number of Lyman-continuum
+;     photons 
 ;
-; Copyright (C) 2011, John Moustakas
+; Copyright (C) 2011, 2013, John Moustakas
 ; 
 ; This program is free software; you can redistribute it and/or modify 
 ; it under the terms of the GNU General Public License as published by 
@@ -58,8 +62,8 @@
 ;-
 
 function isedfit_convolve_sfh, ssp, infosfh=infosfh, time=time, $
-  sfh=sfh, mstar=mstar, cspmstar=cspmstar, nsamp=nsamp, debug=debug, $
-  bigdebug=bigdebug, _extra=extra
+  sfh=sfh, mstar=mstar, nlyc=nlyc, cspmstar=cspmstar, cspnlyc=cspnlyc, $
+  nsamp=nsamp, debug=debug, bigdebug=bigdebug, _extra=extra
 
     if (n_elements(ssp) eq 0) or (n_elements(infosfh) eq 0) then begin
        doc_library, 'isedfit_convolve_sfh'
@@ -80,6 +84,7 @@ function isedfit_convolve_sfh, ssp, infosfh=infosfh, time=time, $
     sfh = isedfit_reconstruct_sfh(infosfh,outage=time,$
       debug=debug,_extra=extra)
     nsfh = n_elements(sfh)
+    cspflux = fltarr(npix,nsfh)
 
 ; check for other quantities to convolve
     nmstar = n_elements(mstar)
@@ -90,8 +95,16 @@ function isedfit_convolve_sfh, ssp, infosfh=infosfh, time=time, $
        endif
        cspmstar = fltarr(nsfh)
     endif
-    cspflux = fltarr(npix,nsfh)
 
+    nnlyc = n_elements(nlyc)
+    if (nnlyc ne 0) then begin
+       if (nnlyc ne n_elements(ssp.age)) then begin
+          splog, 'Dimensions of NLYC and SSP.AGE do not agree'
+          return, -1
+       endif
+       cspnlyc = fltarr(nsfh)
+    endif
+    
 ; integrate over age
     bigtime = [ssp.age,time*1D9]
     bigtime = bigtime[uniq(bigtime,sort(bigtime))]
@@ -139,10 +152,13 @@ function isedfit_convolve_sfh, ssp, infosfh=infosfh, time=time, $
        weight = thissfh*dt ; [Msun]
        vweight = rebin(reform(weight,1,nthistime),npix,nthistime) 
        cspflux[*,ii] = total(isspflux*vweight,2)
-
-; compute the output stellar mass
+       
+; compute the output stellar mass and the number of Lyman-continuum
+; photons
        if (nmstar gt 0) then cspmstar[ii] = $
          total(interpolate(mstar,sspindx)*weight)
+       if (nnlyc gt 0) then cspnlyc[ii] = $
+         alog10(total(interpolate(10D^nlyc,sspindx)*weight,/double))
     endfor
 ;   splog, 'Time = ', systime(1)-t0
 

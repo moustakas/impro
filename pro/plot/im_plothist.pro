@@ -114,7 +114,7 @@ pro im_plothist, arr, xhist, yhist, bin=bin, edge=edge, weight=weight, $
     if (n_elements(extra) ne 0) then begin
        if tag_exist(extra,'xtitle') then extra.xtitle = textoidl(extra.xtitle)
        if tag_exist(extra,'ytitle') then extra.ytitle = textoidl(extra.ytitle)
-       if tag_exist(extra,'color') then extra.color = djs_icolor(extra.color)
+       if tag_exist(extra,'color') then extra.color = im_color(extra.color)
     endif
     if (n_elements(psym) eq 0L) then psym = 10
 
@@ -157,7 +157,7 @@ pro im_plothist, arr, xhist, yhist, bin=bin, edge=edge, weight=weight, $
           yfill = yfill > !Y.CRANGE[0] < !Y.CRANGE[1]
        endelse
 
-       if keyword_set(Fcolor) then Fc = djs_icolor(Fcolor) else Fc = !P.Color
+       if keyword_set(Fcolor) then Fc = im_color(Fcolor) else Fc = !P.Color
        if keyword_set(Fline) then begin
           if keyword_set(Fspacing) then Fs = Fspacing else Fs = 0
           if keyword_set(Forientation) then Fo = Forientation else Fo = 0

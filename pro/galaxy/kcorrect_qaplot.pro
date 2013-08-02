@@ -64,7 +64,7 @@ return, model
 end
 
 pro kcorrect_qaplot, info, psfile=psfile, vname=vname, $
-  in_filterlist=in_filterlist, clobber=clobber
+  in_filterlist=in_filterlist, clobber=clobber, noplot=noplot
     
     ngal = n_elements(info)
     if (ngal eq 0L) then begin
@@ -85,6 +85,7 @@ pro kcorrect_qaplot, info, psfile=psfile, vname=vname, $
     endif
 
     model = kcorrect_restore(info,vname=vname)
+    if keyword_set(noplot) then return
 
     if tag_exist(info,'galaxy') then galaxy = info.galaxy else begin
        fmt = '(I'+string(5L,format='(I0)')+'.'+string(5L,format='(I0)')+')'
@@ -214,7 +215,7 @@ pro kcorrect_qaplot, info, psfile=psfile, vname=vname, $
        endelse
        if (n_elements(psfile) eq 0) then cc = get_kbrd(1)
     endfor       
-    im_plotconfig, psfile=psfile, /psclose, /gzip
+    im_plotconfig, psfile=psfile, /psclose, /pdf
     
 return
 end

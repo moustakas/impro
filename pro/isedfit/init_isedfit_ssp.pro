@@ -12,6 +12,7 @@ function init_isedfit_ssp, npix=npix, nage=nage
       Z:     0.0,$
       age:   dblarr(nage),$
       mstar: fltarr(nage),$
+      nlyc:  fltarr(nage),$
       wave:  fltarr(npix),$
       flux:  fltarr(npix,nage)}
 return, ssp

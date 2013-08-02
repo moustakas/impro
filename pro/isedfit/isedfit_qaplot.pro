@@ -60,15 +60,16 @@ pro isedfit_qaplot, isedfit_paramfile, isedfit, params=params, $
   supergrid_paramfile=supergrid_paramfile, thissupergrid=thissupergrid, $
   isedfit_dir=isedfit_dir, montegrids_dir=montegrids_dir, $
   galaxy=galaxy1, outprefix=outprefix, psfile=psfile1, index=index, clobber=clobber, $
-  xrange=in_xrange, yrange=in_yrange, xlog=xlog
-
-    light = 2.99792458D18       ; speed of light [A/s]
+  xrange=in_xrange, yrange=in_yrange, xlog=xlog, nsigma=nsigma
 
     if n_elements(isedfit_paramfile) eq 0 and n_elements(params) eq 0 then begin
        doc_library, 'isedfit_qaplot'
        return
     endif
 
+    light = 2.99792458D18       ; speed of light [A/s]
+    if n_elements(nsigma) eq 0 then nsigma = 2.0
+    
 ; read the parameter file and parse to get the relevant path and
 ; filenames; optionally overwrite SFHGRID in the parameter file
     if (n_elements(isedfit_dir) eq 0) then isedfit_dir = './'
@@ -204,7 +205,8 @@ pro isedfit_qaplot, isedfit_paramfile, isedfit, params=params, $
 ; overplot the data; distinguish between three different cases, based
 ; on the input photometry
           mab = maggies2mag(isedfit[igal].maggies,ivar=isedfit[igal].ivarmaggies,$
-            magerr=maberr,lomagerr=mabloerr,himagerr=mabhierr,magnsigma=mabupper,nsigma=2.0)
+            magerr=maberr,lomagerr=mabloerr,himagerr=mabhierr,magnsigma=mabupper,$
+            nsigma=nsigma)
           used = where(mab gt -90.0,nused)
           upper = where(mab lt -90.0 and mabupper gt -90,nupper)
 

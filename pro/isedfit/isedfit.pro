@@ -33,6 +33,11 @@
 ;     grids can be found in ISEDFIT_DIR/MONTEGRIDS, or in
 ;     MONTEGRIDS_DIR
 ;   montegrids_dir - override ISEDFIT_DIR+'/'+MONTEGRIDS
+;   use_redshift - use this redshift array instead of constructing the
+;     redshift array from the parameters given in the
+;     ISEDFIT_PARAMFILE parameter file; useful for when you have a
+;     relatively sample of objects with well-determined redshifts
+;     spanning a wide redshift range [NZZ]
 ;   index - use this optional input to fit a zero-indexed subset of
 ;     the full sample (default is to fit everything)
 ;
@@ -223,7 +228,7 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, zobj, isedfit, $
   supergrid_paramfile=supergrid_paramfile, thissupergrid=thissupergrid, $
   sfhgrid_paramfile=sfhgrid_paramfile, nminphot=nminphot, $
   galchunksize=galchunksize, outprefix=outprefix, isedfit_dir=isedfit_dir, $
-  montegrids_dir=montegrids_dir, index=index, allages=allages, $
+  montegrids_dir=montegrids_dir, use_redshift=use_redshift, index=index, allages=allages, $
   write_chi2grid=write_chi2grid, silent=silent, nowrite=nowrite, clobber=clobber
 
     if n_elements(isedfit_paramfile) eq 0 and n_elements(params) eq 0 then begin
@@ -236,7 +241,7 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, zobj, isedfit, $
     if (n_elements(isedfit_dir) eq 0) then isedfit_dir = './'
     if (n_elements(montegrids_dir) eq 0) then montegrids_dir = isedfit_dir+'montegrids/'
     if (n_elements(params) eq 0) then params = $
-      read_isedfit_paramfile(isedfit_paramfile)
+      read_isedfit_paramfile(isedfit_paramfile,use_redshift=use_redshift)
 
 ; read the SUPERGRID parameter file
     if n_elements(supergrid_paramfile) eq 0 or n_elements(sfhgrid_paramfile) eq 0 then begin
@@ -355,6 +360,14 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, zobj, isedfit, $
        return
     endif
 
+; if REDSHIFT is not monotonic then FINDEX(), below, can't be
+; used to interpolate the model grids properly; this only really
+; matters if USE_REDSHIFT is passed    
+    if monotonic(redshift) eq 0 then begin
+       splog, 'REDSHIFT should be a monotonically increasing or decreasing array!'
+       return
+    endif
+
 ; initialize the output structure(s)
     isedfit = init_isedfit(ngal,nfilt,isedfit_post=isedfit_post,$
       sfhgrid_paramfile=sfhgrid_paramfile,thissfhgrid=super.sfhgrid)
@@ -374,7 +387,7 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, zobj, isedfit, $
 ; do not allow the galaxy to be older than the age of the universe at
 ; ZOBJ starting from a maximum formation redshift z=10 [Gyr]
        maxage = lf_z2t(zobj[gthese],omega0=params.omega0,$ ; [Gyr]
-         omegal0=params.omegal)/params.h100 
+         omegal0=params.omegal)/params.h100
        zindx = findex(redshift,zobj[gthese]) ; used for interpolation
 ; loop on each "chunk" of output from ISEDFIT_MODELS
        nchunk = n_elements(fp.isedfit_models_chunkfiles)

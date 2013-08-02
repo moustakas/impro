@@ -100,10 +100,15 @@ function init_montegrid, nmodel, nage, imf=imf, nmaxburst=nmaxburst
       modelindx:                 -1,$
       delayed:                    0,$ ; delayed tau model?
       bursttype:                  0,$ ; burst type: 0=step function (default); 1=gaussian; 2=step function with exponential wings
+      nebular:                    0,$ ; 1=include nebular emission lines
       tau:                     -1.0,$
       Z:                       -1.0,$
       av:                       0.0,$ ; always initialize with zero to accommodate the dust-free models!
       mu:                       1.0,$ ; always default to 1.0!
+      oiiihb:                  -1.0,$ ; [OIII] 5007/H-beta
+      oiihb:                   -1.0,$ ; [OII] 3727/H-beta
+      niiha:                   -1.0,$ ; [NII] 6584/H-alpha
+      siiha:                   -1.0,$ ; [SII] 6716,31/H-alpha
       nburst:                     0,$
       trunctau:                -1.0,$ ; burst truncation time scale
       minage:                  -1.0,$
@@ -209,23 +214,25 @@ pro build_grid, montegrid, chunkinfo, ssppath=ssppath, $
           npix = n_elements(sspfits[0].wave)
 
 ; initialize the output SED data structure
-          if (issp eq 0) then outinfo = struct_addtags(temporary(outinfo),$
-            replicate({mstar: fltarr(params.nage), $
-            wave: float(sspfits[0].wave), $
-            flux: fltarr(npix,params.nage)},nthese))
+          if (issp eq 0) then begin
+             outinfo = struct_addtags(temporary(outinfo),replicate($
+               {mstar: fltarr(params.nage), nlyc: fltarr(params.nage), $
+               wave: float(sspfits[0].wave), flux: fltarr(npix,params.nage)},nthese))
+          endif
 
           delvarx, rv
           klam = k_lambda(outinfo[indx1[0]].wave,r_v=rv,charlot=charlot,$
             calzetti=calzetti,odonnell=odonnell,smc=smc,/silent)
           klam = rebin(reform(klam,npix,1),npix,n_elements(sspfits[0].age)) ; [npix,nage]
-;         if keyword_set(charlot) then nsmth = total((sspfits[0].age gt 0.9*tbc) and (sspfits[0].age lt 1.1*tbc))
+;         if keyword_set(charlot) then nsmth = total((sspfits[0].age gt 0.9*tbc) and $
+;           (sspfits[0].age lt 1.1*tbc))
 
 ; convolve each model with the specified SFH
           for jj = 0L, nindx1-1 do begin
              print, format='("Chunk=",I4.4,"/",I4.4,", SSP=",I4.4,"/",I4.4,", '+$
                'Model=",I4.4,"/",I4.4,"   ",A5,$)', ichunk+1, nchunk, issp+1, $
                nssp, jj+1, nindx1, string(13b)
-; attenuate
+; attenuation
              alam = klam*(outinfo[indx1[jj]].av/rv)
              if keyword_set(charlot) then begin
                 old = where(sspfits[jj].age gt tbc,nold)
@@ -239,22 +246,41 @@ pro build_grid, montegrid, chunkinfo, ssppath=ssppath, $
                 ageindx = findex(sspfits[jj].age,outage*1D9)
                 outflux = interpolate(sspfits[jj].flux,lindgen(npix),ageindx,/grid)
                 outmstar = interpolate(sspfits[jj].mstar,ageindx)
+                outnlyc = interpolate(sspfits[jj].nlyc,ageindx)
                 outmgal = outmstar*0+1
                 outsfr = isedfit_reconstruct_sfh(outinfo[indx1[jj]],$
                   outage=im_double(outage),debug=debug)
              endif else begin
                 outflux = isedfit_convolve_sfh(sspfits[jj],info=outinfo[indx1[jj]],$
-                  time=im_double(outage),mstar=sspfits[jj].mstar,cspmstar=outmstar,$
-                  sfh=outsfr,nsamp=1.0,debug=debug);,/ylog,xr=[4,7],yrange=[1D-14,1D-6])
-;               test = isedfit_reconstruct_sfh(outinfo[indx1[jj]],outage=outage,/debug,xr=[3.5,8])
+                  time=im_double(outage),mstar=sspfits[jj].mstar,nlyc=sspfits[jj].nlyc,$
+                  cspmstar=outmstar,cspnlyc=outnlyc,sfh=outsfr,nsamp=1.0,debug=debug)
+;               plot, outage, outnlyc, psym=8, ysty=3
+;               test = isedfit_reconstruct_sfh(outinfo[indx1[jj]],outage=outage,/debug)
              endelse
-
              inf = where(finite(outflux) eq 0)
              if (inf[0] ne -1) then message, 'Bad bad bad'
 
+; generate the emission-line spectrum, if desired
+             if params.nebular then begin
+                oiihb = 10D^outinfo[indx1[jj]].oiihb
+                oiiihb = 10D^outinfo[indx1[jj]].oiiihb
+                niiha = 10D^outinfo[indx1[jj]].niiha
+                siiha = 10D^outinfo[indx1[jj]].siiha
+                nebflux = isedfit_nebular(10D^outnlyc,inst_sigma=sspinfo.inst_sigma,$
+                  vsigma=vsigma,oiihb=oiihb,oiiihb=oiiihb,niiha=niiha,siiha=siiha,$
+                  wave=outinfo[indx1[jj]].wave)
+; attenuate
+                klam1 = klam[*,0:params.nage-1]
+                alam1 = klam1*(outinfo[indx1[jj]].av/rv)
+                nebflux = nebflux*10.0^(-0.4*alam1)
+;               djs_plot, outinfo[indx1[jj]].wave, outflux[*,10]+nebflux[*,10];, xrange=[3000,7000]
+             endif else nebflux = outflux*0.0
+
+; pack it in             
              outinfo[indx1[jj]].age = outage
              outinfo[indx1[jj]].mstar = outmstar
-             outinfo[indx1[jj]].flux = outflux
+             outinfo[indx1[jj]].nlyc = outnlyc
+             outinfo[indx1[jj]].flux = outflux+nebflux
           endfor 
        endfor    ; close SSP loop 
        im_mwrfits, outinfo, chunkinfo.chunkfiles[ichunk], /clobber
@@ -412,7 +438,28 @@ pro build_montegrids, sfhgrid_paramfile, supergrid_paramfile=supergrid_paramfile
 ;               montegrid.mu = ((10.0^(randomn(seed,params.nmonte)*params.mu[1]+alog10(params.mu[0])))<1.0)>0.0
              endelse
           endif
-       endif 
+       endif
+
+; add emission lines
+       if params.nebular then begin
+          linefile = getenv('IMPRO_DIR')+'/etc/isedfit_lineratios_v1.0.fits.gz'
+          splog, 'Reading line-ratios table '+linefile
+          if file_test(linefile) eq 0 then begin
+             splog, 'File not found!'
+             return
+          endif
+          linecoeff = mrdfits(linefile,1)
+
+; draw [OIII]/H-beta from a uniform logarithmic distribution then
+; compute 
+          montegrid.oiiihb = randomu(seed,params.nmonte)*(params.oiiihb[1]-params.oiiihb[0])+params.oiiihb[0] 
+          montegrid.oiihb = poly(montegrid.oiiihb,linecoeff.oiihb_coeff) + $
+            randomn(seed,params.nmonte)*linecoeff.oiihb_scatter
+          montegrid.niiha = poly(montegrid.oiiihb,linecoeff.niiha_coeff) + $
+            randomn(seed,params.nmonte)*linecoeff.niiha_scatter
+          montegrid.siiha = poly(montegrid.oiiihb,linecoeff.siiha_coeff) + $
+            randomn(seed,params.nmonte)*linecoeff.siiha_scatter
+       endif
 
 ; now assign bursts; note that the bursts can occur outside
 ; (generally, before) the AGE vector; divide the time vector into

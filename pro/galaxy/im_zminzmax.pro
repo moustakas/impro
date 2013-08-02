@@ -13,7 +13,7 @@
 ;   coeffs - coefficients calculated by KCORRECT [5,NGAL]
 ;   bright - bright magnitude cut-off of the survey
 ;   faint - faint magnitude cut-off of the survey
-;   filter - filter function name corresponding to MAG [NGAL] 
+;   filter - filter function name corresponding to MAG
 ;
 ; OPTIONAL INPUTS: 
 ;   vname - basis set used to calculate K-corrections
@@ -126,7 +126,7 @@ function im_zminzmax, redshift, mag, coeffs, bright=bright, $
     if (n_elements(h100) eq 0) then h100 = 0.7
     if (n_elements(omega0) eq 0) then omega0 = 0.3
     if (n_elements(omegalambda) eq 0) then omegalambda = 0.7
-    red, h100=h100, omega0=omega0, omegalambda=omegalambda
+;   red, h100=h100, omega0=omega0, omegalambda=omegalambda
 
 ; evolutionary parameters    
     if (n_elements(q0) eq 0) then q0 = 0.0
@@ -145,11 +145,14 @@ function im_zminzmax, redshift, mag, coeffs, bright=bright, $
     if (n_elements(sample_zmax) eq 0) then $
       zrefmax = 7.0 else zrefmax = sample_zmax
     nzref = 500
-    zref = range(zrefmin,zrefmax,nzref)
+;   zref = range(zrefmin,zrefmax,nzref)
+    zref = findgen(nzref)*(zrefmax-zrefmin)/(nzref-1)+zrefmin
 
 ; distance modulus and evolution
-    dm_gal = dmodulus(redshift)
-    dm_ref = dmodulus(zref)
+    dm_gal = lf_distmod(redshift,omega0=omega0,omegal0=omegalambda)
+    dm_ref = lf_distmod(zref,omega0=omega0,omegal0=omegalambda)
+;   dm_gal = dmodulus(redshift)
+;   dm_ref = dmodulus(zref)
     evol_gal = k_evolve(redshift*0.0,redshift,q0,q1,qz0)
     evol_ref = k_evolve(zref*0.0,zref,q0,q1,qz0)
 

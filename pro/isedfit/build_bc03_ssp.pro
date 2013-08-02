@@ -21,8 +21,10 @@
 ;
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2011 Jan  22, UCSD
+;   jm13aug01siena - compute the number of Lyman continuum photons;
+;   added DOITALL keyword 
 ;
-; Copyright (C) 2011, John Moustakas
+; Copyright (C) 2011, 2013, John Moustakas
 ; 
 ; This program is free software; you can redistribute it and/or modify 
 ; it under the terms of the GNU General Public License as published by 
@@ -35,8 +37,18 @@
 ; General Public License for more details. 
 ;-
 
-pro build_bc03_ssp, chabrier=chabrier, lowres=lowres
+pro build_bc03_ssp, chabrier=chabrier, lowres=lowres, doitall=doitall
 
+    if keyword_set(doitall) then begin
+; Salpeter high and low resolution
+       build_bc03_ssp, chabrier=0, lowres=0
+       build_bc03_ssp, chabrier=0, lowres=1
+; Chabrier high and low resolution
+       build_bc03_ssp, chabrier=1, lowres=0
+       build_bc03_ssp, chabrier=1, lowres=1
+       return
+    endif
+    
     splog, 'Building the BC03 SSPs'
 
     ssppath = getenv('ISEDFIT_SSP_DIR')+'/'
@@ -64,6 +76,7 @@ pro build_bc03_ssp, chabrier=chabrier, lowres=lowres
 
     lsun = 3.826D33         ; [erg/s]
     dist = 10.0*3.085678D18 ; fiducial distance [10 pc in cm]
+    const = 1D/(6.626D-27*2.9979246D18) ; [erg Angstrom]
     
 ; metallicity grid
     Z = [0.0004,0.004,0.008,0.02,0.05]
@@ -89,6 +102,10 @@ pro build_bc03_ssp, chabrier=chabrier, lowres=lowres
        ssp.flux = bc03.flux
        ssp.mstar = ext.m_ ; stellar mass [Msun]
        ssp.Z = Z[iZ]
+
+; compute the number of hydrogen-ionizing photons
+       for jj = 0, nage-1 do ssp.nlyc[jj] = alog10(const*im_integral(ssp.wave,$
+         lsun*ssp.wave*ssp.flux[*,jj],0D,912D))
 
 ; put the model at a fiducial distance of 10 pc, and convert to erg/s 
        ssp.flux = lsun*ssp.flux/(4.0*!dpi*dist^2.0) ; [erg/s/cm2/A/Msun]
