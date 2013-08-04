@@ -268,8 +268,8 @@ Function isedfit_nebular, nlyc, wave=wave, inst_vsigma=inst_vsigma, $
 
 ; scale to a fiducial distance of 10 pc and then add the two
 ; components together
-    flam_line = flam_line/(4.0*!dpi*dist^2) ; [erg/s/cm^2/A]
-    flam_cont = flam_cont/(4.0*!dpi*dist^2) ; [erg/s/cm^2/A]
+    flam_line = float(flam_line/(4.0*!dpi*dist^2)) ; [erg/s/cm^2/A]
+    flam_cont = float(flam_cont/(4.0*!dpi*dist^2)) ; [erg/s/cm^2/A]
     flam_neb = flam_line + flam_cont
     
 return, flam_neb

@@ -106,9 +106,9 @@ function init_montegrid, nmodel, nage, imf=imf, nmaxburst=nmaxburst
       av:                       0.0,$ ; always initialize with zero to accommodate the dust-free models!
       mu:                       1.0,$ ; always default to 1.0!
       oiiihb:                  -1.0,$ ; [OIII] 5007/H-beta
-      oiihb:                   -1.0,$ ; [OII] 3727/H-beta
-      niiha:                   -1.0,$ ; [NII] 6584/H-alpha
-      siiha:                   -1.0,$ ; [SII] 6716,31/H-alpha
+;     oiihb:                   -1.0,$ ; [OII] 3727/H-beta
+;     niiha:                   -1.0,$ ; [NII] 6584/H-alpha
+;     siiha:                   -1.0,$ ; [SII] 6716,31/H-alpha
       nburst:                     0,$
       trunctau:                -1.0,$ ; burst truncation time scale
       minage:                  -1.0,$
@@ -262,20 +262,15 @@ pro build_grid, montegrid, chunkinfo, ssppath=ssppath, $
 
 ; generate the emission-line spectrum, if desired
              if params.nebular then begin
-                oiihb = 10D^outinfo[indx1[jj]].oiihb
                 oiiihb = 10D^outinfo[indx1[jj]].oiiihb
-                niiha = 10D^outinfo[indx1[jj]].niiha
-                siiha = 10D^outinfo[indx1[jj]].siiha
-                nebflux = isedfit_nebular(10D^outnlyc,inst_sigma=sspinfo.inst_sigma,$
-                  vsigma=vsigma,oiihb=oiihb,oiiihb=oiiihb,niiha=niiha,siiha=siiha,$
-                  wave=outinfo[indx1[jj]].wave)
+                nebflux = isedfit_nebular(10D^outnlyc,inst_vsigma=sspinfo.inst_vsigma,$
+                  vsigma=vsigma,oiiihb=oiiihb,wave=outinfo[indx1[jj]].wave,line=line)
 ; attenuate
                 klam1 = klam[*,0:params.nage-1]
                 alam1 = klam1*(outinfo[indx1[jj]].av/rv)
                 nebflux = nebflux*10.0^(-0.4*alam1)
 ;               djs_plot, outinfo[indx1[jj]].wave, outflux[*,10]+nebflux[*,10];, xrange=[3000,7000]
              endif else nebflux = outflux*0.0
-
 ; pack it in             
              outinfo[indx1[jj]].age = outage
              outinfo[indx1[jj]].mstar = outmstar
@@ -415,8 +410,6 @@ pro build_montegrids, sfhgrid_paramfile, supergrid_paramfile=supergrid_paramfile
 ;      splog, 'TESTING WITH A UNIFORM AGE GRID!'
 ;      for ii = 0L, params.nmonte-1 do montegrid[ii].age = range(params.minage,params.maxage,params.nage)
        montegrid.age = randomu(seed,params.nage,params.nmonte)*(params.maxage-params.minage)+params.minage
-stop       
-       
        for ii = 0L, params.nmonte-1 do montegrid[ii].age = montegrid[ii].age[sort(montegrid[ii].age)]
 
 ; reddening, if any; Gamma distribution is the default, unless FLATAV==1
@@ -444,23 +437,22 @@ stop
 
 ; add emission lines
        if params.nebular then begin
-          linefile = getenv('IMPRO_DIR')+'/etc/isedfit_lineratios_v1.0.fits.gz'
-          splog, 'Reading line-ratios table '+linefile
-          if file_test(linefile) eq 0 then begin
-             splog, 'File not found!'
-             return
-          endif
-          linecoeff = mrdfits(linefile,1)
+;          linefile = getenv('IMPRO_DIR')+'/etc/isedfit_forbidden_lineratios.fits.gz'
+;          splog, 'Reading line-ratios table '+linefile
+;          if file_test(linefile) eq 0 then begin
+;             splog, 'File not found!'
+;             return
+;          endif
+;          linecoeff = mrdfits(linefile,1)
 
-; draw [OIII]/H-beta from a uniform logarithmic distribution then
-; compute 
+; draw [OIII]/H-beta from a uniform logarithmic distribution
           montegrid.oiiihb = randomu(seed,params.nmonte)*(params.oiiihb[1]-params.oiiihb[0])+params.oiiihb[0] 
-          montegrid.oiihb = poly(montegrid.oiiihb,linecoeff.oiihb_coeff) + $
-            randomn(seed,params.nmonte)*linecoeff.oiihb_scatter
-          montegrid.niiha = poly(montegrid.oiiihb,linecoeff.niiha_coeff) + $
-            randomn(seed,params.nmonte)*linecoeff.niiha_scatter
-          montegrid.siiha = poly(montegrid.oiiihb,linecoeff.siiha_coeff) + $
-            randomn(seed,params.nmonte)*linecoeff.siiha_scatter
+;         montegrid.oiihb = poly(montegrid.oiiihb,linecoeff.oiihb_coeff) + $
+;           randomn(seed,params.nmonte)*linecoeff.oiihb_scatter
+;         montegrid.niiha = poly(montegrid.oiiihb,linecoeff.niiha_coeff) + $
+;           randomn(seed,params.nmonte)*linecoeff.niiha_scatter
+;         montegrid.siiha = poly(montegrid.oiiihb,linecoeff.siiha_coeff) + $
+;           randomn(seed,params.nmonte)*linecoeff.siiha_scatter
        endif
 
 ; now assign bursts; note that the bursts can occur outside

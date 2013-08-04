@@ -78,11 +78,11 @@ pro build_fsps_ssp, kroupa=kroupa, chabrier=chabrier, miles=miles, doitall=doita
 ;   light = 2.99792458D5        ; speed of light [km/s]
 ;   fwhm2sig = 2D0*sqrt(2.0*alog(2.0))
     if keyword_set(miles) then begin 
-;      inst_sigma = 3.0/5500.0/fwhm2sig*light 
-       inst_sigma = 70.0        ; [km/s]
+;      inst_vsigma = 3.0/5500.0/fwhm2sig*light 
+       inst_vsigma = 70.0        ; [km/s]
     endif else begin
-;      inst_sigma = 20.0/5500.0/fwhm2sig*light 
-       inst_sigma = 450.0       ; [km/s]
+;      inst_vsigma = 20.0/5500.0/fwhm2sig*light 
+       inst_vsigma = 450.0       ; [km/s]
     endelse
     
 ; read each SSP in turn, convert to a FITS structure, do some magic,
@@ -138,7 +138,7 @@ pro build_fsps_ssp, kroupa=kroupa, chabrier=chabrier, miles=miles, doitall=doita
     info = {$
       imf:               imfstr,$
       Z:                      Z,$
-      inst_sigma:    inst_sigma,$ ; [km/s]
+      inst_vsigma:  inst_vsigma,$ ; [km/s]
       sspfile:      sspfile+'.gz'}
 
     infofile = outpath+'info_fsps_'+fsps_ver+'_'+sspstr+'_'+imfstr+'.fits'
