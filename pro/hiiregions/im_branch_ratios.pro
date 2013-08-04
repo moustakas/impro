@@ -10,7 +10,7 @@
 ; INPUTS: 
 ;
 ; OPTIONAL INPUTS: 
-;       dens - electron density (default 10 cm^-3); note that if the
+;       dens - electron density (default 100 cm^-3); note that if the
 ;              density is made too large this program does not account
 ;              for collisional de-excitation 
 ;       temp - electron temperature (default 10,000 K)
@@ -66,19 +66,19 @@
 
 function im_branch_ratios, dens=dens, temp=temp
 
-    if (n_elements(temp) eq 0L) then temp = TEMP ; [K]
+    if (n_elements(temp) eq 0L) then temp = 1D4 ; 10^4 [K]
     if (n_elements(dens) eq 0L) then dens = 1D2 ; [cm^-3]
 
     branch = {$
-      o_i:    0.0, $
-      n_ii:   0.0, $
-      si_iii: 0.0, $
-      s_iii:  0.0, $
-      ar_iii: 0.0, $
-      o_iii:  0.0, $
-      cl_iv:  0.0, $
-      ne_iii: 0.0, $
-      ar_v:   0.0, $
+      o_i:    0.0,$
+      n_ii:   0.0,$
+      si_iii: 0.0,$
+      s_iii:  0.0,$
+      ar_iii: 0.0,$
+      o_iii:  0.0,$
+      cl_iv:  0.0,$
+      ne_iii: 0.0,$
+      ar_v:   0.0,$
       ne_v:   0.0}
 
     level = im_nlevel('o_i',dens=dens,temp=temp)

@@ -121,6 +121,11 @@ pro build_fsps_ssp, kroupa=kroupa, chabrier=chabrier, miles=miles, doitall=doita
 ;      ssp.flux = ssp.flux/rebin(reform(ssp.mstar,1,nage),npix,nage)
        ssp.flux = ssp.flux/(4.0*!dpi*dist^2.0) ; [erg/s/cm2/A/Msun]
 
+;; get the r-band mass-to-light ratio
+;       rmaggies = k_project_filters(k_lambda_to_edges(ssp.wave),$
+;         ssp.flux,filterlist='sdss_r0.par')
+
+; write out       
        sspfile1 = 'fsps_'+fsps_ver+'_'+sspstr+'_'+imfstr+'_'+Z2string(ssp.Z)+'.fits'
 ;      sspfile1 = 'fsps_'+imfstr+'_'+Z2string(ssp.Z)+'.fits'
        im_mwrfits, ssp, ssppath+sspfile1, /clobber

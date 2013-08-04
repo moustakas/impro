@@ -68,7 +68,8 @@
 ;
 
 pro im_ionspec, ionstr, result, dens=dens, temp=temp, level=level, $
-  matrix=matrix, full_annot=full_annot, silent=SILENT
+  matrix=matrix, full_annot=full_annot, silent=SILENT, $
+  sortbystrength=sortbystrength
 
     if (n_elements(ionstr) eq 0L) then begin
        doc_library, 'im_ionspec'
@@ -112,6 +113,7 @@ pro im_ionspec, ionstr, result, dens=dens, temp=temp, level=level, $
     result.aij = aij[q]
 
     result = result[sort(result.vacwave)]
+    if keyword_set(sortbystrength) then result = result[reverse(sort(result.relative_emissivity))]
     if (not keyword_set(silent)) then struct_print, result
 
 return

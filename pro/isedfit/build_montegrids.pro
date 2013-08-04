@@ -415,6 +415,8 @@ pro build_montegrids, sfhgrid_paramfile, supergrid_paramfile=supergrid_paramfile
 ;      splog, 'TESTING WITH A UNIFORM AGE GRID!'
 ;      for ii = 0L, params.nmonte-1 do montegrid[ii].age = range(params.minage,params.maxage,params.nage)
        montegrid.age = randomu(seed,params.nage,params.nmonte)*(params.maxage-params.minage)+params.minage
+stop       
+       
        for ii = 0L, params.nmonte-1 do montegrid[ii].age = montegrid[ii].age[sort(montegrid[ii].age)]
 
 ; reddening, if any; Gamma distribution is the default, unless FLATAV==1
