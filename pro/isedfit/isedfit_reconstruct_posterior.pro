@@ -25,14 +25,7 @@
 ;   isedfit - ISEDFIT result structure
 ;
 ; COMMENTS:
-;   The cosmological parameters are hard-wired to match
-;   ISEDFIT_MODELS.  
-;
-;   Floating underflow messages are suppressed.
-;
-;   Note that the best-fitting models are interpolated onto a
-;   common wavelength grid, currently hard-wired between 100 A and
-;   5 microns, with a spacing of 2 A/pixel.
+;   This routine should not be used to rebuild too many galaxies! 
 ;
 ; EXAMPLES:
 ;
@@ -53,128 +46,116 @@
 ; General Public License for more details. 
 ;-
 
-function isedfit_reconstruct_posterior, isedfit_paramfile, post=post, params=params, $
-  supergrid_paramfile=supergrid_paramfile, thissupergrid=thissupergrid, $
-  isedfit_dir=isedfit_dir, montegrids_dir=montegrids_dir, $
-  index=index, outprefix=outprefix, age=age, sfrage=sfrage, tau=tau, Z=Z, av=av, nburst=nburst, $
-  sfr0=sfr0, sfr100=sfr100, b100=b100, mgal=mgal, chunkindx=chunkindx, $
-  modelindx=modelindx, indxage=ageindx, bigsfr0=bigsfr, bigmass=bigmass, bigsfrage=bigsfrage
+function isedfit_reconstruct_posterior, isedfit_paramfile, params=params, $
+  isedfit_dir=isedfit_dir, thissfhgrid=thissfhgrid, index=index, $
+  outprefix=outprefix
+
+;, age=age, sfrage=sfrage, tau=tau, Z=Z, av=av, nburst=nburst, $
+;  sfr0=sfr0, sfr100=sfr100, b100=b100, mgal=mgal, chunkindx=chunkindx, $
+;  modelindx=modelindx, bigsfr0=bigsfr, bigmass=bigmass, bigsfrage=bigsfrage
 
     if n_elements(isedfit_paramfile) eq 0 and n_elements(params) eq 0 then begin
        doc_library, 'isedfit_reconstruct_posterior'
        return, -1
     endif
 
-    if (n_elements(isedfit_dir) eq 0) then isedfit_dir = './'
-    if (n_elements(montegrids_dir) eq 0) then montegrids_dir = isedfit_dir+'montegrids/'
+; read the parameter file; parse to get the relevant path and
+; filenames
     if (n_elements(params) eq 0) then params = $
-      read_isedfit_paramfile(isedfit_paramfile)
+      read_isedfit_paramfile(isedfit_paramfile,thissfhgrid=thissfhgrid)
+    if (n_elements(isedfit_dir) eq 0) then isedfit_dir = './'
 
-; read the SUPERGRID parameter file
-    if n_elements(supergrid_paramfile) eq 0 then begin
-       splog, 'SUPERGRID parameter file required'
+; treat each SFHgrid separately
+    ngrid = n_elements(params)
+    if ngrid gt 1 then begin
+       for ii = 0, ngrid-1 do begin
+          result1 = isedfit_reconstruct_posterior(params=params[ii],$
+            isedfit_dir=isedfit_dir,index=index,outprefix=outprefix)
+          if ii eq 0 then result = temporary(result1) else $
+            result = [[temporary(result)],[temporary(result1)]]
+       endfor
+       return, result
+    endif
+
+    fp = isedfit_filepaths(params,isedfit_dir=isedfit_dir,outprefix=outprefix)
+
+; restore the best-fitting results
+    isedfile = fp.isedfit_dir+fp.isedfit_outfile+'.gz'
+    if file_test(isedfile) eq 0 then begin
+       splog, 'iSEDfit output file '+isedfile+' not found!'
        return, -1
     endif
+    splog, 'Reading '+isedfile
+    isedfit1 = mrdfits(isedfile,1,/silent)
+
+; only restore a subset of the objects    
+    if (n_elements(index) eq 0L) then isedfit = temporary(isedfit1) else $
+      isedfit = temporary(isedfit1[index])
+    ngal = n_elements(isedfit)
     
-    super = read_supergrid_paramfile(supergrid_paramfile,supergrid=thissupergrid)
-    if n_elements(thissupergrid) eq 0 then thissupergrid = super.supergrid
-
-    fp = isedfit_filepaths(params,supergrid_paramfile=supergrid_paramfile,$
-      thissupergrid=thissupergrid,isedfit_dir=isedfit_dir,montegrids_dir=montegrids_dir,$
-      outprefix=outprefix)
-
-; restore the POSTERIOR output if not passes
-    if (n_elements(post) eq 0L) then begin
-       if (file_test(fp.isedfit_dir+fp.post_outfile+'.gz',/regular) eq 0L) then $
-         message, 'POSTERIOR output not found!'
-       splog, 'Reading '+fp.isedfit_dir+fp.post_outfile+'.gz'
-       post = mrdfits(fp.isedfit_dir+fp.post_outfile+'.gz',1,/silent,rows=index)
+; restore the posterior distribution file
+    if file_test(fp.isedfit_dir+fp.post_outfile+'.gz') eq 0 then begin
+       splog, 'POSTERIOR output file '+fp.isedfit_dir+fp.post_outfile+'.gz not found!'
+       return, -1
     endif
+    splog, 'Reading '+fp.isedfit_dir+fp.post_outfile+'.gz'
+    post = mrdfits(fp.isedfit_dir+fp.post_outfile+'.gz',1,/silent,rows=index)
     ngal = n_elements(post)
 
-;   if (n_elements(isedfit) eq 0L) then begin
-;      if (file_test(fp.isedfit_dir+fp.isedfit_outfile+'.gz',/regular) eq 0L) then $
-;        message, 'ISEDFIT output not found!'
-;      splog, 'Reading '+fp.isedfit_dir+fp.isedfit_outfile+'.gz'
-;      isedfit = mrdfits(fp.isedfit_dir+fp.isedfit_outfile+'.gz',1,/silent,rows=index)
-;   endif
-    
 ; need all the chunks in memory!
+    tags = ['chunkindx','modelindx','age','tau','zmetal','av','mu',$
+      'mstar','sfr','sfr100','sfrage','ewoii','ewoiiihb','ewniiha']
     nchunk = n_elements(fp.sfhgrid_chunkfiles)
     for jj = 0, nchunk-1 do begin
-       modelgrid1 = mrdfits(fp.modelspath+fp.isedfit_models_chunkfiles[jj]+'.gz',1,/silent)
-       modelgrid1 = struct_trimtags(temporary(modelgrid1),except='modelmaggies')
+       chunkfile = fp.modelspath+fp.isedfit_models_chunkfiles[jj]+'.gz'
+       if file_test(chunkfile) eq 0 then message, 'Chunk file '+chunkfile+' not found!'
+       modelgrid1 = mrdfits(chunkfile,1,/silent);,columns=tags)
        if (jj eq 0) then modelgrid = temporary(modelgrid1) else $
          modelgrid = [temporary(modelgrid),temporary(modelgrid1)]
     endfor
     nmodel = n_elements(modelgrid)
-    nage = n_elements(modelgrid[0].age)
-    nallmodel = nmodel*nage
-    ndraw = isedfit_ndraw() ; number of random draws
+    ndraw = params.ndraw
 
-    bigmass = reform(modelgrid.mstar,nallmodel)
-    bigage = reform(modelgrid.age,nallmodel)
-    bigtau = reform(rebin(reform(modelgrid.tau,1,nmodel),nage,nmodel),nallmodel)
-    bigZ = reform(rebin(reform(modelgrid.Z,1,nmodel),nage,nmodel),nallmodel)
-    bigav = reform(rebin(reform(modelgrid.mu*modelgrid.av,1,nmodel),nage,nmodel),nallmodel)
-    bignburst = reform(rebin(reform(modelgrid.nburst,1,nmodel),nage,nmodel),nallmodel)
+; initialize the output data structure
+    result = {$
+      chi2:               1E6,$ ; 1E6=not fitted
+      mstar:    fltarr(ndraw),$
+      age:      fltarr(ndraw),$
+      sfrage:   fltarr(ndraw),$
+      tau:      fltarr(ndraw),$
+      zmetal:   fltarr(ndraw),$
+      AV:       fltarr(ndraw),$
+      mu:       fltarr(ndraw),$
+      sfr:      fltarr(ndraw),$
+      sfr100:   fltarr(ndraw),$
+      ewoii:    fltarr(ndraw),$
+      ewoiiihb: fltarr(ndraw),$
+      ewniiha:  fltarr(ndraw)}
+    result = replicate(result,ngal)
+    result.chi2 = isedfit.chi2
 
-; for restoring the posterior on the models    
-    bigchunkindx = reform(rebin(reform(modelgrid.chunkindx,1,nmodel),nage,nmodel),nallmodel)
-    bigmodelindx = reform(rebin(reform(modelgrid.modelindx,1,nmodel),nage,nmodel),nallmodel)
-    bigageindx = reform(rebin(reform(lindgen(nage),nage,1),nage,nmodel),nallmodel)
+; optionally restore the spectra!
 
-    if arg_present(sfr0) or arg_present(sfr100) or arg_present(b100) or $
-      arg_present(mgal) or arg_present(sfrage) then dosfr = 1 else dosfr = 0
-    if dosfr then begin
-       bigsfr = bigage*0D
-       bigsfr100 = bigage*0D    ; average over the previous 100 Myr
-       bigb100 = bigage*0D      ; birthrate parameter
-       bigmgal = bigage*0D      ; galaxy mass ignoring mass loss 
-       bigsfrage = bigage*0D    ; SFR-weighted age
-       for imod = 0L, nmodel-1 do begin
-          tindx = lindgen(nage)+imod*nage
-          modelsfr = isedfit_reconstruct_sfh(modelgrid[imod],outage=bigage[tindx],$
-            sfr100=modelsfr100,b100=modelb100,mgalaxy=modelmgal,sfrage=modelsfrage)
 
-          bigsfr[tindx] = modelsfr       ; alog10(sfr)
-          bigsfr100[tindx] = modelsfr100 ; alog10(sfr100) 
-          bigb100[tindx] = modelb100
-          bigmgal[tindx] = modelmgal
-          bigsfrage[tindx] = modelsfrage
-       endfor
-; apply the scale factor
-       b100 = fltarr(ndraw,ngal)
-       sfr0 = fltarr(ndraw,ngal)
-       sfr100 = fltarr(ndraw,ngal)
-       sfrage = fltarr(ndraw,ngal)
-;      mgal = fltarr(ndraw,ngal)
-       for gg = 0L, ngal-1 do begin
-          logscale_err = post[gg].scale_err/post[gg].scale/alog(10)
-          logscale = alog10(post[gg].scale) + randomn(seed,ndraw)*logscale_err
-          b100[*,gg] = alog10(bigb100[post[gg].draws])
-          sfr0[*,gg] = alog10(bigsfr[post[gg].draws])+logscale
-          sfr100[*,gg] = alog10(bigsfr100[post[gg].draws])+logscale
-          sfrage[*,gg] = bigsfrage[post[gg].draws]
-;         mgal[*,gg] = bigmgal[post[gg].draws]
-       endfor    
+; build the posteriors
+    good = where(result.chi2 lt 0.9E6,ngood)
+    if ngood gt 0L then begin
+       logscale = alog10(post[good].scale)
+       result[good].mstar = alog10(modelgrid[post[good].draws].mstar)+logscale   ; [log Msun]
+       result[good].sfr = modelgrid[post[good].draws].sfr*post[good].scale       ; [Msun/yr]
+       result[good].sfr100 = modelgrid[post[good].draws].sfr100*post[good].scale ; [Msun/yr]
+;      result[good].sfr = alog10(modelgrid[post[good].draws].sfr)+logscale
+
+       result[good].age = modelgrid[post[good].draws].age             ; [Gyr]
+       result[good].sfrage = modelgrid[post[good].draws].sfrage       ; [Gyr]
+       result[good].Zmetal = modelgrid[post[good].draws].Zmetal       ; [Zsun]
+       result[good].tau = modelgrid[post[good].draws].tau             ; [Gyr]
+       result[good].AV = modelgrid[post[good].draws].AV               ; [mag]
+       result[good].mu = modelgrid[post[good].draws].mu
+       result[good].ewoii = modelgrid[post[good].draws].ewoii         ; [Angstrom, rest]
+       result[good].ewoiiihb = modelgrid[post[good].draws].ewoiiihb   ; [Angstrom, rest]
+       result[good].ewniiha = modelgrid[post[good].draws].ewniiha     ; [Angstrom, rest]
     endif
-
-; now get the remaining parameters    
-    mass = fltarr(ndraw,ngal)
-    for gg = 0L, ngal-1 do begin
-       logscale_err = post[gg].scale_err/post[gg].scale/alog(10)
-       logscale = alog10(post[gg].scale) + randomn(seed,ndraw)*logscale_err
-       mass[*,gg] = alog10(bigmass[post[gg].draws])+logscale
-    endfor
-
-    if arg_present(age) then age = bigage[post.draws]
-    if arg_present(tau) then tau = bigtau[post.draws]
-    if arg_present(Z) then Z = bigZ[post.draws]
-    if arg_present(av) then av = bigav[post.draws]
-    if arg_present(chunkindx) then chunkindx = bigchunkindx[post.draws]
-    if arg_present(modelindx) then modelindx = bigmodelindx[post.draws]
-    if arg_present(ageindx) then ageindx = bigageindx[post.draws]
         
-return, mass
+return, result
 end

@@ -35,55 +35,32 @@
 ; General Public License for more details. 
 ;-
 
-function isedfit_filepaths, params, supergrid_paramfile=supergrid_paramfile, $
-  thissupergrid=thissupergrid, sfhgrid=sfhgrid, synthmodels=synthmodels, imf=imf, $
-  redcurve=redcurve, outprefix=outprefix1, ngalaxy=ngalaxy, ngalchunk=ngalchunk, $
-  galchunksize=galchunksize, isedfit_dir=isedfit_dir, montegrids_dir=montegrids_dir
+function isedfit_filepaths, params, isedfit_dir=isedfit_dir, $
+  montegrids_dir=montegrids_dir, outprefix=outprefix1, $
+  ngalaxy=ngalaxy, ngalchunk=ngalchunk
 
-    if (n_elements(params) eq 0L) then $
+    if (n_elements(params) eq 0) then $
       message, 'PARAMS input required'
-    if (n_elements(galchunksize) eq 0L) then $
-      galchunksize = 500L ; can play with this number
+    if (n_elements(params) ne 1) then $
+      message, 'PARAMS must be a scalar'
 
     if (n_elements(isedfit_dir) eq 0) then isedfit_dir = './'
     if (n_elements(montegrids_dir) eq 0) then montegrids_dir = isedfit_dir+'montegrids/'
 
-; read the SUPERGRID parameter file, if given    
-    if n_elements(supergrid_paramfile) ne 0 then begin
-       super = read_supergrid_paramfile(supergrid_paramfile,supergrid=thissupergrid)
-       if n_elements(sfhgrid) eq 0 then sfhgrid = super.sfhgrid
-       if n_elements(synthmodels) eq 0 then synthmodels = super.synthmodels
-       if n_elements(imf) eq 0 then imf = super.imf
-       if n_elements(redcurve) eq 0 then redcurve = super.redcurve
-    endif else begin
-       if (n_elements(sfhgrid) eq 0) or (n_elements(synthmodels) eq 0) or $
-         (n_elements(imf) eq 0) or (n_elements(redcurve) eq 0) then begin
-          splog, 'You must either provide SUPERGRID_PARAMFILE or *all* of '+$
-            'SFHGRID, SYNTHMODELS, IMF, and REDCURVE'
-          return, -1
-       endif
-    endelse
-
-    if (n_elements(sfhgrid) ne 1) then $
-      message, 'SFHGRID must be a scalar'
-
-    redcurvestring = strtrim(redcurve2string(redcurve),2)
-    
-; if CHUNKINFO file does not exist, try dropping the reddening curve 
+; build the file names
+    sfhgrid = params.sfhgrid
+    synthmodels = strtrim(params.synthmodels,2)
+    imf = strtrim(params.imf,2)
+    redcurve = strtrim(params.redcurve,2)
     sfhgridstring = 'sfhgrid'+string(sfhgrid,format='(I2.2)')
+
     sfhgridpath = montegrids_dir+sfhgridstring+$
-      '/'+synthmodels+'/'+redcurvestring+'/'
+      '/'+synthmodels+'/'+redcurve+'/'
     chunkinfofile = sfhgridpath+imf+'_chunkinfo.fits.gz'
-    if (file_test(chunkinfofile) eq 0) then begin
-       redcurvestring = ''
-       sfhgridpath = montegrids_dir+sfhgridstring+$
-         '/'+synthmodels+'/'
-       chunkinfofile = sfhgridpath+imf+'_chunkinfo.fits.gz'
-    endif
     if (file_test(chunkinfofile) eq 0) then $
       message, 'CHUNKINFOFILE '+chunkinfofile+' not found!'
 
-    modelspath = isedfit_dir+sfhgridstring+'/'+redcurvestring+'/'
+    modelspath = isedfit_dir+sfhgridstring+'/'+redcurve+'/'
 
 ; needs error checking here to make sure the directories exist    
 
@@ -96,9 +73,7 @@ function isedfit_filepaths, params, supergrid_paramfile=supergrid_paramfile, $
     
     if (n_elements(outprefix1) eq 0) then thisprefix = prefix else $
       thisprefix = outprefix1
-    if (redcurvestring eq '') then $
-      outfile = thisprefix+'_'+synthmodels+'_'+imf+'_'+sfhgridstring+suffix else $
-      outfile = thisprefix+'_'+synthmodels+'_'+imf+'_'+redcurvestring+'_'+sfhgridstring+suffix
+    outfile = thisprefix+'_'+synthmodels+'_'+imf+'_'+redcurve+'_'+sfhgridstring+suffix
     postfile = outfile+'_post'
     kcorrfile = outfile+'_kcorr'
     psfile = 'qaplot_'+outfile+'.ps'
@@ -113,7 +88,7 @@ function isedfit_filepaths, params, supergrid_paramfile=supergrid_paramfile, $
 ; because of the dependence on the number of output chi2grid files;
 ; this output is also needed by ISEDFIT_CHI2GRID_QAPLOT
     if (n_elements(ngalaxy) ne 0) then begin
-       ngalchunk = ceil(ngalaxy/float(galchunksize))
+       ngalchunk = ceil(ngalaxy/float(params.galchunksize))
 ; full chi2 grid file names
        len = strtrim(strlen(strtrim(ngalchunk,2))>3,2)
        chi2grid_gchunkfiles = modelsprefix+imf+'_chi2grid_gchunk_'+$
@@ -126,7 +101,7 @@ function isedfit_filepaths, params, supergrid_paramfile=supergrid_paramfile, $
     endelse
 
 ; file paths and filenames
-    if (file_test(chunkinfofile,/regular) eq 0L) then $
+    if file_test(chunkinfofile) eq 0 then $
       message, 'No SFH grid information file found!'
     chunkinfo = mrdfits(chunkinfofile,1,/silent)
     sfhgrid_chunkfiles = sfhgridpath+strtrim(chunkinfo.chunkfiles,2)

@@ -1,6 +1,6 @@
 ;+
 ; NAME:
-;   ISEDFIT_COMPUTE_CHI2()
+;   ISEDFIT_CHI2()
 ;
 ; PURPOSE:
 ;   Compute chi^2 and the best-fitting scale factor (stellar mass)
@@ -11,7 +11,7 @@
 ; INPUTS: 
 ;   maggies - input photometry [NFILT,NGAL]
 ;   ivarmaggies - corresponding inverse variances [NFILT,NGAL] 
-;   chunkmodels - see ISEDFIT
+;   modelchunk - see ISEDFIT
 ;   maxage - age of the universe at the redshift of the galaxy [NGAL] 
 ;   zindx - see ISEDFIT
 ;
@@ -53,7 +53,7 @@
 ; General Public License for more details. 
 ;-
 
-function isedfit_compute_chi2, maggies, ivarmaggies, chunkmodels, maxage, $
+function isedfit_chi2, maggies, ivarmaggies, modelchunk, maxage, $
   zindx, gchunk=gchunk, ngalchunk=ngalchunk, ichunk=ichunk, nchunk=nchunk, $
   nminphot=nminphot, allages=allages, maxold=maxold, silent=silent
 
@@ -62,12 +62,10 @@ function isedfit_compute_chi2, maggies, ivarmaggies, chunkmodels, maxage, $
     nfilt = dims[0] ; number of filters
     if (ndim eq 1) then ngal = 1 else ngal = dims[1] ; number of galaxies
     
-    nmodel = n_elements(chunkmodels)
-    nage = n_elements(chunkmodels[0].age)
-
+    nmodel = n_elements(modelchunk)
     gridchunk = {scale: -1.0, scale_err: -1.0, chi2: 1E6, $ ; zptoffset: fltarr(nfilt), $
       bestmaggies: fltarr(nfilt)}
-    gridchunk = replicate(gridchunk,nage,nmodel,ngal)
+    gridchunk = replicate(gridchunk,nmodel,ngal)
 
 ;   t0 = systime(1)
     for igal = 0L, ngal-1 do begin
@@ -86,49 +84,48 @@ function isedfit_compute_chi2, maggies, ivarmaggies, chunkmodels, maxage, $
        dof = total(nivarmaggies gt 0)-1.0 ; degrees of freedom
        if (dof le 0) then message, 'This should not happen!'
 ;      t1 = systime(1)
-       for imodel = 0L, nmodel-1 do begin
-          if keyword_set(maxold) then begin
-             agediff = min(abs(chunkmodels[imodel].age-maxage[igal]),these)
-             nthese = 1
-          endif else begin
+
+       if keyword_set(maxold) then begin
+          agediff = min(abs(modelchunk.age-maxage[igal]),these)
+          nthese = 1
+       endif else begin
 ; constrain the models to be younger than the universe
-             if keyword_set(allages) then begin
-                nthese = nage
-                these = lindgen(nthese)
-             endif else begin
-                these = where((chunkmodels[imodel].age le maxage[igal]),nthese)
-             endelse
+          if keyword_set(allages) then begin
+             nthese = nmodel
+             these = lindgen(nthese)
+          endif else begin
+             these = where((modelchunk.age le maxage[igal]),nthese)
           endelse
-          if (nthese ne 0L) then begin ; at least one model
+       endelse 
+       if (nthese ne 0L) then begin ; at least one model
 ; interpolate the model photometry at the galaxy redshift
-;            plot, chunkmodels[imodel].modelmaggies[5,these,*],zindx[igal])*1.0D
-             modelmaggies = interpolate(chunkmodels[imodel].modelmaggies[*,these,*],zindx[igal])
+;         plot, modelchunk[imodel].modelmaggies[5,these,*],zindx[igal])*1.0D
+          modelmaggies = interpolate(modelchunk[these].modelmaggies,$
+            findgen(nfilt),zindx[igal],findgen(nthese),/grid)
 ; perform acrobatic dimensional juggling to get the maximum likelihood
 ; scale-factor and corresponding chi2 as a function of age; VSCALE is
 ; the maximum likelihood value of SCALE and VSCALE_ERR is the 1-sigma
 ; error (see pg 84 of
 ; http://www.hep.phy.cam.ac.uk/~thomson/lectures/statistics/FittingHandout.pdf)
-             vmodelmaggies = reform(1D*modelmaggies,nfilt,nthese)
-             vmaggies = rebin(reform(nmaggies,nfilt,1),nfilt,nthese)
-             vivarmaggies = rebin(reform(nivarmaggies,nfilt,1),nfilt,nthese)
-             vscale = total(reform((nivarmaggies*nmaggies),1,nfilt)#vmodelmaggies,1,/double)/$
-               total(reform(nivarmaggies,1,nfilt)#vmodelmaggies^2,1,/double)
-             vscale_err = 1.0/sqrt(total(reform(nivarmaggies,1,nfilt)#vmodelmaggies^2,1,/double))
-             vchi2 = total(vivarmaggies*(vmaggies-rebin(reform(vscale,1,nthese),$
-               nfilt,nthese)*vmodelmaggies)^2,1,/double)
-;            print, total(nivarmaggies*(nmaggies-(vscale[30]+vscale_err[30])*vmodelmaggies[*,30])^2)-vchi2[30]
+          vmodelmaggies = reform(1D*modelmaggies,nfilt,nthese)
+          vmaggies = rebin(reform(nmaggies,nfilt,1),nfilt,nthese)
+          vivarmaggies = rebin(reform(nivarmaggies,nfilt,1),nfilt,nthese)
+          vscale = total(reform((nivarmaggies*nmaggies),1,nfilt)#vmodelmaggies,1,/double)/$
+            total(reform(nivarmaggies,1,nfilt)#vmodelmaggies^2,1,/double)
+          vscale_err = 1.0/sqrt(total(reform(nivarmaggies,1,nfilt)#vmodelmaggies^2,1,/double))
+          vchi2 = total(vivarmaggies*(vmaggies-rebin(reform(vscale,1,nthese),$
+            nfilt,nthese)*vmodelmaggies)^2,1,/double)
 ; store the results
-             bestmaggies = rebin(reform(vscale,1,nthese),nfilt,nthese)*vmodelmaggies
-             gridchunk[these,imodel,igal].chi2 = vchi2/dof
-             inf = where(finite(vscale) eq 0)
-             if inf[0] ne -1 then message, 'Problem here'
-             check = where((vscale le 0) or (finite(vscale) eq 0))
-             if (check[0] ne -1) then message, 'Zero scale?!?'
-             gridchunk[these,imodel,igal].scale = vscale      ; alog10(vscale)
-             gridchunk[these,imodel,igal].scale_err = vscale_err ; /vscale/alog(10)
-             gridchunk[these,imodel,igal].bestmaggies = bestmaggies
-          endif
-       endfor                   ; model loop
+          bestmaggies = rebin(reform(vscale,1,nthese),nfilt,nthese)*vmodelmaggies
+          gridchunk[these,igal].chi2 = vchi2/dof
+          inf = where(finite(vscale) eq 0)
+          if inf[0] ne -1 then message, 'Problem here'
+          check = where((vscale le 0) or (finite(vscale) eq 0))
+          if (check[0] ne -1) then message, 'Zero scale?!?'
+          gridchunk[these,igal].scale = vscale            ; alog10(vscale)
+          gridchunk[these,igal].scale_err = vscale_err    ; /vscale/alog(10)
+          gridchunk[these,igal].bestmaggies = bestmaggies
+       endif 
 ;      splog, format='("All models = ",G0," minutes")', (systime(1)-t1)/60.0       
     endfor                      ; galaxy loop
 ;   splog, format='("All galaxies = ",G0," minutes")', (systime(1)-t0)/60.0

@@ -26,7 +26,7 @@ return, data
 end
 
 pro oplot_peg, linewave, xx=xx, yy=yy
-    common isedfit_calibrate, oiiihbaxis, g99, peg, sdss, hii, atlas
+    common isedfit_calibrate, oiiihbaxis, iz06, g99, peg, sdss, hii, atlas
     color = 'dodger blue' & psym = 16
     get_element, peg.wave, 5007.0, is5007
     get_element, peg.wave, linewave, thisline
@@ -84,6 +84,26 @@ pro oplot_g99, linewave, xx=xx, yy=yy
           if n_elements(yy) eq 0 then yy = yy1 else yy = [yy,yy1]
        endif
     endfor
+return
+end
+pro oplot_iz06, linewave, xx=xx, yy=yy
+    common isedfit_calibrate
+    color = 'purple' & psym = 14
+
+    tag = tag_indx(iz06,'f'+linewave)
+    etag = tag_indx(iz06,'e_f'+linewave)
+    reftag = tag_indx(iz06,'f4959')
+    refetag = tag_indx(iz06,'e_f4959')
+
+    ww = where(iz06.(tag) gt 0.0 and iz06.(reftag) gt 0.0,nww)
+    if nww ne 0 then begin
+       xx = alog10(2.98*iz06[ww].(reftag))
+       yy = alog10(iz06[ww].(tag))
+       xxerr = iz06[ww].(refetag)/iz06[ww].(reftag)/alog(10)
+       yyerr = iz06[ww].(etag)/iz06[ww].(tag)/alog(10)
+       oploterror, xx, yy, xxerr, yyerr, psym=symcat(psym), $
+         color=im_color(color), symsize=0.7
+    endif
 return
 end
 
@@ -274,7 +294,7 @@ pro isedfit_calibrate_lineratios
       10D^(range(alog10(sbreak[ii])-0.01,alog10(sbreak[ii])+0.01,100))]
     outwave = outwave[sort(outwave)]
     outwave = outwave*1D4
-    out = {wave_neb: outwave, flam_neb: interpolate(sb99.flux_gas[*,this]/10D^sb99.nlyc[this],$
+    cneb = {wave_neb: outwave, flam_neb: interpolate(sb99.flux_gas[*,this]/10D^sb99.nlyc[this],$
       findex(sb99.wave,outwave))}
 ;   zero = where(out.wave lt 912.0)
 ;   out.flam_neb[zero] = 0.0
@@ -285,7 +305,7 @@ pro isedfit_calibrate_lineratios
 ;   djs_oplot, sb99.wave/1D4, sb99.flux_gas[*,this+20]/10D^sb99.nlyc[this+20], color='green'
 
     outfile = getenv('IMPRO_DIR')+'/etc/isedfit_nebular_continuum.fits'
-    im_mwrfits, out, outfile, /clobber
+    im_mwrfits, cneb, outfile, /clobber
 
 ;; below are some notes from Pegase and Koleva+09 for computing the
 ;; nebular *continuum*
@@ -322,13 +342,11 @@ pro isedfit_calibrate_lineratios
 ;    5199.    0.027          NI       40
 ;    2141.    0.013          NII      41
 ;    5755.    0.011          NII      42
-;    6583.    1.145          NII      43
 ;    6300.    0.126          OI       44
 ;    7330.    0.045          OII      46
 ;    1663.    0.009          OIII     47
 ;    4363.    0.012          OIII     48
 ;   12800.    0.082          NeII     50
-;    3869.    0.299          NeIII    51
 ;    2798.    0.07           MgII     52
 ;    4070.    0.043          SII      53
 ;   10330.    0.163          SII      56
@@ -358,6 +376,8 @@ pro isedfit_calibrate_lineratios
     if n_elements(peg) eq 0 then peg = read_pegase_hii() ; Pegase
     if n_elements(g99) eq 0 then g99 = mrdfits(getenv('CATALOGS_DIR')+$ ; Garnett+99    
       '/99garnett/99garnett_table2.fits.gz',1)
+    if n_elements(iz06) eq 0 then iz06 = im_read_vizier_tsv($ ; Izotov+06
+      getenv('CATALOGS_DIR')+'/hiiregions/06izotov/2006_izotov.dat')
     if n_elements(sdss) eq 0 then sdss = read_mysdss()
     if n_elements(hii) eq 0 then hii = read_myhii()
     if n_elements(atlas) eq 0 then atlas = read_myatlas()
@@ -507,6 +527,47 @@ pro isedfit_calibrate_lineratios
 ;    print, median(10^(poly(oiiihbaxis,out[is16].coeff)-$
 ;      poly(oiiihbaxis,out[is31].coeff)))    
     
+; --------------------
+; [Ne III] 3869
+    ytitle = 'log ([Ne III] \lambda3869 / H\beta)'
+    yrange = [-2,1]
+    djs_plot, [0], [0], /nodata, position=pos, xsty=1, ysty=1, $
+      xrange=oiiihbrange, yrange=yrange, ytitle=textoidl(ytitle), $
+      xtitle=textoidl(oiiihbtitle)
+    oplot_iz06, '3868', xx=iz06xx, yy=iz06yy
+    calibrate_ratio, [iz06xx], [iz06yy], name='[NeIII]_3869',$
+      wave=3868.752D, ncoeff=2, out=out, indx=indx
+    oplot_calibration, out[indx]
+
+;; below are some helium lines which I'm ignoring because the
+;; line-ratios match pretty well the theoretical case B values
+;; tabulated in hydrogen_helium_emissivities.dat    
+;    
+;; --------------------
+;; He I 5876
+;    ytitle = 'log (He I \lambda5876 / H\beta)'
+;    yrange = [-2,1]
+;    djs_plot, [0], [0], /nodata, position=pos, xsty=1, ysty=1, $
+;      xrange=oiiihbrange, yrange=yrange, ytitle=textoidl(ytitle), $
+;      xtitle=textoidl(oiiihbtitle)
+;    oplot_iz06, '5876', xx=iz06xx, yy=iz06yy
+;    oplot_g99, 5876, xx=g99xx, yy=g99yy
+;    calibrate_ratio, [g99xx,iz06xx], [g99yy,iz06yy], name='HeI_5876',$
+;      wave=5876D, ncoeff=1, out=out, indx=indx
+;    oplot_calibration, out[indx]
+;
+;; --------------------
+;; He I 4471
+;    ytitle = 'log (He I \lambda4471 / H\beta)'
+;    yrange = [-2,1]
+;    djs_plot, [0], [0], /nodata, position=pos, xsty=1, ysty=1, $
+;      xrange=oiiihbrange, yrange=yrange, ytitle=textoidl(ytitle), $
+;      xtitle=textoidl(oiiihbtitle)
+;    oplot_g99, 4471, xx=g99xx, yy=g99yy
+;    calibrate_ratio, [g99xx], [g99yy], name='HeI_4471',$
+;      wave=4471D, ncoeff=1, out=out, indx=indx
+;    oplot_calibration, out[indx]
+
     im_plotconfig, /psclose, psfile=psfile, /pdf
 
 ; write out    

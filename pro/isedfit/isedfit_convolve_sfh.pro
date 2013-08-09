@@ -7,17 +7,11 @@
 ;   generalized version).
 ;
 ; INPUTS: 
-;   ssp - structure describing the SSP grid:
-;     age  - age vector in years [NAGE]
-;     wave - wavelength vector [NPIX]
-;     flux - flux vector [NPIX,NAGE]
-;
-;   infosfh - iSEDfit-style star formation history structure
-;     tau - characteristic e-folding time [Gyr]
-;     nburst - number of bursts
-;     tburst - time each burst begins [Gyr]
-;     dtburst - burst duration [Gyr]
-;     fburst - mass fraction of each burst
+;   flux - input SSP spectra [NPIX,NAGE]
+;   age  - age vector corresponding to each spectrum in FLUX [NAGE, years] 
+;   infosfh - iSEDfit-style star formation history structure; see
+;     ISEDFIT_SFH for details for what this structure
+;     should contain
 ;
 ; OPTIONAL INPUTS:
 ;   time - desired output age vector (Gyr)
@@ -31,6 +25,8 @@
 ;   cspnlyc - CSP evolution in the number of Ly-continuum photons [NSFH]
 ;
 ; KEYWORD PARAMETERS:
+;   delayed, bursttype - additional keywords for ISEDFIT_SFH (see that
+;   routine for details)   
 ;
 ; OUTPUTS: 
 ;   cspflux - time-dependent spectra of the composite stellar
@@ -61,70 +57,74 @@
 ; General Public License for more details. 
 ;-
 
-function isedfit_convolve_sfh, ssp, infosfh=infosfh, time=time, $
+function isedfit_convolve_sfh, flux, age=age, infosfh=infosfh, time=time, $
   sfh=sfh, mstar=mstar, nlyc=nlyc, cspmstar=cspmstar, cspnlyc=cspnlyc, $
-  nsamp=nsamp, debug=debug, bigdebug=bigdebug, _extra=extra
+  nsamp=nsamp, debug=debug, bigdebug=bigdebug, delayed=delayed, $
+  bursttype=bursttype, _extra=extra
 
-    if (n_elements(ssp) eq 0) or (n_elements(infosfh) eq 0) then begin
+    if (n_elements(flux) eq 0) or n_elements(age) eq 0 or $
+      (n_elements(infosfh) eq 0) then begin
        doc_library, 'isedfit_convolve_sfh'
        return, -1
     endif
 
-    if (tag_indx(ssp,'age') eq -1) or (tag_indx(ssp,'wave') eq -1) or $
-      (tag_indx(ssp,'flux') eq -1) then begin
-       splog, 'Incompatible SSP structure format'
+    dim = size(flux,/dim)
+    npix = dim[0] ; number of pixels
+    nage = dim[1]
+
+    if nage ne n_elements(age) then begin
+       splog, 'FLUX must be an [NPIX,NAGE] element array!'
        return, -1
     endif
-    npix = n_elements(ssp.wave)
-
+    if (n_elements(time) eq 0) then time = age/1D9
     if (n_elements(nsamp) eq 0) then nsamp = 2
 
-; check for the SFH
-    if (n_elements(time) eq 0) then time = ssp.age/1D9
-    sfh = isedfit_reconstruct_sfh(infosfh,outage=time,$
-      debug=debug,_extra=extra)
+; get the basic SFH    
+    sfh = isedfit_sfh(infosfh,outage=time,debug=debug,$
+      delayed=delayed,bursttype=bursttype,_extra=extra)
     nsfh = n_elements(sfh)
     cspflux = fltarr(npix,nsfh)
 
 ; check for other quantities to convolve
     nmstar = n_elements(mstar)
     if (nmstar ne 0) then begin
-       if (nmstar ne n_elements(ssp.age)) then begin
-          splog, 'Dimensions of MSTAR and SSP.AGE do not agree'
+       if (nmstar ne nage) then begin
+          splog, 'Dimensions of MSTAR and AGE do not agree'
           return, -1
        endif
-       cspmstar = fltarr(nsfh)
+       if nsfh eq 1 then cspmstar = 0.0 else cspmstar = fltarr(nsfh)
     endif
 
     nnlyc = n_elements(nlyc)
     if (nnlyc ne 0) then begin
-       if (nnlyc ne n_elements(ssp.age)) then begin
-          splog, 'Dimensions of NLYC and SSP.AGE do not agree'
+       if (nnlyc ne nage) then begin
+          splog, 'Dimensions of NLYC and AGE do not agree'
           return, -1
        endif
-       cspnlyc = fltarr(nsfh)
+       if nsfh eq 1 then cspnlyc = 0.0 else cspnlyc = fltarr(nsfh)
     endif
     
 ; integrate over age
-    bigtime = [ssp.age,time*1D9]
+    bigtime = [age,time*1D9]
     bigtime = bigtime[uniq(bigtime,sort(bigtime))]
 
 ;   t0 = systime(1)
     for ii = 0, nsfh-1 do begin
 ; build the oversampled time array
-       age = time[ii]*1D9 ; [yr]
-       otime = [0D,bigtime<age,(age-bigtime)>0D,age]
+       thisage = time[ii]*1D9   ; [yr]
+       otime = [0D,bigtime<thisage,(thisage-bigtime)>0D,thisage]
        otime = im_double(otime) ; even though it's double, we still need this...
        otime = otime[uniq(otime,sort(otime))]
        thistime = interpolate(otime,dindgen(nsamp*n_elements(otime)-(nsamp-1))/(nsamp*1D))
 
-       thistime = build_isedfit_agegrid(infosfh,inage=thistime/1D9)*1D9
+       thistime = isedfit_agegrid(infosfh,inage=thistime/1D9)*1D9
        nthistime = n_elements(thistime)
        
 ; interpolate       
-       sspindx = findex(ssp.age,reverse(thistime))>0
-       isspflux = interpolate(ssp.flux,sspindx)
-       thissfh = isedfit_reconstruct_sfh(infosfh,useage=thistime/1D9)
+       sspindx = findex(age,reverse(thistime))>0
+       isspflux = interpolate(flux,sspindx)
+       thissfh = isedfit_sfh(infosfh,useage=thistime/1D9,$
+         delayed=delayed,bursttype=bursttype,_extra=extra)
 
        if keyword_set(bigdebug) then begin
           djs_plot, time, sfh, psym=6, xsty=3, ysty=3, /xlog, /ylog, $

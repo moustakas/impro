@@ -9,8 +9,8 @@
 
 function init_isedfit_ssp, npix=npix, nage=nage
     ssp = {$
-      Z:     0.0,$
-      age:   dblarr(nage),$
+      Zmetal:         0.0,$
+      age:   fltarr(nage),$
       mstar: fltarr(nage),$
       nlyc:  fltarr(nage),$
       wave:  fltarr(npix),$

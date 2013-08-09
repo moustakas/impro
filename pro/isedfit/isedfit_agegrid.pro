@@ -1,6 +1,6 @@
 ;+
 ; NAME:
-;   BUILD_ISEDFIT_AGEGRID()
+;   ISEDFIT_AGEGRID()
 ;
 ; PURPOSE:
 ;   Build an age (time) grid that deals with bursts correctly. 
@@ -50,7 +50,7 @@
 ; General Public License for more details. 
 ;-
 
-function build_isedfit_agegrid, info, inage=inage1, nage=nage, $
+function isedfit_agegrid, info, inage=inage1, nage=nage, $
   minage=minage, maxage=maxage, lookback=lookback, linear=linear, $
   debug=debug
 
@@ -58,7 +58,7 @@ function build_isedfit_agegrid, info, inage=inage1, nage=nage, $
 
     if (n_elements(inage1) eq 0) then begin
        if (n_elements(minage) eq 0) then minage = 0D else minage = im_double(minage)
-       if (n_elements(maxage) eq 0) then maxage = 13.5D else maxage = im_double(maxage)
+       if (n_elements(maxage) eq 0) then maxage = 13.8D else maxage = im_double(maxage)
        if (n_elements(nage) eq 0) then nage = 100
        if (minage eq 0D) then begin
           if log then inage = [0D,range(0.001D,maxage,nage-1,log=log)] else $

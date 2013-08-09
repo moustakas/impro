@@ -16,23 +16,17 @@
 ;   params - data structure with the same information contained in
 ;     ISEDFIT_PARAMFILE (over-rides ISEDFIT_PARAMFILE)
 ;   supergrid_paramfile - file describing the supergrid parameters 
-;   thissupergrid - if SUPERGRID_PARAMFILE contains multiple
+;   thissfhgrid - if SUPERGRID_PARAMFILE contains multiple
 ;     supergrids then build this SUPERGRID (may be a vector)
 ;   sfhgrid_paramfile - parameter file name giving details on all the
 ;     available SFH grids (needed to initialize the output data
 ;     structure) 
 ;
-;   nminphot - require at least NMINPHOT bandpasses of well-measured
-;     photometry (i.e., excluding upper limits) before fitting
-;     (default 3)  
-;   galchunksize - split the sample into GALCHUNKSIZE sized chunks,
-;     which is necessary if the sample is very large (default 5000)
 ;   outprefix - optionally write out files with a different prefix
 ;     from that specified in ISEDFIT_PARAMFILE (or PARAMS)
 ;   isedfit_dir - base pathname for iSEDfit files; the Monte Carlo
 ;     grids can be found in ISEDFIT_DIR/MONTEGRIDS, or in
 ;     MONTEGRIDS_DIR
-;   montegrids_dir - override ISEDFIT_DIR+'/'+MONTEGRIDS
 ;   use_redshift - use this redshift array instead of constructing the
 ;     redshift array from the parameters given in the
 ;     ISEDFIT_PARAMFILE parameter file; useful for when you have a
@@ -65,7 +59,6 @@
 ;     from the posterior distribution function, which can be used to
 ;     rebuild the posterior distributions of any of the output
 ;     parameters 
-;   isedfit_outfile - output file name for ISEDFIT
 ;
 ; COMMENTS:
 ;   WARNING: maggies, ivarmaggies, and zobj are copied into the output
@@ -95,19 +88,12 @@
 ; General Public License for more details. 
 ;-
 
-function init_isedfit, ngal, nfilt, sfhgrid_paramfile=sfhgrid_paramfile, $
-  thissfhgrid=thissfhgrid, isedfit_post=isedfit_post
+function init_isedfit, ngal, nfilt, params=params, isedfit_post=isedfit_post
 ; ISEDFIT support routine - initialize the output structure 
 
-    params = read_sfhgrid_paramfile(sfhgrid_paramfile,thissfhgrid=thissfhgrid)
-    ndraw = isedfit_ndraw() ; number of random draws
-
-; compute the maximum number of bursts, if any
-    if (params.pburst le 0D) then nmaxburst = 0 else $
-      nmaxburst = ceil((params.maxage-params.minage)/params.interval_pburst)
-
-    burstarray1 = -1.0
-    if (nmaxburst gt 1) then burstarray1 = fltarr(nmaxburst)-1.0
+    ndraw = params.ndraw ; number of random draws
+    if (params.nmaxburst eq 0) then burstarray1 = -1.0 else $
+      burstarray1 = fltarr(params.nmaxburst)-1.0
 
     isedfit1 = {$
       isedfit_id:      -1L,$    ; unique ID number
@@ -119,34 +105,41 @@ function init_isedfit, ngal, nfilt, sfhgrid_paramfile=sfhgrid_paramfile, $
 
 ; best-fit values (at the chi2 minimum); see BUILD_ISEDFIT_SFHGRID
     best = {$
-      ageindx:                   -1,$
       chunkindx:                 -1,$
       modelindx:                 -1,$
-      delayed:                    0,$ ; delayed tau model?
-      bursttype:                  0,$ ; burst type: 0=step function (default); 1=gaussian; 2=step function with exponential wings
+      delayed:       params.delayed,$ ; delayed tau model?
+      bursttype:   params.bursttype,$ ; burst type
+      chi2:                     1E6,$ ; chi2 minimum
+      scale:                   -1.0,$ 
+      scale_err:               -1.0,$ 
+
+      mstar:                   -1.0,$ 
+      age:                     -1.0,$
+      sfrage:                  -1.0,$
       tau:                     -1.0,$
-      Z:                       -1.0,$
-      av:                       0.0,$ ; always initialize with zero to accommodate the dust-free models!
+      Zmetal:                  -1.0,$
+      AV:                       0.0,$ ; always initialize with zero to accommodate the dust-free models!
       mu:                       1.0,$ ; always default to 1.0!
+      oiiihb:                  -1.0,$ 
+      nlyc:                    -1.0,$ 
+      sfr:                     -1.0,$ ; instantaneous
+      sfr100:                  -1.0,$ ; 100 Myr timescale
+      ewoii:                   -1.0,$ 
+      ewoiiihb:                -1.0,$ 
+      ewniiha:                 -1.0,$ 
       nburst:                     0,$
       trunctau:                -1.0,$ ; burst truncation time scale
-      minage:                  -1.0,$
-      maxage:                  -1.0,$
-      mintburst:               -1.0,$
-      maxtburst:               -1.0,$
       tburst:           burstarray1,$
       dtburst:          burstarray1,$ ; 
-      fburst:           burstarray1,$ ; burst mass fraction
-;     aburst:           burstarray1,$ ; burst amplitude
+      fburst:           burstarray1}  ; burst mass fraction
 
 ;     chunkindx:        -1,$
 ;     modelindx:        -1,$
-;     ageindx:          -1,$
 ;     delayed:           0,$
 ;     bursttype:         0,$
 ;
 ;     tau:            -1.0,$
-;     Z:              -1.0,$
+;     Zmetal:         -1.0,$
 ;     av:             -1.0,$
 ;     mu:             -1.0,$
 ;     nburst:            0,$
@@ -155,57 +148,54 @@ function init_isedfit, ngal, nfilt, sfhgrid_paramfile=sfhgrid_paramfile, $
 ;     dtburst:   burstarray1,$
 ;     fburst:    burstarray1,$
 
-      chi2:            1E6,$ ; chi2 minimum
-      scale:          -1.0,$ 
-      scale_err:      -1.0,$ 
-      mass:           -1.0,$ 
-      age:            -1.0,$
-      sfrage:         -1.0,$
-      sfr:            -1.0,$ ; instantaneous
-      sfr100:         -1.0,$ ; 100 Myr
-      b100:           -1.0}  ; averaged over the previous 100 Myr
+;     b100:           -1.0}  ; averaged over the previous 100 Myr
 
 ; median quantities and PDF quantiles
     qmed = {$
-;     mass_avg:     -1.0,$
+;     mstar_avg:     -1.0,$
 ;     age_avg:      -1.0,$
 ;     sfr_avg:      -1.0,$ ; instantaneous
 ;     sfr100_avg:   -1.0,$ ; 100 Myr
 ;     b100_avg:     -1.0,$
 ;     tau_avg:      -1.0,$
-;     Z_avg:        -1.0,$
+;     Zmetal_avg:   -1.0,$
 ;     av_avg:       -1.0,$
 ;     mu_avg:       -1.0,$
 
-      mass_50:     -1.0,$
+      mstar_50:    -1.0,$
       age_50:      -1.0,$
       sfrage_50:   -1.0,$
-      sfr_50:      -1.0,$ ; instantaneous
-      sfr100_50:   -1.0,$ ; 100 Myr
-      b100_50:     -1.0,$
       tau_50:      -1.0,$
-      Z_50:        -1.0,$
+      Zmetal_50:   -1.0,$
       av_50:       -1.0,$
       mu_50:       -1.0,$
+      sfr_50:      -1.0,$ ; instantaneous
+      sfr100_50:   -1.0,$ ; 100 Myr
+      ewoii_50:    -1.0,$
+      ewoiiihb_50: -1.0,$
+      ewniiha_50:  -1.0,$
 
-      mass_err:     -1.0,$
+      mstar_err:    -1.0,$
       age_err:      -1.0,$
       sfrage_err:   -1.0,$
+      tau_err:      -1.0,$
+      Zmetal_err:   -1.0,$
+      av_err:       -1.0,$
+      mu_err:       -1.0,$
+;     oiiihb_err:   -1.0,$
       sfr_err:      -1.0,$
       sfr100_err:   -1.0,$
-      b100_err:     -1.0,$
-      tau_err:      -1.0,$
-      Z_err:        -1.0,$
-      av_err:       -1.0,$
-      mu_err:       -1.0}
+      ewoii_err:    -1.0,$
+      ewoiiihb_err: -1.0,$
+      ewniiha_err:  -1.0}
 
-;     mass_eff_err:   -1.0,$
+;     mstar_eff_err:   -1.0,$
 ;     age_eff_err:    -1.0,$
 ;     sfr_eff_err:    -1.0,$
 ;     sfr100_eff_err: -1.0,$
 ;     b100_eff_err:   -1.0,$
 ;     tau_eff_err:    -1.0,$
-;     Z_eff_err:      -1.0,$
+;     Zmetal_eff_err: -1.0,$
 ;     av_eff_err:     -1.0,$
 ;     mu_eff_err:     -1.0}
 
@@ -224,12 +214,10 @@ return, isedfit
 end
 
 pro isedfit, isedfit_paramfile, maggies, ivarmaggies, zobj, isedfit, $
-  isedfit_post=isedfit_post, params=params, isedfit_outfile=isedfit_outfile, $
-  supergrid_paramfile=supergrid_paramfile, thissupergrid=thissupergrid, $
-  sfhgrid_paramfile=sfhgrid_paramfile, nminphot=nminphot, $
-  galchunksize=galchunksize, outprefix=outprefix, isedfit_dir=isedfit_dir, $
-  montegrids_dir=montegrids_dir, use_redshift=use_redshift, index=index, allages=allages, $
-  write_chi2grid=write_chi2grid, silent=silent, nowrite=nowrite, clobber=clobber
+  isedfit_post=isedfit_post, params=params, isedfit_dir=isedfit_dir, $
+  thissfhgrid=thissfhgrid, outprefix=outprefix, index=index, $
+  allages=allages, maxold=maxold, write_chi2grid=write_chi2grid, $
+  silent=silent, nowrite=nowrite, clobber=clobber
 
     if n_elements(isedfit_paramfile) eq 0 and n_elements(params) eq 0 then begin
        doc_library, 'isedfit'
@@ -238,20 +226,10 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, zobj, isedfit, $
 
 ; read the parameter file; parse to get the relevant path and
 ; filenames
-    if (n_elements(isedfit_dir) eq 0) then isedfit_dir = './'
-    if (n_elements(montegrids_dir) eq 0) then montegrids_dir = isedfit_dir+'montegrids/'
     if (n_elements(params) eq 0) then params = $
-      read_isedfit_paramfile(isedfit_paramfile,use_redshift=use_redshift)
+      read_isedfit_paramfile(isedfit_paramfile,thissfhgrid=thissfhgrid)
+    if (n_elements(isedfit_dir) eq 0) then isedfit_dir = './'
 
-; read the SUPERGRID parameter file
-    if n_elements(supergrid_paramfile) eq 0 or n_elements(sfhgrid_paramfile) eq 0 then begin
-       splog, 'SUPERGRID and SFHGRID parameter files required'
-       return
-    endif
-    
-    super = read_supergrid_paramfile(supergrid_paramfile,supergrid=thissupergrid)
-    if n_elements(thissupergrid) eq 0 then thissupergrid = super.supergrid
-       
 ; error checking on the input photometry    
     ndim = size(maggies,/n_dim)
     dims = size(maggies,/dim)
@@ -282,25 +260,31 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, zobj, isedfit, $
        splog, 'MAGGIES and ZOBJ do not match'
        return
     endif
+    if (total(finite(maggies) eq 0B) ne 0.0) or $
+      (total(finite(ivarmaggies) eq 0B) ne 0.0) then begin
+       splog, 'MAGGIES and IVARMAGGIES cannot have infinite values'
+       return
+    endif
+    if (total(zobj le 0.0) ne 0.0) then begin
+       splog, 'ZOBJ should all be positive'
+       return
+    endif
 
-; fit each SUPERGRID separately
-    nsuper = n_elements(thissupergrid)
-    if nsuper gt 1 then begin
-       for ii = 0, nsuper-1 do begin
-          isedfit, isedfit_paramfile, maggies, ivarmaggies, zobj, isedfit, $
-            isedfit_post=isedfit_post, params=params, supergrid_paramfile=supergrid_paramfile, $
-            thissupergrid=thissupergrid[ii], sfhgrid_paramfile=sfhgrid_paramfile, $
-            nminphot=nminphot, galchunksize=galchunksize, outprefix=outprefix, $
-            isedfit_dir=isedfit_dir, montegrids_dir=montegrids_dir, index=index, $
-            allages=allages, write_chi2grid=write_chi2grid, silent=silent, $
-            nowrite=nowrite, clobber=clobber
+; treat each SFHgrid separately
+    ngrid = n_elements(params)
+    if ngrid gt 1 then begin
+       for ii = 0, ngrid-1 do begin
+          isedfit, isedfit_paramfile1, maggies, ivarmaggies, zobj, isedfit, $
+            isedfit_post=isedfit_post, params=params[ii], isedfit_dir=isedfit_dir, $
+            outprefix=outprefix, index=index, allages=allages, maxold=maxold, $
+            write_chi2grid=write_chi2grid, silent=silent, nowrite=nowrite, $
+            clobber=clobber
        endfor 
        return
     endif
 
-    fp = isedfit_filepaths(params,supergrid_paramfile=supergrid_paramfile,$
-      thissupergrid=thissupergrid,isedfit_dir=isedfit_dir,montegrids_dir=montegrids_dir,$
-      ngalaxy=ngal,ngalchunk=ngalchunk,galchunksize=galchunksize,outprefix=outprefix)
+    fp = isedfit_filepaths(params,isedfit_dir=isedfit_dir,ngalaxy=ngal,$
+      ngalchunk=ngalchunk,outprefix=outprefix)
 
     isedfit_outfile = fp.isedfit_dir+fp.isedfit_outfile
     if file_test(isedfit_outfile+'.gz',/regular) and $
@@ -312,15 +296,11 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, zobj, isedfit, $
 
 ; fit the requested subset of objects and return
     if (n_elements(index) ne 0L) then begin
-       isedfit, isedfit_paramfile, maggies[*,index], ivarmaggies[*,index], zobj[index], $
-         isedfit1, isedfit_post=isedfit_post1, params=params, supergrid_paramfile=supergrid_paramfile, $
-         thissupergrid=thissupergrid, sfhgrid_paramfile=sfhgrid_paramfile, $
-         nminphot=nminphot, galchunksize=galchunksize, outprefix=outprefix, $
-         isedfit_dir=isedfit_dir, montegrids_dir=montegrids_dir, index=index, $
-         allages=allages, write_chi2grid=write_chi2grid, silent=silent, $
-         /nowrite, clobber=clobber
-       isedfit = init_isedfit(ngal,nfilt,sfhgrid_paramfile=sfhgrid_paramfile,$
-         thissfhgrid=super.sfhgrid,isedfit_post=isedfit_post)
+       isedfit, isedfit_paramfile1, maggies[*,index], ivarmaggies[*,index], zobj[index], $
+         isedfit1, isedfit_post=isedfit_post1, params=params, isedfit_dir=isedfit_dir, $
+         outprefix=outprefix, allages=allages, write_chi2grid=write_chi2grid, $
+         silent=silent, /nowrite, clobber=clobber
+       isedfit = init_isedfit(ngal,nfilt,params=params,isedfit_post=isedfit_post)
        isedfit[index] = isedfit1
        isedfit_post[index] = isedfit_post1
        if (keyword_set(nowrite) eq 0) then begin
@@ -330,23 +310,11 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, zobj, isedfit, $
        return
     endif
 
-; additional error checking    
-    if (total(finite(maggies) eq 0B) ne 0.0) or $
-      (total(finite(ivarmaggies) eq 0B) ne 0.0) then begin
-       splog, 'MAGGIES and IVARMAGGIES cannot have infinite values'
-       return
-    endif
-    if (total(zobj le 0.0) ne 0.0) then begin
-       splog, 'ZOBJ should all be positive'
-       return
-    endif
-    if (n_elements(nminphot) eq 0L) then nminphot = 3
-
     if (keyword_set(silent) eq 0) then begin
-       splog, 'SYNTHMODELS='+super.synthmodels+', '+$
-         'IMF='+super.imf+', '+'SFHGRID='+$
-         string(super.sfhgrid,format='(I2.2)')+', '+$
-         'REDCURVE='+strtrim(redcurve2string(super.redcurve),2)
+       splog, 'SYNTHMODELS='+strtrim(params.synthmodels,2)+', '+$
+         'REDCURVE='+strtrim(params.redcurve,2)+', IMF='+$
+         strtrim(params.imf,2)+', '+'SFHGRID='+$
+         string(params.sfhgrid,format='(I2.2)')
     endif
 
 ; filters and redshift grid
@@ -369,8 +337,7 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, zobj, isedfit, $
     endif
 
 ; initialize the output structure(s)
-    isedfit = init_isedfit(ngal,nfilt,isedfit_post=isedfit_post,$
-      sfhgrid_paramfile=sfhgrid_paramfile,thissfhgrid=super.sfhgrid)
+    isedfit = init_isedfit(ngal,nfilt,params=params,isedfit_post=isedfit_post)
     isedfit.isedfit_id = lindgen(ngal)
     isedfit.maggies = maggies
     isedfit.ivarmaggies = ivarmaggies
@@ -380,8 +347,8 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, zobj, isedfit, $
     t1 = systime(1)
     mem1 = memory(/current)
     for gchunk = 0L, ngalchunk-1 do begin
-       g1 = gchunk*galchunksize
-       g2 = ((gchunk*galchunksize+galchunksize)<ngal)-1
+       g1 = gchunk*params.galchunksize
+       g2 = ((gchunk*params.galchunksize+params.galchunksize)<ngal)-1
        gnthese = g2-g1+1
        gthese = lindgen(gnthese)+g1
 ; do not allow the galaxy to be older than the age of the universe at
@@ -394,34 +361,34 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, zobj, isedfit, $
        t0 = systime(1)
        mem0 = memory(/current)
        for ichunk = 0, nchunk-1 do begin
+          print, format='("ISEDFIT: Chunk ",I0,"/",I0, A10,$)', ichunk+1, nchunk, string(13b)
           chunkfile = fp.modelspath+fp.isedfit_models_chunkfiles[ichunk]+'.gz'
-          if (keyword_set(silent) eq 0) then splog, 'Reading '+chunkfile
-          chunkmodels = mrdfits(chunkfile,1,/silent)
-          nmodel = n_elements(chunkmodels)
+;         if (keyword_set(silent) eq 0) then splog, 'Reading '+chunkfile
+          modelchunk = mrdfits(chunkfile,1,/silent)
+          nmodel = n_elements(modelchunk)
 ; compute chi2
-          gridchunk = isedfit_compute_chi2(maggies[*,gthese],ivarmaggies[*,gthese],$
-            chunkmodels,maxage,zindx,gchunk=gchunk,ngalchunk=ngalchunk,ichunk=ichunk,$
-            nchunk=nchunk,nminphot=nminphot,allages=allages,silent=silent,$
-            maxold=params.maxold)
-          modelgrid1 = struct_trimtags(temporary(chunkmodels),except=['MODELMAGGIES'])
+          galaxychunk = isedfit_chi2(maggies[*,gthese],ivarmaggies[*,gthese],$
+            modelchunk,maxage,zindx,gchunk=gchunk,ngalchunk=ngalchunk,ichunk=ichunk,$
+            nchunk=nchunk,nminphot=params.nminphot,allages=allages,silent=silent,$
+            maxold=maxold)
           if (ichunk eq 0) then begin
-             fullgrid = temporary(gridchunk)
-             modelgrid = temporary(modelgrid1)
+             galaxygrid = temporary(galaxychunk)
+             modelgrid = temporary(modelchunk)
           endif else begin
-             fullgrid = [[temporary(fullgrid)],[temporary(gridchunk)]]
-             modelgrid = [temporary(modelgrid),temporary(modelgrid1)]
+             galaxygrid = [temporary(galaxygrid),temporary(galaxychunk)]
+             modelgrid = [temporary(modelgrid),temporary(modelchunk)]
           endelse
        endfor ; close ModelChunk
 ; optionally write out the full chi2 grid 
        if keyword_set(write_chi2grid) then begin
-          im_mwrfits, fullgrid, clobber=clobber, fp.modelspath+fp.chi2grid_gchunkfiles[gchunk]
+          im_mwrfits, galaxygrid, clobber=clobber, fp.modelspath+fp.chi2grid_gchunkfiles[gchunk]
 ;         im_mwrfits, modelgrid, clobber=clobber, fp.modelspath+fp.modelgrid_gchunkfiles[gchunk]
        endif
 ; minimize chi2
        if (keyword_set(silent) eq 0) then splog, 'Building the posterior distributions...'
        temp_isedfit_post = isedfit_post[gthese]
-       isedfit[gthese] = isedfit_compute_posterior(isedfit[gthese],$
-         modelgrid,fullgrid,isedfit_post=temp_isedfit_post)
+       isedfit[gthese] = isedfit_posterior(isedfit[gthese],modelgrid=modelgrid,$
+         galaxygrid=galaxygrid,params=params,isedfit_post=temp_isedfit_post)
        isedfit_post[gthese] = temporary(temp_isedfit_post) ; pass-by-value
        if (keyword_set(silent) eq 0) and (gchunk eq 0) then begin
           splog, 'First GalaxyChunk = '+string((systime(1)-t0)/60.0,format='(G0)')+$

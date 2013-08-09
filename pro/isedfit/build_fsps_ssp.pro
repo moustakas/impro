@@ -110,7 +110,7 @@ pro build_fsps_ssp, kroupa=kroupa, chabrier=chabrier, miles=miles, doitall=doita
        ssp.flux = fsps.flux
        ssp.wave = fsps.wave
        ssp.mstar = fsps.mstar
-       ssp.Z = fsps.Z
+       ssp.Zmetal = fsps.Z
 
 ; compute the number of hydrogen-ionizing photons
        for jj = 0, nage-1 do ssp.nlyc[jj] = alog10(const*im_integral(ssp.wave,$
@@ -126,18 +126,18 @@ pro build_fsps_ssp, kroupa=kroupa, chabrier=chabrier, miles=miles, doitall=doita
 ;         ssp.flux,filterlist='sdss_r0.par')
 
 ; write out       
-       sspfile1 = 'fsps_'+fsps_ver+'_'+sspstr+'_'+imfstr+'_'+Z2string(ssp.Z)+'.fits'
-;      sspfile1 = 'fsps_'+imfstr+'_'+Z2string(ssp.Z)+'.fits'
+       sspfile1 = 'fsps_'+fsps_ver+'_'+sspstr+'_'+imfstr+'_'+Z2string(ssp.Zmetal)+'.fits'
+;      sspfile1 = 'fsps_'+imfstr+'_'+Z2string(ssp.Zmetal)+'.fits'
        im_mwrfits, ssp, ssppath+sspfile1, /clobber
 
-       Z[iZ] = ssp.Z
+       Z[iZ] = ssp.Zmetal
        sspfile[iZ] = sspfile1
     endfor
 
 ; write out an information structure
     info = {$
       imf:               imfstr,$
-      Z:                      Z,$
+      Zmetal:                 Z,$
       inst_vsigma:  inst_vsigma,$ ; [km/s]
       sspfile:      sspfile+'.gz'}
 
