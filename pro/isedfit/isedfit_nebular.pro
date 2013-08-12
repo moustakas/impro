@@ -267,15 +267,14 @@ Function isedfit_nebular, nlyc, wave=wave, inst_vsigma=inst_vsigma, $
 ; build the wavelength vector and the output spectra; ensure adequate 
 ; sampling around the lines (use +/-5-sigma)
     if n_elements(wave) eq 0 then begin
-;      wave = range(912.0,5E4,1000) ; [Angstrom]
-;      wave = range(line[0].wave-20,line[0].wave+20,50)
        for ii = 0, nline-1 do begin
           width = 4.0*tot_vsigma/light*line[ii].wave
-          if ii eq 0 then wave = [line[ii].wave,range(line[ii].wave-width,line[ii].wave+width,40)] else $
-            wave = [wave,line[ii].wave,range(line[ii].wave-width,line[ii].wave+width,40)]
+          morewave = range(line[ii].wave-width,line[ii].wave+width,40)
+          if ii eq 0 then wave = [line[ii].wave,morewave] else $
+            wave = [wave,line[ii].wave,morewave]
        endfor
        wave = wave[sort(wave)]
-    endif; else splog, 'Using input wavelength array!'
+    endif
     nwave = n_elements(wave)
 
     if keyword_set(nospectrum) then return, -1

@@ -13,9 +13,7 @@
 ;   isedpath - I/O path
 ;   index - zero-indexed list of objects to analyze (default is to
 ;     compute K-corrections for everything)
-;   isedfit_sfhgrid_dir - see BUILD_ISEDFIT_SFHGRID
 ;   outprefix - optional output prefix string (see ISEDFIT) 
-;   isedfit_sfhgrid_dir - see BUILD_ISEDFIT_SFHGRID
 ;   thissfhgrid - if SFHGRID in the parameter is a vector, then use
 ;     this optional input to pick one
 ;   galchunksize - divide the sample into GALCHUNKSIZE chunks to

@@ -105,9 +105,9 @@ function isedfit_reconstruct_posterior, isedfit_paramfile, params=params, $
 ; need all the chunks in memory!
     tags = ['chunkindx','modelindx','age','tau','zmetal','av','mu',$
       'mstar','sfr','sfr100','sfrage','ewoii','ewoiiihb','ewniiha']
-    nchunk = n_elements(fp.sfhgrid_chunkfiles)
+    nchunk = n_elements(fp.montegrids_chunkfiles)
     for jj = 0, nchunk-1 do begin
-       chunkfile = fp.modelspath+fp.isedfit_models_chunkfiles[jj]+'.gz'
+       chunkfile = fp.models_fullpath+fp.isedfit_models_chunkfiles[jj]+'.gz'
        if file_test(chunkfile) eq 0 then message, 'Chunk file '+chunkfile+' not found!'
        modelgrid1 = mrdfits(chunkfile,1,/silent);,columns=tags)
        if (jj eq 0) then modelgrid = temporary(modelgrid1) else $

@@ -155,8 +155,29 @@ keeping the SFHGRID priors fixed.  Call \superpro{} again.
 3) Changing your redshift range while keeping everything else
 constant.  Example: exploring a low-redshift solution.
 
+Currently supported list of SSPs (put this in a table): basti
+(solar-scaled, alpha-enhanced), FSPS, BC03, Maraston+05, Pegase. 
 
-ToDo
+List of IMFs.  Depends on which models.  Kroupa, Chabrier,
+Salpeter. Merge this information with the preceding table.   Reddening
+curves.  
+
+
+
+Sequence of events:
+
+* isedfit_montegrids
+* isedfit_models
+* isedfit
+* isedfit_qaplot - need to add a NOBJ warning!  no more than 100; add
+  an NRANDOM keyword!
+
+
+\section{ToDo}
+
+\begin{itemize}
+\item{Add more forbidden (e.g., nebular, auroral emission lines). 
+\end{itemize}
 
 
 

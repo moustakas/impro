@@ -37,9 +37,9 @@
 
 function read_isedfit_paramfile, isedfit_paramfile, thissfhgrid=thissfhgrid
 
-    if (n_elements(isedfit_paramfile) eq 0) then message, $
+    if n_elements(isedfit_paramfile) eq 0 then message, $
       'ISEDFIT_PARAMFILE input required!'
-    if (file_test(isedfit_paramfile,/regular) eq 0) then $
+    if file_test(isedfit_paramfile) eq 0 then $
       message, 'SFHGRID parameter file '+isedfit_paramfile+' not found'
 
     params = yanny_readone(isedfit_paramfile)

@@ -13,7 +13,6 @@
 ;   isedpath - I/O path
 ;   index - zero-indexed list of objects to restore (default is to
 ;     restore all)
-;   isedfit_sfhgrid_dir - see BUILD_ISEDFIT_SFHGRID
 ;   outprefix - optional output prefix string (see ISEDFIT) 
 ;   in_isedfit - like ISEDFIT, but as an input; needed to enable some
 ;     of the fancy plotting I've done for papers
@@ -119,7 +118,7 @@ function isedfit_restore, isedfit_paramfile, params=params, isedfit_dir=isedfit_
        nchunk = n_elements(chunks)
        
 ; initialize the model structure (need to get the number of pixels)
-       junk = mrdfits(fp.sfhgrid_chunkfiles[0],1,row=0,/silent)
+       junk = mrdfits(fp.montegrids_chunkfiles[0],1,row=0,/silent)
        npix = n_elements(junk.wave)
 
        result = struct_addtags(temporary(isedfit),replicate($
@@ -128,7 +127,7 @@ function isedfit_restore, isedfit_paramfile, params=params, isedfit_dir=isedfit_
        for ichunk = 0L, nchunk-1L do begin
           these = where(chunks[ichunk] eq allchunks,nthese)
           if (nthese ne 0L) and (chunks[ichunk] ge 0) then begin
-             chunkfile = strtrim(fp.sfhgrid_chunkfiles[chunks[ichunk]],2)
+             chunkfile = strtrim(fp.montegrids_chunkfiles[chunks[ichunk]],2)
              if (not keyword_set(silent)) then $
                splog, 'Reading '+chunkfile
              grid = mrdfits(chunkfile,1,/silent)

@@ -3,67 +3,49 @@
 ;   ISEDFIT_MONTEGRIDS
 ;
 ; PURPOSE:
-;   Build the Monte Carlo based star formation history grids for use
-;   with iSEDfit.  
+;   Build the Monte Carlo star formation history grids.
 ;
 ; INPUTS: 
-;   isedfit_paramfile - parameter file describing the star formation
-;     history (SFH) priors
+;   isedfit_paramfile - iSEDfit parameter file
 ;
 ; OPTIONAL INPUTS: 
-;   supergrid_paramfile - file describing the supergrid parameters 
-;     (parameters can be overridden using SFHGRID, SYNTHMODELS, IMF,
-;     and REDCURVE optional inputs) 
+;   params - data structure with the same information contained in
+;     ISEDFIT_PARAMFILE (over-rides ISEDFIT_PARAMFILE)
+;   thissfhgrid - if ISEDFIT_PARAMFILE contains multiple grids then
+;     build this SFHgrid (may be a vector)
+;   montegrids_dir - full directory path where the Monte Carlo grids
+;     should be written (default PWD=present working directory)
 ;
-;   thissfhgrid - if SUPERGRID_PARAMFILE contains multiple
-;     supergrids then build this SUPERGRID (may be a vector)
-;
-;   sfhgrid - SFH grid number to build
-;   synthmodels - population synthesis models to use (see the
-;     corresponding BUILD_*_SSP routine for details)
-;       bc03 - 
-;       bc03_lowres - low-resolution BC03 models
-;       basti - solar-scaled models
-;       basti_ae - alpha-enhanced models
-;       pegase - 
-;       maraston05 - 
-;
-;   imf - initial mass function; the available IMFs depend on which
-;     SYNTHMODELS are adopted, but as of 2011 Aug 24 they are:
-;       chab = Chabrier (2003): bc03, bc03_lowres, fsps
-;       salp = Salpeter (1955): bc03, bc03_lowres, fsps, maraston05,
-;         pegase 
-;       kroupa01 = Kroupa (2001): basti, basti_ae, fsps, maraston05,
-;         pegase 
-;
-;   redcurve - reddening curve; current options are: 
-;    -1 = none
-;     0 = Calzetti 2000 
-;     1 = Charlot & Fall 2000
-;     2 = O'Donnell 1994 (i.e., standard Milky Way)
-;     3 = SMC
-; 
-;   isedfit_dir - base pathname for iSEDfit files; the Monte Carlo
-;     grids themselves are written to ISEDFIT_DIR/MONTEGRIDS; note
-;     that a directory will be created if none exists
-;   montegrids_dir - override ISEDFIT_DIR+'/'+MONTEGRIDS
+;   chunksize, minichunksize - to deal with disk space issues this
+;     routine splits the full set of models (NMODEL, as specified in 
+;     WRITE_ISEDFIT_PARAMFILE) into CHUNKSIZE (default 5000) sized
+;     chunks; furthemore, to circumvent possible memory issues, each
+;     chunk is further divided into MINICHUNKSIZE (default 500) sized
+;     chunks; all these tricks are transparent to the user and are
+;     only documented here for completeness
 ;
 ; KEYWORD PARAMETERS: 
 ;   clobber - delete old files from a previous call to this routine,
 ;     including all the Monte Carlo distributions of parameter values
-;   debug - make some debugging plots and wait for a keystroke 
+;     (the user is prompted to confirm the clobber to avoid
+;     inadvertently deleting a large grid!)
+;   debug - make some debugging plots and wait for a keystroke
+;     (currently not a very useful switch)
 ;
 ; OUTPUTS: 
-;   The grids get written out in a data model that ISEDFIT
-;   understands, and which should be transparent to the user. 
+;   The grids (spectra, parameters, etc.) are written out in a data
+;   model that iSEDfit understands, and which should be transparent to
+;   the user.  However, this routine also generates a QAplot (written
+;   to the appropriate subdirectory of MONTEGRIDS_DIR) which should be
+;   inspected to ensure that proper parameter priors have been
+;   chosen. 
 ;
 ; COMMENTS:
-;   Using SUPERGRID_PARAMFILE is the recommended way to call this
-;   routine. 
+;   Some ToDo items:
+;     * output the UV slope, beta, and maybe D(4000)
+;     * better debugging diagnostic plots 
 ;
 ; TODO:
-;   Build diagnostic plots showing the range of parameters spanned by
-;   the models.
 ;
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2009 Feb 20, NYU - written
@@ -74,6 +56,8 @@
 ;   jm11aug24ucsd - documentation updated
 ;   jm13jan13siena - semi-major changes in preparation for public
 ;     release 
+;   jm13aug09siena - significant update and rewrite to conform to a
+;     new and much simpler data model
 ;
 ; Copyright (C) 2009-2011, 2013, John Moustakas
 ; 
@@ -88,9 +72,9 @@
 ; General Public License for more details. 
 ;-
 
-function init_montegrid, nmodel, nage, imf=imf, nmaxburst=nmaxburst
-; initialize the structure containing the parameters of the Monte
-; Carlo grid
+function init_montegrid, nmodel, nmaxburst=nmaxburst
+; internal support routine: initialize the structure containing the
+; parameters of the Monte Carlo grid 
 
     burstarray1 = -1.0
     if (nmaxburst gt 1) then burstarray1 = fltarr(nmaxburst)-1.0
@@ -120,8 +104,8 @@ return, montegrid
 end
 
 function get_bracket_files, info, sspinfo=sspinfo
-; get the two SSPs that bracket the desired metallicity, to allow for
-; interpolation
+; internal support routine: get the two SSPs that bracket the desired
+; metallicity, to allow for interpolation
     ninfo = n_elements(info)
     bracket_files = strarr(2,ninfo)
 
@@ -138,7 +122,8 @@ end
 
 function read_and_interpolate, files, info=info, $
   ssppath=ssppath, fits_grid=fits_grid
-; read and interpolate the base model file onto the desired tau grid
+; internal support routine: read and interpolate the base model file
+; onto the desired metallicity grid 
 
     files = strtrim(files,2)
     junk1 = file_search(ssppath+files[0],count=c1)
@@ -169,7 +154,7 @@ end
 function build_modelgrid, montegrid, params=params, debug=debug, $
   sspinfo=sspinfo, ssppath=ssppath, minichunksize=minichunksize, $
   ichunk=ichunk, nchunk=nchunk
-; this is the main driver routine for building the grid
+; internal support routine: workhorse code which builds the spectra  
 
     if (n_elements(tbc) eq 0) then tbc = 0.01D9 ; dust dispersal timescale [10 Myr]
 
@@ -305,7 +290,8 @@ function build_modelgrid, montegrid, params=params, debug=debug, $
                 flam_cont = flam_cont*10.0^(-0.4*alam)
 
 ; get the EW of some emission lines; the wavelengths correspond to
-; [OII], Hb+[OIII], and Ha+[NII]
+; [OII], Hb+[OIII], and Ha+[NII]; should probably push this to its own
+; function 
                 lmin = [3727.42,4861.325,6548.043]
                 lmax = [3727.42,5006.842,6730.815]
                 lwave = total([[lmin],[lmax]],2)/2.0
@@ -349,8 +335,7 @@ function build_modelgrid, montegrid, params=params, debug=debug, $
 ;                 modelgrid1[sspindx[jj]].ewoiiihb, modelgrid1[sspindx[jj]].ewniiha
              endif else nebflux = outflux*0.0
 
-; ToDo: add additional interesting outputs like beta (UV slope) and
-; the EW of common emission lines
+; ToDo: add additional interesting outputs like beta (UV slope)
 
 ; pack it in             
              modelgrid1[sspindx[jj]].age = outage
@@ -369,9 +354,9 @@ function build_modelgrid, montegrid, params=params, debug=debug, $
 return, modelgrid
 end    
 
-pro isedfit_montegrids, isedfit_paramfile, params=params, isedfit_dir=isedfit_dir, $
-  montegrids_dir=montegrids_dir, thissfhgrid=thissfhgrid, chunksize=chunksize, $
-  minichunksize=minichunksize, clobber=clobber, debug=debug
+pro isedfit_montegrids, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid, $
+  montegrids_dir=montegrids_dir, chunksize=chunksize, minichunksize=minichunksize, $
+  clobber=clobber, debug=debug
 
 ; read the SFHGRID parameter file
     if n_elements(isedfit_paramfile) eq 0 and n_elements(params) eq 0 then begin
@@ -379,16 +364,19 @@ pro isedfit_montegrids, isedfit_paramfile, params=params, isedfit_dir=isedfit_di
        return
     endif
 
+    if n_elements(montegrids_dir) eq 0 then montegrids_dir = get_pwd()
+
+; read the parameter file and then optionally call this routine
+; recursively     
     if (n_elements(params) eq 0) then params = $
       read_isedfit_paramfile(isedfit_paramfile,thissfhgrid=thissfhgrid)
 
-; treat each SFHgrid separately
     ngrid = n_elements(params)
     if ngrid gt 1 then begin
        for ii = 0, ngrid-1 do begin
-          isedfit_montegrids, params=params[ii], isedfit_dir=isedfit_dir, $
-            montegrids_dir=montegrids_dir, chunksize=chunksize, $
-            minichunksize=minichunksize, clobber=clobber, debug=debug
+          isedfit_montegrids, params=params[ii], montegrids_dir=montegrids_dir, $
+            chunksize=chunksize, minichunksize=minichunksize, clobber=clobber, $
+            debug=debug
        endfor
        return
     endif
@@ -399,13 +387,13 @@ pro isedfit_montegrids, isedfit_paramfile, params=params, isedfit_dir=isedfit_di
     
 ; read the SSP information structure    
     ssppath = getenv('ISEDFIT_SSP_DIR')
-    if (file_test(ssppath,/dir) eq 0) then begin
+    if file_test(ssppath,/dir) eq 0 then begin
        splog, 'Verify that ${ISEDFIT_SSP_DIR} environment variable is defined!'
        return
     endif
     ssppath=ssppath+'/'
     sspinfofile = ssppath+'info_'+strtrim(params.synthmodels,2)+'_'+strtrim(params.imf,2)+'.fits.gz'
-    if (file_test(sspinfofile) eq 0) then begin
+    if file_test(sspinfofile) eq 0 then begin
        splog, 'SSP info file '+sspinfofile+' not found!'
        splog, 'Run the appropriate BUILD_*_SSP code!'
        return
@@ -413,15 +401,13 @@ pro isedfit_montegrids, isedfit_paramfile, params=params, isedfit_dir=isedfit_di
     sspinfo = mrdfits(sspinfofile,1,/silent)
     
 ; make directories and delete old files
-    if (n_elements(isedfit_dir) eq 0) then isedfit_dir = './'
-    if (n_elements(montegrids_dir) eq 0) then montegrids_dir = isedfit_dir+'montegrids/'
     sfhgridstring = 'sfhgrid'+string(params.sfhgrid,format='(I2.2)')
     sfhgridpath = montegrids_dir+sfhgridstring+$
       '/'+strtrim(params.synthmodels,2)+'/'+strtrim(params.redcurve,2)+'/'
 
-    if (file_test(sfhgridpath,/dir) eq 0) then begin
+    if file_test(sfhgridpath,/dir) eq 0 then begin
        splog, 'Making directory '+sfhgridpath
-       spawn, 'mkdir -p '+sfhgridpath
+       file_mkdir, sfhgridpath
     endif
 
 ; ---------------------------------------------------------------------------
@@ -434,14 +420,15 @@ pro isedfit_montegrids, isedfit_paramfile, params=params, isedfit_dir=isedfit_di
           splog, 'Delete all *'+strtrim(params.imf,2)+'* files from '+sfhgridpath+' [Y/N]?'
           cc = get_kbrd(1)
        endif
-       if keyword_set(clobber) or (strupcase(cc) eq 'Y') then $
-         spawn, '/bin/rm -f '+sfhgridpath+'*'+strtrim(params.imf,2)+'*.fits.gz', /sh
+       if keyword_set(clobber) or (strupcase(cc) eq 'Y') then begin
+          delfiles = file_search(sfhgridpath+'*'+strtrim(params.imf,2)+'*.fits.gz',count=ndel)
+          if ndel ne 0 then file_delete, delfiles, /quiet
+       endif
        
        splog, 'Building SFHGRID='+sfhgridstring+' REDCURVE='+strtrim(params.redcurve,2)+$
          ' NMODEL='+string(params.nmodel,format='(I0)')
 
-       montegrid = init_montegrid(params.nmodel,imf=strtrim(params.imf,2),$
-         nmaxburst=params.nmaxburst)
+       montegrid = init_montegrid(params.nmodel,nmaxburst=params.nmaxburst)
 
 ; draw uniformly from linear TAU, or 1/TAU?
        tau = randomu(seed,params.nmodel)*(params.tau[1]-params.tau[0])+params.tau[0]
