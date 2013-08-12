@@ -3,30 +3,44 @@
 ;   ISEDFIT_RESTORE()
 ;
 ; PURPOSE:
-;   Restore the best-fitting iSEDfit model. 
+;   Restore the ISEDFIT fitting results and the best-fitting models. 
 ;
 ; INPUTS:
-;   paramfile - iSEDfit parameter file
+;   isedfit_paramfile - iSEDfit parameter file
 ;
 ; OPTIONAL INPUTS:
-;   params - iSEDfit parameter data structure (over-rides PARAMFILE) 
-;   isedpath - I/O path
-;   index - zero-indexed list of objects to restore (default is to
-;     restore all)
+;   params - data structure with the same information contained in
+;     ISEDFIT_PARAMFILE (over-rides ISEDFIT_PARAMFILE)
+;   thissfhgrid - if ISEDFIT_PARAMFILE contains multiple grids then
+;     build this SFHgrid (may be a vector)
+;   isedfit_dir - full directory path where all the ISEDFIT output
+;     files can be found; should match the directory passed to ISEDFIT
+;     (default PWD=present working directory)  
+;   montegrids_dir - full directory path where the Monte Carlo grids
+;     written by ISEDFIT_MONTEGRIDS can be found (default 'montegrids'
+;     subdirectory of the PWD=present working directory)
+;   index - use this optional input to restore a zero-indexed subset
+;     of the full sample (default is to restore everything, although
+;     see COMMENTS)
 ;   outprefix - optional output prefix string (see ISEDFIT) 
-;   in_isedfit - like ISEDFIT, but as an input; needed to enable some
-;     of the fancy plotting I've done for papers
+;   in_isedfit - use this input data structure in lieu of the ISEDFIT
+;     output structure read based on the contents of
+;     ISEDFIT_PARAMFILE; this input facilitates some of the
+;     fancy plotting I've done for papers  
 ;
 ; KEYWORD PARAMETERS:
-;   flambda - convert to F(lambda) (erg/s/cm^2/A) (default is AB mag) 
+;   flambda - convert to F(lambda) (erg/s/cm^2/A) (default is AB mag)
 ;   fnu - convert to F(nu) (erg/s/cm^2/Hz) (default is AB mag) 
-;   nomodels - restore the ISEDFIT structure, but not the model
-;     spectra  
-;   noigm - do not convolve with the IGM
+;   nomodels - restore the ISEDFIT output structure, but not the model
+;     spectra
+;   noigm - do not convolve with the IGM, over-riding the content of
+;     ISEDFIT_PARAMFILE; this can be useful for testing but should not
+;     in general be used
 ;   silent - suppress messages to STDOUT
 ;
 ; OUTPUTS:
-;   model - output data structure array [NGAL]
+;   model - output data structure array containing all the ISEDFIT
+;     outputs plus the following tags [NGAL]
 ;     .WAVE - observed-frame wavelength array (Angstrom)
 ;     .FLUX - observed-frame flux array (AB mag)
 ;
@@ -34,13 +48,18 @@
 ;   isedfit - iSEDfit result structure (see ISEDFIT) [NGAL] 
 ;
 ; COMMENTS:
+;   This routine should be not be used to restore too many spectra
+;   (unless /NOMODELS), otherwise memory problems may occur; use
+;   INDEX. 
 ;
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2007 Jun 27, NYU - largely excised from
 ;     ISEDFIT_QAPLOT and ISEDFIT_MEASURE
 ;   jm11oct01ucsd - documentation cleaned up and updated
+;   jm13aug09siena - updated to conform to the latest data model;
+;     documentation updated 
 ;
-; Copyright (C) 2007, 2011, John Moustakas
+; Copyright (C) 2007, 2011, 2013, John Moustakas
 ; 
 ; This program is free software; you can redistribute it and/or modify 
 ; it under the terms of the GNU General Public License as published by 
@@ -53,8 +72,8 @@
 ; General Public License for more details. 
 ;-
 
-function isedfit_restore, isedfit_paramfile, params=params, isedfit_dir=isedfit_dir, $
-  montegrids_dir=montegrids_dir, thissfhgrid=thissfhgrid, in_isedfit=in_isedfit, $
+function isedfit_restore, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid, $
+  isedfit_dir=isedfit_dir, montegrids_dir=montegrids_dir, in_isedfit=in_isedfit, $
   outprefix=outprefix, index=index, flambda=flambda, fnu=fnu, nomodels=nomodels, $
   noigm=noigm, silent=silent
 
@@ -67,8 +86,8 @@ function isedfit_restore, isedfit_paramfile, params=params, isedfit_dir=isedfit_
 ; filenames
     if (n_elements(params) eq 0) then params = $
       read_isedfit_paramfile(isedfit_paramfile,thissfhgrid=thissfhgrid)
-    if (n_elements(isedfit_dir) eq 0) then isedfit_dir = './'
-    if (n_elements(montegrids_dir) eq 0) then montegrids_dir = isedfit_dir+'montegrids/'
+    if (n_elements(isedfit_dir) eq 0) then isedfit_dir = get_pwd()
+    if (n_elements(montegrids_dir) eq 0) then montegrids_dir = get_pwd()+'montegrids/'
 
 ; treat each SFHgrid separately
     ngrid = n_elements(params)
@@ -118,6 +137,11 @@ function isedfit_restore, isedfit_paramfile, params=params, isedfit_dir=isedfit_
        nchunk = n_elements(chunks)
        
 ; initialize the model structure (need to get the number of pixels)
+       if file_test(fp.montegrids_chunkfiles[0]) eq 0 then begin
+          splog, 'First Montegrids ChunkFile '+fp.montegrids_chunkfiles[0]+' not found!'
+          return, -1
+       endif
+
        junk = mrdfits(fp.montegrids_chunkfiles[0],1,row=0,/silent)
        npix = n_elements(junk.wave)
 

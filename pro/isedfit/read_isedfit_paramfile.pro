@@ -9,8 +9,8 @@
 ;   isedfit_paramfile - parameter file to read
 ;
 ; OPTIONAL INPUTS: 
-;   thissfhgrid - subscript the file to this SFH grid (default is to
-;     read them all)
+;   thissfhgrid - if ISEDFIT_PARAMFILE contains multiple grids then
+;     read this SFHgrid (may be a vector)
 ;
 ; OUTPUTS: 
 ;   params - data structure with all the parameters 

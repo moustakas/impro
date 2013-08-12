@@ -18,8 +18,8 @@
 ;     output files should be written (default PWD=present working
 ;     directory) 
 ;   montegrids_dir - full directory path where the Monte Carlo grids
-;     written by ISEDFIT_MONTEGRIDS can be found (default PWD=present
-;     working directory)  
+;     written by ISEDFIT_MONTEGRIDS can be found (default 'montegrids'
+;     subdirectory of the PWD=present working directory)
 ;
 ; KEYWORD PARAMETERS:
 ;   clobber - overwrite existing files of the same name (the default
@@ -76,7 +76,7 @@ pro isedfit_models, isedfit_paramfile, params=params, isedfit_dir=isedfit_dir, $
       read_isedfit_paramfile(isedfit_paramfile,thissfhgrid=thissfhgrid)
 
     if n_elements(isedfit_dir) eq 0 then isedfit_dir = get_pwd()
-    if n_elements(montegrids_dir) eq 0 then montegrids_dir = get_pwd()
+    if n_elements(montegrids_dir) eq 0 then montegrids_dir = get_pwd()+'montegrids/'
 
 ; treat each SFHgrid separately
     ngrid = n_elements(params)

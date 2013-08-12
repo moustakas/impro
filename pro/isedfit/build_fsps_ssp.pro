@@ -4,7 +4,7 @@
 ;
 ; PURPOSE:
 ;   Generate a grid of FSPS simple stellar populations (SSPs)
-;   to be used by BUILD_ISEDFIT_SFHGRID.
+;   to be used by ISEDFIT_MONTEGRIDS.
 ;
 ; INPUTS:
 ;
@@ -16,7 +16,8 @@
 ;
 ; OUTPUTS:
 ;   An information structure is written to getenv('ISEDFIT_SSP_DIR')
-;   and the models themselves are written to the 'fsps' subdirectory.
+;   and the models themselves are written to the appropriate 'fsps'
+;   subdirectory. 
 ;
 ; COMMENTS:
 ;   If there are any updates to the FSPS models all you have to do is
@@ -57,10 +58,9 @@ pro build_fsps_ssp, kroupa=kroupa, chabrier=chabrier, miles=miles, doitall=doita
     endif
     
     splog, 'Building the FSPS SSPs'
+    outpath = getenv('ISEDFIT_SSP_DIR')+'/'
 
     fsps_ver = 'v2.4'           ; hard-coded version number!
-    outpath = getenv('ISEDFIT_SSP_DIR')+'/'
-    
     imfstr = 'salp'
     if keyword_set(kroupa) then imfstr = 'kroupa01'
     if keyword_set(chabrier) then imfstr = 'chab'
@@ -69,8 +69,8 @@ pro build_fsps_ssp, kroupa=kroupa, chabrier=chabrier, miles=miles, doitall=doita
     ssppath = outpath+'fsps_'+fsps_ver+'_'+sspstr+'/'
     if file_test(ssppath,/dir) eq 0 then file_mkdir, ssppath
     
-    const = 1D/(6.626D-27*2.9979246D18) ; [erg Angstrom]
-    dist = 10.0*3.085678D18 ; fiducial distance [10 pc in cm]
+    const = 1D/(6.626D-27*2.9979246D18) ; [erg*Angstrom]
+    dist = 10.0*3.085678D18             ; fiducial distance [10 pc in cm]
 
 ; estimate the instrumental velocity dispersion; for the MILES+BaSeL
 ; SSPs assume 3 A in the optical (ignore the change in resolution at
@@ -126,8 +126,8 @@ pro build_fsps_ssp, kroupa=kroupa, chabrier=chabrier, miles=miles, doitall=doita
 ;         ssp.flux,filterlist='sdss_r0.par')
 
 ; write out       
-       sspfile1 = 'fsps_'+fsps_ver+'_'+sspstr+'_'+imfstr+'_'+Z2string(ssp.Zmetal)+'.fits'
-;      sspfile1 = 'fsps_'+imfstr+'_'+Z2string(ssp.Zmetal)+'.fits'
+       sspfile1 = 'fsps_'+fsps_ver+'_'+sspstr+'_'+imfstr+'_Z'+$
+         string(ssp.Zmetal,format='(G0.0)')+'.fits'
        im_mwrfits, ssp, ssppath+sspfile1, /clobber
 
        Z[iZ] = ssp.Zmetal

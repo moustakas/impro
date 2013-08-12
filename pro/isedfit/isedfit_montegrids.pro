@@ -14,7 +14,8 @@
 ;   thissfhgrid - if ISEDFIT_PARAMFILE contains multiple grids then
 ;     build this SFHgrid (may be a vector)
 ;   montegrids_dir - full directory path where the Monte Carlo grids
-;     should be written (default PWD=present working directory)
+;     should be written (default 'montegrids' subdirectory of the
+;     PWD=present working directory) 
 ;
 ;   chunksize, minichunksize - to deal with disk space issues this
 ;     routine splits the full set of models (NMODEL, as specified in 
@@ -364,7 +365,7 @@ pro isedfit_montegrids, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
        return
     endif
 
-    if n_elements(montegrids_dir) eq 0 then montegrids_dir = get_pwd()
+    if n_elements(montegrids_dir) eq 0 then montegrids_dir = get_pwd()+'montegrids/'
 
 ; read the parameter file and then optionally call this routine
 ; recursively     
@@ -399,7 +400,7 @@ pro isedfit_montegrids, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
        return
     endif
     sspinfo = mrdfits(sspinfofile,1,/silent)
-    
+
 ; make directories and delete old files
     sfhgridstring = 'sfhgrid'+string(params.sfhgrid,format='(I2.2)')
     sfhgridpath = montegrids_dir+sfhgridstring+$

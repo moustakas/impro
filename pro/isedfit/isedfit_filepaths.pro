@@ -1,50 +1,27 @@
 ;+
 ; NAME:
 ;   ISEDFIT_FILEPATHS()
-;
 ; PURPOSE:
 ;   Given a parameters structure (see READ_ISEDFIT_PARAMFILE), pack
-;   all the requisite paths and filenames into a structure.
-;
-; INPUTS: 
-;   params - 
-;
-; OPTIONAL INPUTS: 
-;   outprefix - 
-;   isedfit_dir - 
-;
-; KEYWORD PARAMETERS: 
-;
-; OUTPUTS: 
-;
-; COMMENTS:
-;
+;   all the requisite paths and filenames into a structure.  This
+;   routine is a support routine and in general should not be called
+;   on its own.
 ; MODIFICATION HISTORY:
-;   J. Moustakas, 2009 Feb 11, NYU 
-;
-; Copyright (C) 2009, John Moustakas
-; 
-; This program is free software; you can redistribute it and/or modify 
-; it under the terms of the GNU General Public License as published by 
-; the Free Software Foundation; either version 2 of the License, or
-; (at your option) any later version. 
-; 
-; This program is distributed in the hope that it will be useful, but 
-; WITHOUT ANY WARRANTY; without even the implied warranty of
-; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-; General Public License for more details. 
+;   J. Moustakas, 2009 Feb 11, NYU
+;   jm13aug09siena - updated to the latest data model 
 ;-
 
 function isedfit_filepaths, params, isedfit_dir=isedfit_dir, $
-  montegrids_dir=montegrids_dir, outprefix=outprefix1, pdffile=pdffile1
+  montegrids_dir=montegrids_dir, outprefix=outprefix1, $
+  pdffile=pdffile1, band_shift=band_shift
 
     if (n_elements(params) eq 0) then $
       message, 'PARAMS input required'
     if (n_elements(params) ne 1) then $
       message, 'PARAMS must be a scalar'
 
-    if n_elements(isedfit_dir) eq 0 then isedfit_dir = './'
-    if n_elements(montegrids_dir) eq 0 then montegrids_dir = './'
+    if n_elements(isedfit_dir) eq 0 then isedfit_dir = get_pwd()
+    if n_elements(montegrids_dir) eq 0 then montegrids_dir = get_pwd()+'montegrids/'
 
 ; some handy variables    
     prefix = strtrim(params.prefix,2)
@@ -87,7 +64,6 @@ function isedfit_filepaths, params, isedfit_dir=isedfit_dir, $
 ; iSEDfit output file names    
     outfile = thisprefix+'_'+synthmodels+'_'+imf+'_'+redcurve+'_'+sfhgridstring+suffix
     postfile = outfile+'_post'
-    kcorrfile = outfile+'_kcorr'
     if n_elements(pdffile1) eq 0 then begin
        psfile = 'qaplot_'+outfile+'.ps'
        pdffile = repstr(psfile,'.ps','.pdf')
@@ -96,6 +72,10 @@ function isedfit_filepaths, params, isedfit_dir=isedfit_dir, $
        psfile = repstr(pdffile,'.pdf','.ps')
     endelse
 
+    if n_elements(band_shift) eq 0 then band_shift = 0.0
+    zbandshift = 'z'+string(band_shift,format='(F3.1)')
+    kcorrfile = outfile+'_kcorr.'+zbandshift
+    
 ; file paths and filenames
     filepaths = {$
       isedfit_dir:              isedfit_dir,        $

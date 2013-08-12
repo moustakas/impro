@@ -92,7 +92,7 @@ function init_isedfit, ngal, nfilt, params=params, isedfit_post=isedfit_post
       ivarmaggies: fltarr(nfilt),$ ; corresponding inverse variance
       bestmaggies: fltarr(nfilt)}  ; best-fitting model photometry
 
-; best-fit values (at the chi2 minimum); see BUILD_ISEDFIT_SFHGRID
+; best-fit values (at the chi2 minimum); see ISEDFIT_MONTEGRIDS
     best = {$
       chunkindx:                 -1,$
       modelindx:                 -1,$

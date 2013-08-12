@@ -1,61 +1,19 @@
 ;+
 ; NAME:
 ;   ISEDFIT_CHI2()
-;
 ; PURPOSE:
-;   Compute chi^2 and the best-fitting scale factor (stellar mass)
-;   given a grid of observed and synthetic photometry.  This routine
-;   is an ISEDFIT support routine, and in general should not be called
-;   on its own.
-;
-; INPUTS: 
-;   maggies - input photometry [NFILT,NGAL]
-;   ivarmaggies - corresponding inverse variances [NFILT,NGAL] 
-;   modelchunk - see ISEDFIT
-;   maxage - age of the universe at the redshift of the galaxy [NGAL] 
-;   zindx - see ISEDFIT
-;
-; OPTIONAL INPUTS: 
-;   The following variables are passed from ISEDFIT so that an
-;   informational message can be printed to STDOUT:
-;     gchunk
-;     ngalchunk
-;     ichunk
-;     nchunk
-;   nminphot - an object must have good photometry in at least
-;     NMINPHOT bandpasses
-;
-; KEYWORD PARAMETERS: 
-;   allages - by default only consider models that are younger than
-;     the age of the universe at the redshift of the galaxy, unless
-;     /ALLAGES 
-;
-; OUTPUTS: 
-;   gridchunk - output data structure containing the chi^2, stellar
-;     mass, and best-fitting synthesized photometry for each
-;     combination of galaxy and models [NMODEL,NAGE,NGAL]
-;
-; OPTIONAL OUTPUTS:
-;
+;   Compute chi^2 and the best-fitting scale factor given a grid of
+;   observed and synthetic photometry.  This routine is an ISEDFIT
+;   support routine and in general should not be called on its own. 
 ; MODIFICATION HISTORY:
-;   J. Moustakas, 2009 Feb - developed
-;
-; Copyright (C) 2009, John Moustakas
-; 
-; This program is free software; you can redistribute it and/or modify 
-; it under the terms of the GNU General Public License as published by 
-; the Free Software Foundation; either version 2 of the License, or
-; (at your option) any later version. 
-; 
-; This program is distributed in the hope that it will be useful, but 
-; WITHOUT ANY WARRANTY; without even the implied warranty of
-; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-; General Public License for more details. 
+;   J. Moustakas, 2009 Feb 10, NYU - developed
+;   jm13aug09siena - updated to the latest data model 
 ;-
 
 function isedfit_chi2, maggies, ivarmaggies, modelchunk, maxage, $
-  zindx, gchunk=gchunk, ngalchunk=ngalchunk, ichunk=ichunk, nchunk=nchunk, $
-  nminphot=nminphot, allages=allages, maxold=maxold, silent=silent
+  zindx, gchunk=gchunk, ngalchunk=ngalchunk, ichunk=ichunk, $
+  nchunk=nchunk, nminphot=nminphot, allages=allages, maxold=maxold, $
+  silent=silent
 
     ndim = size(maggies,/n_dim)
     dims = size(maggies,/dim)

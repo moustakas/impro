@@ -17,15 +17,14 @@
 ;     written; must match the directory passed to ISEDFIT (default
 ;     PWD=present working directory) 
 ;   montegrids_dir - full directory path where the Monte Carlo grids
-;     written by ISEDFIT_MONTEGRIDS can be found (default PWD=present
-;     working directory)  
-;   outprefix - see ISEDFIT
-;
+;     written by ISEDFIT_MONTEGRIDS can be found (default 'montegrids'
+;     subdirectory of the PWD=present working directory)
 ;   index - use this optional input to plot a zero-indexed subset of
 ;     the full sample (default is to plot everything, although see
 ;     COMMENTS)
 ;   galaxy - string array of galaxy names to include in the legend on
 ;     each page of the QAplot
+;   outprefix - optional output prefix string (see ISEDFIT) 
 ;   pdffile - overwrite the default name of the output PDF file (not
 ;     typically necessary since the file name matches the ISEDFIT
 ;     output files); must end with a '.PDF' suffix
@@ -50,6 +49,8 @@
 ;     and explanation of all the outputs  
 ;
 ; COMMENTS:
+;   This routine should be not be used to plot too many objects,
+;   otherwise memory problems may occur; use INDEX.
 ;
 ; EXAMPLES:
 ;
@@ -175,7 +176,7 @@ pro isedfit_qaplot, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid, $
     if (n_elements(params) eq 0) then params = $
       read_isedfit_paramfile(isedfit_paramfile,thissfhgrid=thissfhgrid)
     if (n_elements(isedfit_dir) eq 0) then isedfit_dir = get_pwd()
-    if (n_elements(montegrids_dir) eq 0) then montegrids_dir = get_pwd()
+    if (n_elements(montegrids_dir) eq 0) then montegrids_dir = get_pwd()+'montegrids/'
 
 ; treat each SFHgrid separately
     ngrid = n_elements(params)
@@ -335,35 +336,18 @@ pro isedfit_qaplot, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid, $
                errcolor=im_color('firebrick'), errthick=!p.thick
           endif
 
-; legend
-          label = [$
+          im_legend, /left, /top, box=0, spacing=1.7, charsize=1.1, margin=0, $
+            textoidl([$
             'log (M_{*}/M'+sunsymbol()+') = '+strtrim(string(isedfit_results[igal].mstar,format='(F12.2)'),2),$
             'Age = '+strtrim(string(isedfit_results[igal].age,format='(F12.2)'),2)+' Gyr',$
             'SFR = '+strtrim(string(isedfit_results[igal].sfr100,format='(F12.2)'),2)+' M'+sunsymbol()+' yr^{-1}',$
             '\tau = '+strtrim(string(isedfit_results[igal].tau,format='(F12.1)'),2)+' Gyr',$
             'Z/Z'+sunsymbol()+' = '+strtrim(string(isedfit_results[igal].Zmetal/0.019,format='(F12.2)'),2),$
-            'A_{V} = '+strtrim(string(isedfit_results[igal].av*isedfit_results[igal].mu,format='(F12.2)'),2)+' mag']
-;           'Age_{SFR} = '+strtrim(string(isedfit_results[igal].sfrage,format='(F12.2)'),2),$
-;         label = [$
-;           'log (M/M'+sunsymbol()+') = '+strtrim(string(isedfit_results[igal].mstar,format='(F12.2)'),2)+$
-;           ' ('+strtrim(string(isedfit_results[igal].mstar_50,format='(F12.2)'),2)+')',$
-;           'log SFR_{100} = '+strtrim(string(isedfit_results[igal].sfr100,format='(F12.2)'),2)+$
-;           ' ('+strtrim(string(isedfit_results[igal].sfr100_50,format='(F12.2)'),2)+') M'+sunsymbol()+' yr^{-1}',$
-;           'A_{V} = '+strtrim(string(isedfit_results[igal].av*isedfit_results[igal].mu,format='(F12.2)'),2)+$
-;           ' ('+strtrim(string(isedfit_results[igal].av_50*isedfit_results[igal].mu_50,format='(F12.2)'),2)+') mag',$
-;           '\tau = '+strtrim(string(isedfit_results[igal].tau,format='(F12.1)'),2)+$
-;           ' ('+strtrim(string(isedfit_results[igal].tau_50,format='(F12.2)'),2)+') Gyr',$
-;           'Age = '+strtrim(string(isedfit_results[igal].age,format='(F12.2)'),2)+$
-;           ' ('+strtrim(string(isedfit_results[igal].age_50,format='(F12.2)'),2)+') Gyr',$
-;           'Age_{SFR} = '+strtrim(string(isedfit_results[igal].sfrage,format='(F12.2)'),2)+$
-;           ' ('+strtrim(string(isedfit_results[igal].sfrage_50,format='(F12.2)'),2)+') Gyr',$
-;           'Z/Z'+sunsymbol()+' = '+strtrim(string(isedfit_results[igal].Zmetal/0.019,format='(F12.2)'),2)+$
-;           ' ('+strtrim(string(isedfit_results[igal].Zmetal_50/0.019,format='(F12.2)'),2)+')']
-          im_legend, textoidl(label), /left, /top, box=0, spacing=1.7, charsize=1.1, margin=0
-          label = textoidl([strtrim(repstr(galaxy[igal],'_',' '),2),$
+            'A_{V} = '+strtrim(string(isedfit_results[igal].av*isedfit_results[igal].mu,format='(F12.2)'),2)+' mag'])
+          im_legend, /right, /bottom, box=0, spacing=1.5, charsize=1.4, margin=0, $
+            textoidl([strtrim(repstr(galaxy[igal],'_',' '),2),$
             'z = '+strtrim(string(zobj,format='(F12.4)'),2),'\chi_{\nu}^{2} = '+$
             strtrim(string(isedfit_results[igal].chi2,format='(F12.2)'),2)])
-          im_legend, label, /right, /bottom, box=0, spacing=1.5, charsize=1.4, margin=0
        endelse
 
 ; lower panels: posterior distributions
