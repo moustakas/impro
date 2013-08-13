@@ -8,15 +8,19 @@
 ;
 ; INPUTS: 
 ;   sfhinfo - iSEDfit-style star formation history structure with the
-;     following mandatory tags (technically, the BURST tags are only
-;     needed if NBURST>0):
-;     .TAU - characteristic e-folding time [Gyr]
-;     .TRUNCTAU - characteristic e-folding time over which the last
-;       burst should be truncated [Gyr]
-;     .NBURST - number of bursts
-;     .TBURST - time/age at which each burst begins [Gyr]
-;     .DTBURST - burst duration (exact meaning depends on BURSTTTYPE) [Gyr]
-;     .FBURST - total stellar mass fraction formed in each burst
+;     following tags (note, only .TAU is mandatory, but see also the
+;     TAU optional input):
+;       .TAU - characteristic e-folding time [Gyr]
+;       .TRUNCTAU - characteristic e-folding time over which the last
+;         burst should be truncated [Gyr]
+;       .NBURST - number of bursts
+;       .TBURST - time/age at which each burst begins [Gyr]
+;       .DTBURST - burst duration (exact meaning depends on BURSTTTYPE) [Gyr]
+;       .FBURST - total stellar mass fraction formed in each burst
+;   tau - in lieu of passing SFHINFO, a basic star-formation history
+;     (no bursts, truncated or otherwise) be constructed by simply
+;     passing the characteristic e-folding time through this variable
+;     [Gyr] 
 ; 
 ; OPTIONAL INPUTS: 
 ;   nagemax - maximum number of age/time points to use internally
@@ -81,24 +85,40 @@
 ; General Public License for more details. 
 ;-
 
-function isedfit_sfh, sfhinfo, outage=outage, mtau=mtau, useage=useage, $
+function isedfit_sfh, sfhinfo, tau=tau, outage=outage, mtau=mtau, useage=useage, $
   nagemax=nagemax, dage=dage, sfhtau=outsfhtau, sfhburst=outsfhburst, $
   aburst=aburst, mburst=mburst, mgalaxy=outmgalaxy, sfr100=outsfr100, $
   b100=outb100, sfrage=outsfrage, delayed=delayed, bursttype=bursttype, $
   notruncate=notruncate, linear=linear, debug=debug, _extra=extra
     
-    if n_elements(sfhinfo) eq 0 then begin
+    if n_elements(sfhinfo) eq 0 and n_elements(tau) eq 0 then begin
        doc_library, 'isedfit_sfh'
        return, -1
     endif
 
-; burst preliminaries (need this info up here)
-    nb = sfhinfo.nburst 
-    if (nb gt 0) then begin
-       fburst = im_double(sfhinfo.fburst[0:nb-1])
-       tburst = im_double(sfhinfo.tburst[0:nb-1])
-       dtburst = im_double(sfhinfo.dtburst[0:nb-1])
-    endif
+; construct the variables we will need
+    if n_elements(sfhinfo) eq 0 then begin
+       if n_elements(tau) ne 1 then begin
+          splog, 'Either pass a scalar (positive) TAU value or SFHINFO!'
+          return, -1
+       endif
+       nb = 0
+       trunctau = 0D
+    endif else begin
+       if tag_exist(sfhinfo,'NBURST') then nb = sfhinfo.nburst else nb = 0
+       if (nb gt 0) then begin
+          if tag_exist(sfhinfo,'FBURST') eq 0 or tag_exist(sfhinfo,'FBURST') eq 0 or $
+            tag_exist(sfhinfo,'FBURST') eq 0 then begin
+             splog, 'SFHINFO structure requires FBURST, TBURST, and DTBURST tags!'
+             return, -1
+          endif
+          fburst = im_double(sfhinfo.fburst[0:nb-1])
+          tburst = im_double(sfhinfo.tburst[0:nb-1])
+          dtburst = im_double(sfhinfo.dtburst[0:nb-1])
+       endif
+       if tag_exist(sfhinfo,'TRUNCTAU') then $
+         trunctau = sfhinfo.trunctau else trunctau = 0.0D
+    endelse
     
 ; need a highly sampled age grid to get the integrations right; this
 ; grid is used internally and then the output quantities are
@@ -114,8 +134,9 @@ function isedfit_sfh, sfhinfo, outage=outage, mtau=mtau, useage=useage, $
 
     nage = long((((maxage-minage)/dage)<nagemax)>nagemin)
     if (n_elements(useage) eq 0) then begin
-       age = isedfit_agegrid(sfhinfo,debug=0,nage=nage,$
-         minage=minage,maxage=maxage,linear=linear)
+       age = isedfit_agegrid(sfhinfo,tau=tau,debug=0,nage=nage,$
+         minage=minage,maxage=maxage,linear=linear,$
+         delayed=delayed,bursttype=bursttype)
     endif else age = useage
 
     if (n_elements(outage) eq 0) then outage = age
@@ -124,10 +145,10 @@ function isedfit_sfh, sfhinfo, outage=outage, mtau=mtau, useage=useage, $
 ; deal with the simple tau model, including delayed tau models, and
 ; with bursty SFHs     
     if (n_elements(mtau) eq 0) then mtau = 1D ; normalization [Msun]
-    if (sfhinfo.tau eq 0D) then sfhtau = dblarr(nage) else begin
+    if (tau eq 0D) then sfhtau = dblarr(nage) else begin
        if keyword_set(delayed) then $
-         sfhtau = mtau*age*1D9*exp(-age/sfhinfo.tau)/(sfhinfo.tau*1D9)^2 else $
-           sfhtau = mtau*exp(-age/sfhinfo.tau)/(sfhinfo.tau*1D9)
+         sfhtau = mtau*age*1D9*exp(-age/tau)/(tau*1D9)^2 else $
+           sfhtau = mtau*exp(-age/tau)/(tau*1D9)
     endelse
 
 ; type of burst: 0=step function (default); 1=gaussian; 2=step
@@ -138,9 +159,9 @@ function isedfit_sfh, sfhinfo, outage=outage, mtau=mtau, useage=useage, $
        aburst = dblarr(nb)
        mburst = dblarr(nb)
        for ib = 0, nb-1 do begin
-          if (sfhinfo.tau eq 0D) then $
+          if (tau eq 0D) then $
             aburst[ib] = fburst[ib]*mtau/(dtburst[ib]*1D9) else $
-              aburst[ib] = fburst[ib]*mtau*(1.0-exp(-tburst[ib]/sfhinfo.tau))/(dtburst[ib]*1D9)
+              aburst[ib] = fburst[ib]*mtau*(1.0-exp(-tburst[ib]/tau))/(dtburst[ib]*1D9)
 ; step-function burst (default)
           if bursttype eq 0 then begin
              if (max(age) ge tburst[ib]) then begin
@@ -178,7 +199,7 @@ function isedfit_sfh, sfhinfo, outage=outage, mtau=mtau, useage=useage, $
 ; truncate the last burst?
     dotruncate = 0
     ilast = -1
-    if (nb gt 0) and (sfhinfo.trunctau gt 0D) then begin
+    if (nb gt 0) and (trunctau gt 0D) then begin
        if (keyword_set(notruncate) eq 0) then begin
           dotruncate = 1
           ilast = (long(findex(age,tburst[nb-1])))>0
@@ -189,16 +210,16 @@ function isedfit_sfh, sfhinfo, outage=outage, mtau=mtau, useage=useage, $
           if (npost gt 0) then begin
 ; truncate the full SFH
              sfrpostburst = interpol(sfh,age,tburst[nb-1])
-             sfh[post] = sfrpostburst*exp(-(age[post]-tburst[nb-1])/sfhinfo.trunctau)
+             sfh[post] = sfrpostburst*exp(-(age[post]-tburst[nb-1])/trunctau)
 
 ; code below truncates SFHBURST and SFHTAU, and adjusts MBURST for the
 ; truncation; in general we don't use these quantities, so skip
 ; the extra work              
 ;             sfrpostburst1 = interpol(sfhburst1[*,nb-1],age,tburst[nb-1])
-;             sfhburst1[post,nb-1] = sfrpostburst1*exp(-(age[post]-tburst[nb-1])/sfhinfo.trunctau)
+;             sfhburst1[post,nb-1] = sfrpostburst1*exp(-(age[post]-tburst[nb-1])/trunctau)
 ;             mburst[nb-1] = im_integral(age*1D9,sfhburst1[*,nb-1]) ; [Msun]
-;;            mburst[nb-1] = 0.5D*mburst[nb-1] + sfrpostburst*sfhinfo.trunctau[nb-1]*1D9*$
-;;              exp(-tburst[nb-1]/sfhinfo.trunctau[nb-1]) ; [Msun]                
+;;            mburst[nb-1] = 0.5D*mburst[nb-1] + sfrpostburst*trunctau[nb-1]*1D9*$
+;;              exp(-tburst[nb-1]/trunctau[nb-1]) ; [Msun]                
 ;             sfhtau[post] = 0
 ;             sfhburst = total(sfhburst1,2,/double)
           endif
@@ -233,12 +254,12 @@ function isedfit_sfh, sfhinfo, outage=outage, mtau=mtau, useage=useage, $
                 m100burst = im_integral(age*1D9,sfhburst,1D9*(age[iage]-dt)>0,1D9*age[iage])
                 mtotburst = im_integral(age*1D9,sfhburst,0D,1D9*age[iage])
              endelse
-             if (sfhinfo.tau eq 0D) then begin
+             if (tau eq 0D) then begin
                 mtot100 = 0D + m100burst
                 mgalaxy[iage] = mtau + mtotburst
              endif else begin
-                mtot100 = mtau*(exp(-((age[iage]-dt)>0)/sfhinfo.tau)-exp(-age[iage]/sfhinfo.tau)) + m100burst
-                mgalaxy[iage] = mtau*(1D0-exp(-age[iage]/sfhinfo.tau)) + mtotburst
+                mtot100 = mtau*(exp(-((age[iage]-dt)>0)/tau)-exp(-age[iage]/tau)) + m100burst
+                mgalaxy[iage] = mtau*(1D0-exp(-age[iage]/tau)) + mtotburst
              endelse
           endelse
           if (age[iage] gt 0D) then begin
@@ -246,7 +267,7 @@ function isedfit_sfh, sfhinfo, outage=outage, mtau=mtau, useage=useage, $
              b100[iage] = sfr100[iage]/(mgalaxy[iage]/(1D9*age[iage]))
           endif
 ; compute the SFR-weighted age
-          if (sfhinfo.tau eq 0D) then sfrage[iage] = age[iage] else begin
+          if (tau eq 0D) then sfrage[iage] = age[iage] else begin
              norm = im_integral(age*1D9,sfh,0D,1D9*age[iage])
              if (norm eq 0D) then sfrage[iage] = age[iage] else $
                sfrage[iage] = im_integral(age*1D9,sfh*(age[iage]-age)*1D9,0D,1D9*age[iage])/norm
@@ -271,7 +292,7 @@ function isedfit_sfh, sfhinfo, outage=outage, mtau=mtau, useage=useage, $
     if keyword_set(debug) then begin
        djs_plot, age, sfh, xlog=0, xsty=3, ysty=3, psym=-6, _extra=extra;, xr=[min(age)>0.01,max(age)]
        djs_oplot, [outage], [outsfh], psym=6, color='orange'
-       if dotruncate then djs_oplot, tburst[nb-1]+sfhinfo.trunctau*[1,1], !y.crange, color='yellow'
+       if dotruncate then djs_oplot, tburst[nb-1]+trunctau*[1,1], !y.crange, color='yellow'
 ;      for ib = 0, nb-1 do djs_oplot, tburst[ib]*[1,1], !y.crange, color='yellow'
     endif
 

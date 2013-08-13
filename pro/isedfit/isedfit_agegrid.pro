@@ -6,14 +6,16 @@
 ;   Build an age (time) grid that deals with bursts correctly. 
 ;
 ; INPUTS: 
-;   info - iSEDfit-style star formation history structure 
-;     tau - characteristic e-folding time [Gyr]
-;     nburst - number of bursts
-;     tburst - time each burst begins [Gyr]
-;     dtburst - burst duration [Gyr]
-;     fburst - mass fraction of each burst
-;     truncate - construct an age vector for a truncated burst (only
-;       used for NBURST=1)
+;   sfhinfo - iSEDfit-style star formation history structure (see
+;     ISEDFIT_SFH for more details)
+;      .TAU - characteristic e-folding time [Gyr]
+;      .NBURST - number of bursts
+;      .TBURST - time each burst begins [Gyr]
+;      .DTBURST - burst duration [Gyr]
+;      .FBURST - mass fraction of each burst
+;      .TRUNCTAU - construct an age vector for a truncated burst (only
+;        used for NBURST>0)
+;   tau - see ISEDFIT_SFH documentation [Gyr]
 ;
 ; OPTIONAL INPUTS: 
 ;   inage - input age vector to use as a starting point [Gyr]; note
@@ -24,6 +26,12 @@
 ;   maxage - maximum age [Gyr] (default 13.0)
 ;
 ; KEYWORD PARAMETERS: 
+;   delayed - construct a "delayed" rather a "simple" tau model (see
+;     iSEDfit documentation) (recommended)
+;   bursttype - type of burst (see iSEDfit documentation)
+;     0 - step function
+;     1 - Gaussian (default)
+;     2 - step function with exponential wings
 ;   lookback - convert OUTAGE to a lookback time
 ;   debug - make a simple debugging plot and wait for a keystroke 
 ;
@@ -50,9 +58,9 @@
 ; General Public License for more details. 
 ;-
 
-function isedfit_agegrid, info, inage=inage1, nage=nage, $
+function isedfit_agegrid, sfhinfo, tau=tau, inage=inage1, nage=nage, $
   minage=minage, maxage=maxage, lookback=lookback, linear=linear, $
-  debug=debug
+  delayed=delayed, bursttype=bursttype, debug=debug
 
     if keyword_set(linear) then log = 0 else log = 1
 
@@ -72,12 +80,34 @@ function isedfit_agegrid, info, inage=inage1, nage=nage, $
     maxage = max(inage)
     nage = n_elements(inage)
     
-; some convenient variables    
-    nb = info.nburst
+; construct the variables we will need
+    if n_elements(sfhinfo) eq 0 then begin
+       if n_elements(tau) ne 1 then begin
+          splog, 'Either pass a scalar TAU value or SFHINFO!'
+          return, -1
+       endif
+       nb = 0
+       trunctau = 0D
+    endif else begin
+       if tag_exist(sfhinfo,'NBURST') then nb = sfhinfo.nburst else nb = 0
+       if (nb gt 0) then begin
+          if tag_exist(sfhinfo,'FBURST') eq 0 or tag_exist(sfhinfo,'FBURST') eq 0 or $
+            tag_exist(sfhinfo,'FBURST') eq 0 then begin
+             splog, 'SFHINFO structure requires FBURST, TBURST, and DTBURST tags!'
+             return, -1
+          endif
+          fburst = im_double(sfhinfo.fburst[0:nb-1])
+          tburst = im_double(sfhinfo.tburst[0:nb-1])
+          dtburst = im_double(sfhinfo.dtburst[0:nb-1])
+       endif
+       if tag_exist(sfhinfo,'TRUNCTAU') then $
+         trunctau = sfhinfo.trunctau else trunctau = 0.0D
+    endelse
+
     if (nb eq 0) then return, inage
 
-    tb = im_double(info.tburst[0:nb-1])
-    dtb = im_double(info.dtburst[0:nb-1])
+    tb = im_double(tburst)
+    dtb = im_double(dtburst)
 
 ; demand that at least NSAMP points are used to sample the burst, but
 ; (in the limit of lots of bursts) no more than 80% of NAGE
@@ -122,15 +152,15 @@ function isedfit_agegrid, info, inage=inage1, nage=nage, $
 
 ; truncate the last burst?  require at least 5 age samplings of the
 ; exponential tail
-    if (info.trunctau gt 0.0) then begin
-       if info.bursttype eq 1 then $
-         post = where(outage ge tb[nb-1],npost,comp=pre,ncomp=npre) else $ ; after the peak of the burst
+    if (trunctau gt 0.0) then begin
+       if keyword_set(bursttype) then $
+         post = where(outage ge tb[nb-1],npost,comp=pre,ncomp=npre) else $      ; after the peak of the burst
            post = where(outage ge tb[nb-1]+dtb[nb-1],npost,comp=pre,ncomp=npre) ; after the full width of the burst
        if (npost gt 0) then begin
           npad = 5
-          if info.bursttype eq 1 then $
-            padage = tb[nb-1]-im_double(info.trunctau)*alog((1D0-(range(0.1D,1D,npad,/log)-0.1D))) else $
-              padage = (tb[nb-1]+dtb[nb-1])-im_double(info.trunctau)*alog((1D0-(range(0.001D,1D,npad,/log)-0.001D)))
+          if keyword_set(bursttype) then $
+            padage = tb[nb-1]-im_double(trunctau)*alog((1D0-(range(0.1D,1D,npad,/log)-0.1D))) else $
+              padage = (tb[nb-1]+dtb[nb-1])-im_double(trunctau)*alog((1D0-(range(0.001D,1D,npad,/log)-0.001D)))
 
           keep = where(padage lt maxage,nkeep) ; could break if TB=MAXAGE
           if (nkeep gt 0) then begin

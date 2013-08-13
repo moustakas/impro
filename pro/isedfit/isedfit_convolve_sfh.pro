@@ -9,9 +9,17 @@
 ; INPUTS: 
 ;   flux - input SSP spectra [NPIX,NAGE]
 ;   age  - age vector corresponding to each spectrum in FLUX [NAGE, years] 
-;   infosfh - iSEDfit-style star formation history structure; see
-;     ISEDFIT_SFH for details for what this structure
-;     should contain
+;
+;   sfhinfo - iSEDfit-style star formation history structure (see
+;     ISEDFIT_SFH for more details)
+;      .TAU - characteristic e-folding time [Gyr]
+;      .NBURST - number of bursts
+;      .TBURST - time each burst begins [Gyr]
+;      .DTBURST - burst duration [Gyr]
+;      .FBURST - mass fraction of each burst
+;      .TRUNCTAU - construct an age vector for a truncated burst (only
+;        used for NBURST>0)
+;   tau - see ISEDFIT_SFH documentation [Gyr]
 ;
 ; OPTIONAL INPUTS:
 ;   time - desired output age vector (Gyr)
@@ -26,7 +34,7 @@
 ;
 ; KEYWORD PARAMETERS:
 ;   delayed, bursttype - additional keywords for ISEDFIT_SFH (see that
-;   routine for details)   
+;     routine for details)   
 ;
 ; OUTPUTS: 
 ;   cspflux - time-dependent spectra of the composite stellar
@@ -57,13 +65,13 @@
 ; General Public License for more details. 
 ;-
 
-function isedfit_convolve_sfh, flux, age=age, infosfh=infosfh, time=time, $
-  sfh=sfh, mstar=mstar, nlyc=nlyc, cspmstar=cspmstar, cspnlyc=cspnlyc, $
-  nsamp=nsamp, debug=debug, bigdebug=bigdebug, delayed=delayed, $
-  bursttype=bursttype, _extra=extra
+function isedfit_convolve_sfh, flux, age=age, infosfh=infosfh, tau=tau, $
+  time=time, sfh=sfh, mstar=mstar, nlyc=nlyc, cspmstar=cspmstar, $
+  cspnlyc=cspnlyc, nsamp=nsamp, debug=debug, bigdebug=bigdebug, $
+  delayed=delayed, bursttype=bursttype, _extra=extra
 
-    if (n_elements(flux) eq 0) or n_elements(age) eq 0 or $
-      (n_elements(infosfh) eq 0) then begin
+    if n_elements(flux) eq 0 or n_elements(age) eq 0 or $
+      ((n_elements(infosfh) eq 0) and (n_elements(tau) eq 0)) then begin
        doc_library, 'isedfit_convolve_sfh'
        return, -1
     endif
@@ -80,7 +88,7 @@ function isedfit_convolve_sfh, flux, age=age, infosfh=infosfh, time=time, $
     if (n_elements(nsamp) eq 0) then nsamp = 2
 
 ; get the basic SFH    
-    sfh = isedfit_sfh(infosfh,outage=time,debug=debug,$
+    sfh = isedfit_sfh(infosfh,tau=tau,outage=time,debug=debug,$
       delayed=delayed,bursttype=bursttype,_extra=extra)
     nsfh = n_elements(sfh)
     cspflux = fltarr(npix,nsfh)
@@ -117,13 +125,14 @@ function isedfit_convolve_sfh, flux, age=age, infosfh=infosfh, time=time, $
        otime = otime[uniq(otime,sort(otime))]
        thistime = interpolate(otime,dindgen(nsamp*n_elements(otime)-(nsamp-1))/(nsamp*1D))
 
-       thistime = isedfit_agegrid(infosfh,inage=thistime/1D9)*1D9
+       thistime = isedfit_agegrid(infosfh,tau=tau,inage=thistime/1D9,$
+         delayed=delayed,bursttype=bursttype)*1D9
        nthistime = n_elements(thistime)
        
 ; interpolate       
        sspindx = findex(age,reverse(thistime))>0
        isspflux = interpolate(flux,sspindx)
-       thissfh = isedfit_sfh(infosfh,useage=thistime/1D9,$
+       thissfh = isedfit_sfh(infosfh,tau=tau,useage=thistime/1D9,$
          delayed=delayed,bursttype=bursttype,_extra=extra)
 
        if keyword_set(bigdebug) then begin

@@ -22,7 +22,8 @@
 ;   The code CREATE_PEGASE_SSPS needs to have been run.  The SSPs have
 ;   been built using the BaSeL stellar library (without emission
 ;   lines) with the additional free parameters in Pegase set to their 
-;   fiducial recommended values. 
+;   fiducial recommended values.  The highest stellar metallicity
+;   value (Z=0.01) is ignored.
 ;
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2011 Mar 29, UCSD
@@ -75,7 +76,8 @@ pro build_pegase_ssp, kroupa=kroupa, cosmic_imf=cosmic_imf, doitall=doitall
 
 ; read each SSP in turn, convert to a FITS structure, do some magic,
 ; and then write out
-    Zstr = ['0.0001','0.0004','0.004','0.008','0.02','0.05','0.1']
+    Zstr = ['0.0001','0.0004','0.004','0.008','0.02','0.05']
+;   Zstr = ['0.0001','0.0004','0.004','0.008','0.02','0.05','0.1']
     nZ = n_elements(Zstr)
 
     Z = fltarr(nZ)
