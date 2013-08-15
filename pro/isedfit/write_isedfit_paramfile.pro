@@ -253,7 +253,7 @@ pro write_isedfit_paramfile, params=params, isedfit_dir=isedfit_dir, prefix=pref
     if n_elements(nmodel) ne 0 then params.nmodel = nmodel
     if n_elements(ndraw) ne 0 then params.ndraw = ndraw
     if n_elements(nminphot) ne 0 then params.nminphot = nminphot
-    if n_elements(galchunksize) ne 0 then params.galchunksize
+    if n_elements(galchunksize) ne 0 then params.galchunksize = galchunksize
 
 ; basic SFH
     if n_elements(age) ne 0 then begin
