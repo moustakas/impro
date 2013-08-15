@@ -53,7 +53,7 @@
 ; General Public License for more details. 
 ;-
 
-pro im_plothist, arr, xhist, yhist, bin=bin, edge=edge, weight=weight, $
+pro im_plothist, arr, xhist, yhist, bin=bin1, edge=edge, weight=weight, $
   psym=psym, cumulative=cumulative, normfactor=normfactor, noplot=noplot, $
   overplot=overplot, fill=fill, fcolor=fcolor, fline=fline, fspacing=fspacing, $
   fpattern=fpattern, forientation=forientation, fraction=fraction, peak=peak, $
@@ -68,13 +68,13 @@ pro im_plothist, arr, xhist, yhist, bin=bin, edge=edge, weight=weight, $
     dtype = size(arr,/type)
     if (n_elements(weight) eq 0L) then weight = dblarr(ndata)+1.0
 
-    if (n_elements(bin) eq 0) then begin
+    if (n_elements(bin1) eq 0) then begin
        if keyword_set(logbins) then $
          bin = (max(alog10(arr))-min(alog10(arr)))/double(ceil(0.3D*sqrt(ndata))) else $
            bin = (max(arr)-min(arr))/double(ceil(0.3D*sqrt(ndata)))
        if (dtype eq 4) then bin = float(bin)
     endif else begin
-       bin = float(abs(bin))
+       bin = float(abs(bin1))
     endelse
 
 ; if ARR is an integer and BIN is floating point then histogram()
@@ -138,12 +138,15 @@ pro im_plothist, arr, xhist, yhist, bin=bin, edge=edge, weight=weight, $
 
     if keyword_set(fill) then begin
        if keyword_set(logbins) then begin
-          xfill = transpose([[Xhist-10^bin/2.0],[Xhist+10^bin/2.0]])
-          xfill = reform(xfill, n_elements(xfill))
-          xfill = [xfill[0], xfill, xfill[n_elements(xfill)-1]]
-          yfill = transpose([[yhist],[yhist]])
-          yfill = reform(yfill, n_elements(yfill))
-          yfill = [0, yfill, 0]
+;      if keyword_set(logbins) and n_elements(bin1) eq 0 then begin
+          xfill = [xhist[0],xhist,xhist[n_hist-1]]
+          yfill = [0.0,yhist,0.0]
+;         xfill = transpose([[Xhist-10.0^bin/2.0],[Xhist+10.0^bin/2.0]])
+;         xfill = reform(xfill, n_elements(xfill))
+;         xfill = [xfill[0], xfill, xfill[n_elements(xfill)-1]]
+;         yfill = transpose([[yhist],[yhist]])
+;         yfill = reform(yfill, n_elements(yfill))
+;         yfill = [0, yfill, 0]
           xfill = xfill > 10^!X.CRANGE[0] < 10^!X.CRANGE[1] ;Make sure within plot range
           yfill = yfill > !Y.CRANGE[0] < !Y.CRANGE[1]
        endif else begin

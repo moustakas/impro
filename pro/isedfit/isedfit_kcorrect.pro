@@ -30,6 +30,11 @@
 ; KEYWORD PARAMETERS:
 ;   vega - convert the output absolute magnitudes to Vega (default is
 ;     to keep them as AB magnitudes)
+;   nowrite - do not write out any of the output files (generally not
+;     recommended but can be useful in certain situations) 
+;   clobber - overwrite existing files of the same name (the default
+;     is to check for existing files and if they exist to exit
+;     gracefully)  
 ;
 ; OUTPUTS:
 ;   kcorrect_results - [NGAL] data structure with the following tags
@@ -67,7 +72,7 @@
 pro isedfit_kcorrect, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid, $
   isedfit_dir=isedfit_dir, montegrids_dir=montegrids_dir, outprefix=outprefix, $
   index=index, out_filterlst=out_filterlist, band_shift=band_shift, $
-  kcorrect_results=kcorrect_results, vega=vega
+  kcorrect_results=kcorrect_results, vega=vega, nowrite=nowrite, clobber=clobber
 
     if n_elements(isedfit_paramfile) eq 0 and n_elements(params) eq 0 then begin
        doc_library, 'isedfit_kcorrect'
@@ -88,7 +93,8 @@ pro isedfit_kcorrect, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid,
           isedfit_kcorrect, params=params[ii], isedfit_dir=isedfit_dir,$
             montegrids_dir=montegrids_dir, outprefix=outprefix, index=index, $
             out_filterlst=out_filterlist, band_shift=band_shift, $
-            kcorrect_results=kcorrect_results1, vega=vega
+            kcorrect_results=kcorrect_results1, vega=vega, nowrite=nowrite, $
+            clobber=clobber
           if ii eq 0 then kcorrect_results = kcorrect_results1 else $
             kcorrect_results = [[temporary(kcorrect_results)],[kcorrect_results1]]
        endfor 
@@ -113,8 +119,8 @@ pro isedfit_kcorrect, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid,
     endif
 
 ; restore the ISEDFIT results without the best-fitting models to get
-; the number of galaxies 
-    isedfit = isedfit_restore(params=params,isedfit_dir=isedfit_dir,$
+; the number of galaxies and other goodies
+    isedfit = read_isedfit(params=params,isedfit_dir=isedfit_dir,$
       montegrids_dir=montegrids_dir,index=index,outprefix=outprefix,$
       silent=silent,/nomodels)
     ngal = n_elements(isedfit)
@@ -147,8 +153,8 @@ pro isedfit_kcorrect, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid,
        good = where((isedfit[sortindx[gthese]].chi2 gt 0.0) and $
          (isedfit[sortindx[gthese]].chi2 lt 0.9E6),ngood)
        if (ngood ne 0L) then begin
-          isedfit1 = isedfit_restore(params=params,isedfit_dir=isedfit_dir,$
-            montegrids_dir=montegrids_dir,index=sortindx[gthese[good]],$
+          isedfit1 = read_isedfit(params=params,isedfit_dir=isedfit_dir,$
+            montegrids_dir=montegrids_dir,index=index[sortindx[gthese[good]]],$
             outprefix=outprefix,/flambda,/silent)
           oneplusz = rebin(reform(1.0+isedfit[sortindx[gthese[good]]].zobj,1,ngood),$
             n_elements(isedfit1[0].wave),ngood)
@@ -159,7 +165,7 @@ pro isedfit_kcorrect, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid,
             isedfit[sortindx[gthese[good]]].maggies,isedfit[sortindx[gthese[good]]].ivarmaggies,$
             filterlist,out_filterlist,restwave,restflux,band_shift=band_shift,$
             absmag=chunk_absmag,ivarabsmag=chunk_ivarabsmag,synth_absmag=chunk_synth_absmag,$
-            vega=vega,/silent)
+            chi2=chi2,vega=vega,/silent)
 
           kcorrect_results[sortindx[gthese[good]]].kcorrect = chunk_kcorr
           kcorrect_results[sortindx[gthese[good]]].absmag = chunk_absmag
@@ -173,7 +179,8 @@ pro isedfit_kcorrect, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid,
       (systime(1)-t0)/60.0
 
 ; write out
-    im_mwrfits, kcorrect_results, kcorrfile, silent=silent, /clobber
+    if keyword_set(nowrite) eq 0 then im_mwrfits, kcorrect_results, $
+      kcorrfile, silent=silent, /clobber
     
 return
 end

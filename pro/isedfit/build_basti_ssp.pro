@@ -81,7 +81,7 @@ pro build_basti_ssp, enhanced=enhanced, doitall=doitall
 ; the spectra are somewhat incomplete; also, cut the models at 14.5
 ; Gyr because some 15 Gyr models are missing (e.g., z803,
 ; sss_agb.t615000) 
-    Zstr = reverse(['z103','z203','z403','z803','z102','zsun','z302','z402'])
+    Zstr = ['z103','z203','z403','z803','z102','zsun','z302','z402']
     nZ = n_elements(Zstr)
 
     Z = fltarr(nZ)

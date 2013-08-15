@@ -4,8 +4,8 @@
 ;
 ; PURPOSE:
 ;   Reconstruct the posterior distribution(s) of the output
-;   parameters.  This routine is used by ISEDFIT_QAPLOT but it can
-;   also be called independently.
+;   parameters.  This routine is used by READ_ISEDFIT() among other
+;   routines but it can also be called independently. 
 ;
 ; INPUTS:
 ;   isedfit_paramfile - iSEDfit parameter file
@@ -40,7 +40,7 @@
 ;
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2007 Jun 27, NYU - largely excised from
-;     ISEDFIT_QAPLOT and ISEDFIT_MEASURE
+;     ISEDFIT_SED_QAPLOT and ISEDFIT_MEASURE
 ;   jm13aug09siena - updated to conform to the latest version of
 ;     iSEDfit 
 ;

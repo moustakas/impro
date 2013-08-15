@@ -73,6 +73,7 @@ function isedfit_chi2, maggies, ivarmaggies, modelchunk, maxage, $
           vscale_err = 1.0/sqrt(total(reform(nivarmaggies,1,nfilt)#vmodelmaggies^2,1,/double))
           vchi2 = total(vivarmaggies*(vmaggies-rebin(reform(vscale,1,nthese),$
             nfilt,nthese)*vmodelmaggies)^2,1,/double)
+          if total(vscale lt 0) ne 0.0 then message, 'Negative scale factor!'
 ; store the results
           bestmaggies = rebin(reform(vscale,1,nthese),nfilt,nthese)*vmodelmaggies
           gridchunk[these,igal].chi2 = vchi2/dof

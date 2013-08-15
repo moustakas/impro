@@ -21,7 +21,7 @@
 ;
 ; EXAMPLES:
 ;   First try the Salpeter IMF:
-;      IDL> write_pegase_imf, [0.01,100.0], 1.0-2.35, $
+;      IDL> write_pegase_imf, [0.1,100.0], 1.0-2.35, $
 ;      IDL>   outfile='IMF_mySalpeter.dat'
 
 ;   Alternatively, try the "cosmic IMF" of Wilkins+08 (eq. 2):

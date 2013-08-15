@@ -143,7 +143,7 @@ function init_paramfile, filterlist=filterlist, prefix=prefix, $
       nmodel:        10000L,$
       ndraw:          2000L,$
       nminphot:          3L,$
-      galchunksize:    500L,$
+      galchunksize:   5000L,$
 ; model grid parameters; basic SFH priors
       age:       [0.1,13.0],$ ; range of model ages [Gyr]
       tau:       [0.01,1.0],$ ; [Gyr] or [Gyr^-1] if /ONEOVERTAU
@@ -237,8 +237,16 @@ pro write_isedfit_paramfile, params=params, isedfit_dir=isedfit_dir, prefix=pref
 ; SPS parameters
     if n_elements(synthmodels) ne 0 then params.synthmodels = synthmodels
     if n_elements(imf) ne 0 then params.imf = imf
-    if n_elements(redcurve) ne 0 then params.redcurve = redcurve
+    if n_elements(redcurve) ne 0 then params.redcurve = strlowcase(strtrim(redcurve,2))
     if n_elements(igm) ne 0 then params.igm = keyword_set(igm)
+    case params.redcurve of
+       'none': 
+       'calzetti': 
+       'charlot': 
+       'odonnell': 
+       'smc': 
+       else: message, 'Reddening curve '+params.redcurve+' not currently supported!'
+    endcase
 
 ; --------------------
 ; SFH priors
@@ -298,7 +306,10 @@ pro write_isedfit_paramfile, params=params, isedfit_dir=isedfit_dir, prefix=pref
     endif
     
 ; additional options
-    params.oneovertau = keyword_set(oneovertau)
+    if keyword_set(oneovertau) then begin
+       params.oneovertau = 1
+       if min(params.tau) le 0 then message, 'When using /ONEOVERTAU, TAU must be greater than zero!'
+    endif
     params.delayed = keyword_set(delayed)
     if params.delayed and params.oneovertau then $
       message, 'DELAYED and ONEOVERTAU may not work well together; choose one!'

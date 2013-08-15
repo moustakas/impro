@@ -37,7 +37,7 @@ function isedfit_filepaths, params, isedfit_dir=isedfit_dir, $
     sfhgridstring = 'sfhgrid'+string(params.sfhgrid,format='(I2.2)')
 
 ; montegrids output directory and output files; only
-; ISEDFIT_MONTEGRIDS, ISEDFIT_MODELS, ISEDFIT_RESTORE, and possibly
+; ISEDFIT_MONTEGRIDS, ISEDFIT_MODELS, READ_ISEDFIT(), and possibly
 ; ISEDFIT_RECONSTRUCT_POSTERIOR should need the CHUNKINFO file,
 ; so don't crash if we don't find it (just move on)
     montegrids_fullpath = montegrids_dir+sfhgridstring+'/'+synthmodels+'/'+redcurve+'/'

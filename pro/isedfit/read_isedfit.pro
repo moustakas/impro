@@ -1,9 +1,10 @@
 ;+
 ; NAME:
-;   ISEDFIT_RESTORE()
+;   READ_ISEDFIT()
 ;
 ; PURPOSE:
-;   Restore the ISEDFIT fitting results and the best-fitting models. 
+;   Restore the ISEDFIT fitting results and, optionally, the posterior
+;   parameter distributions, and the best-fitting models. 
 ;
 ; INPUTS:
 ;   isedfit_paramfile - iSEDfit parameter file
@@ -45,7 +46,7 @@
 ;     .FLUX - observed-frame flux array (AB mag)
 ;
 ; OPTIONAL OUTPUTS:
-;   isedfit - iSEDfit result structure (see ISEDFIT) [NGAL] 
+;   isedfit_post - iSEDfit result structure (see ISEDFIT) [NGAL] 
 ;
 ; COMMENTS:
 ;   This routine should be not be used to restore too many spectra
@@ -54,7 +55,7 @@
 ;
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2007 Jun 27, NYU - largely excised from
-;     ISEDFIT_QAPLOT and ISEDFIT_MEASURE
+;     ISEDFIT_SED_QAPLOT and ISEDFIT_MEASURE
 ;   jm11oct01ucsd - documentation cleaned up and updated
 ;   jm13aug09siena - updated to conform to the latest data model;
 ;     documentation updated 
@@ -72,13 +73,13 @@
 ; General Public License for more details. 
 ;-
 
-function isedfit_restore, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid, $
+function read_isedfit, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid, $
   isedfit_dir=isedfit_dir, montegrids_dir=montegrids_dir, in_isedfit=in_isedfit, $
-  outprefix=outprefix, index=index, flambda=flambda, fnu=fnu, nomodels=nomodels, $
-  noigm=noigm, silent=silent
+  outprefix=outprefix, index=index, isedfit_post=isedfit_post, flambda=flambda, $
+  fnu=fnu, nomodels=nomodels, noigm=noigm, silent=silent
 
     if n_elements(isedfit_paramfile) eq 0 and n_elements(params) eq 0 then begin
-       doc_library, 'isedfit_restore'
+       doc_library, 'read_isedfit'
        return, -1
     endif
 
@@ -93,7 +94,7 @@ function isedfit_restore, isedfit_paramfile, params=params, thissfhgrid=thissfhg
     ngrid = n_elements(params)
     if ngrid gt 1 then begin
        for ii = 0, ngrid-1 do begin
-          result1 = isedfit_restore(params=params[ii],isedfit_dir=isedfit_dir,$
+          result1 = read_isedfit(params=params[ii],isedfit_dir=isedfit_dir,$
             montegrids_dir=montegrids_dir,in_isedfit=in_isedfit,$
             outprefix=outprefix,index=index,flambda=flambda,fnu=fnu, $
             nomodels=nomodels,noigm=noigm,silent=silent)
@@ -114,13 +115,21 @@ function isedfit_restore, isedfit_paramfile, params=params, thissfhgrid=thissfhg
        endif
        splog, 'Reading '+isedfile
        isedfit1 = mrdfits(isedfile,1,/silent)
-
 ; only restore a subset of the objects    
-       if (n_elements(index) eq 0L) then isedfit = temporary(isedfit1) else $
-         isedfit = temporary(isedfit1[index])
+       if (n_elements(index) eq 0L) then begin
+          index = lindgen(n_elements(isedfit1)) ; need this for isedfit_kcorrect
+          isedfit = temporary(isedfit1) 
+       endif else isedfit = temporary(isedfit1[index])
     endif else isedfit = in_isedfit
     ngal = n_elements(isedfit)
 
+; restore the posteriors if requested
+    if arg_present(isedfit_post) then begin
+       isedfit_post = isedfit_reconstruct_posterior(params=params,$
+         isedfit_dir=isedfit_dir,index=index,outprefix=outprefix)
+    endif
+
+; restore the models    
     if keyword_set(nomodels) then begin
        return, isedfit
     endif else begin

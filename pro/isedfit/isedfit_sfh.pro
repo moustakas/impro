@@ -105,6 +105,10 @@ function isedfit_sfh, sfhinfo, tau=tau, outage=outage, mtau=mtau, useage=useage,
        nb = 0
        trunctau = 0D
     endif else begin
+       if tag_exist(sfhinfo,'TAU') eq 0 then begin
+          splog, 'SFHINFO structure requires TAU tag!'
+          return, -1
+       endif else tau = sfhinfo.tau
        if tag_exist(sfhinfo,'NBURST') then nb = sfhinfo.nburst else nb = 0
        if (nb gt 0) then begin
           if tag_exist(sfhinfo,'FBURST') eq 0 or tag_exist(sfhinfo,'FBURST') eq 0 or $

@@ -77,9 +77,9 @@
 ;-
 
 function im_read_basti, metallicity=metallicity, eta=eta, hires=hires, $
-  enhanced=enhanced
+  enhanced=enhanced, silent=silent
 
-    ssppath = getenv('IM_DATA_DIR')+'/synthesis/basti/'
+    ssppath = getenv('IM_RESEARCH_DIR')+'/synthesis/basti/'
 
     if (n_elements(metallicity) eq 0) then metallicity = 'zsun'
     case metallicity of
@@ -178,7 +178,7 @@ function im_read_basti, metallicity=metallicity, eta=eta, hires=hires, $
 ; flux units for the hires models are arbitrary, while for the lores
 ; models the units are 4.3607D-33 erg/s/m!
     for ii = 0L, nage-1 do begin
-       splog, 'Reading '+sspfile[ii]
+       if keyword_set(silent) eq 0 then splog, 'Reading '+sspfile[ii]
        readfast, sspfile[ii], data, skip=0
        npix = n_elements(data[0,*])
        if (ii eq 0) then begin

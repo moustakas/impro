@@ -160,7 +160,7 @@ function build_modelgrid, montegrid, params=params, debug=debug, $
     if (n_elements(tbc) eq 0) then tbc = 0.01D9 ; dust dispersal timescale [10 Myr]
 
 ; define some reddening curve variables
-    case strtrim(params.redcurve,2) of
+    case strlowcase(strtrim(params.redcurve,2)) of
        'none': 
        'calzetti': calzetti = 1
        'charlot': charlot = 1
@@ -242,7 +242,7 @@ function build_modelgrid, montegrid, params=params, debug=debug, $
              alam = klam*(modelgrid1[sspindx[jj]].av/rv)
              if keyword_set(charlot) then begin
                 old = where(sspfits[jj].age gt tbc,nold)
-                if (nold ne 0) then alam[*,old] = outinfo[indx1[jj]].mu*alam[*,old]
+                if (nold ne 0) then alam[*,old] = modelgrid1[sspindx[jj]].mu*alam[*,old]
              endif
              sspflux[*,*,jj] = sspflux[*,*,jj]*10.0^(-0.4*alam)
 

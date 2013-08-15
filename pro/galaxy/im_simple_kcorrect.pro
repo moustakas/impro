@@ -167,10 +167,12 @@ function im_simple_kcorrect, redshift, maggies, ivarmaggies, in_filterlist, $
        synth_outmaggies_obs[*,jj] = k_project_filters(lambda,flux,$ ; out_filterlist, observed
          silent=silent,filterlist=out_filterlist)
 
-       scale[jj] = total(ivarmaggies[*,jj]*maggies[*,jj]*bestmaggies[*,jj],/double)/$
+; note the absolute value, to protect against negative fluxes       
+       scale[jj] = total(ivarmaggies[*,jj]*abs(maggies[*,jj])*bestmaggies[*,jj],/double)/$
          total(ivarmaggies[*,jj]*bestmaggies[*,jj]^2.0,/double)
-       chi2[jj] = total(ivarmaggies[*,jj]*(maggies[*,jj]-scale[jj]*bestmaggies[*,jj])^2.0,/double)
-
+       chi2[jj] = total(ivarmaggies[*,jj]*(abs(maggies[*,jj])-scale[jj]*bestmaggies[*,jj])^2.0,/double)
+       scale[jj] = abs(scale[jj])
+       
        bestmaggies[*,jj] = scale[jj]*bestmaggies[*,jj]
        synth_outmaggies_rest[*,jj] = scale[jj]*synth_outmaggies_rest[*,jj]
        synth_outmaggies_obs[*,jj] = scale[jj]*synth_outmaggies_obs[*,jj]

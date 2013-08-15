@@ -55,7 +55,7 @@
 function im_read_maraston05, metallicity=metallicity, hbmorph=hbmorph, $
   kroupa=kroupa, abmag=abmag, flambda=flambda, fnu=fnu
 
-    ssppath = getenv('IM_DATA_DIR')+'/synthesis/maraston05/'
+    ssppath = getenv('IM_RESEARCH_DIR')+'/synthesis/maraston05/'
 
     if (n_elements(metallicity) eq 0) then metallicity = 'z002'
     case metallicity of

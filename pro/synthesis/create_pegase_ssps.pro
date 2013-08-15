@@ -8,14 +8,10 @@
 ;
 ; INPUTS: 
 ;
-; OPTIONAL INPUTS: 
-;
 ; KEYWORD PARAMETERS: 
 ;   cosmic_imf - generate SSPs for my PRIMUS cosmic-IMF project 
 ;
 ; OUTPUTS: 
-;
-; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
 ;   To change the ages.dat file (must be integers!)
@@ -28,7 +24,7 @@
 ; 
 ;   For now do not include nebular emission, but that is on my ToDo
 ;   list. 
-;    
+;
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2011 Mar 29, UCSD
 ;
@@ -54,15 +50,8 @@ pro create_pegase_ssps, cosmic_imf=cosmic_imf, dossps=dossps, $
       spawn, 'mkdir -p '+ssppath, /sh
 
 ; --------------------------------------------------    
-; [1] specify the IMFs
-    imf = ['Salpeter_100','Kroupa01_100'] ; fiducial set
-    imfstr = ['salp','kroupa01']
-    minmass = [0.1,0.01]
-    maxmass = [100,100]
-    imffile = hrpath+'IMF_'+imf+'.dat' 
-    nimf = n_elements(imf)
-    
-; ###########################################################################
+; [1] specify (and create if necessary) the IMFs 
+
 ; special case for my cosmic IMF project; consider a grid of high-mass
 ; slopes with a fixed low-mass slope 
     if keyword_set(cosmic_imf) then begin
@@ -80,13 +69,23 @@ pro create_pegase_ssps, cosmic_imf=cosmic_imf, dossps=dossps, $
           slope = 1.0-[1.3,alpha2[ii]] ; fixed low-mass slope
           write_pegase_imf, mass, slope, outfile=imffile[ii]
        endfor
-    endif
-; ###########################################################################
+    endif else begin 
+       imf = ['Salpeter_100','Kroupa01_100'] ; fiducial set
+       imfstr = ['salp','kroupa01']
+       minmass = [0.1,0.1]
+       maxmass = [100,100]
+       imffile = hrpath+'IMF_'+imf+'.dat' 
+       nimf = n_elements(imf)
+
+       write_pegase_imf, [0.1,100.0], 1.0-2.35, outfile=imffile[0]          ; Salpeter
+       write_pegase_imf, [0.1,0.5,100.0], 1.0-[1.3,2.3], outfile=imffile[1] ; Kroupa01
+    endelse
 
 ; update the list_IMFs.dat file; be sure a copy of the *original* IMF
 ; file exists because we are going to be overwriting it
     if (file_test(hrpath+'list_IMFs.original.dat') eq 0) then begin
-       splog, 'Please manually copy/backup the *original* list_IMF.dat file'
+       splog, 'Please manually copy/backup the *original* list_IMF.dat file to: '
+       splog, '   '+hrpath+'list_IMFs.original.dat'
        return
     endif
      
@@ -117,7 +116,7 @@ pro create_pegase_ssps, cosmic_imf=cosmic_imf, dossps=dossps, $
           printf, lun, strtrim(maxmass[ii],2)     ; highest mass M_sun
           printf, lun, 'B'                        ; SNII ejecta model of Woosley & Weaver
           printf, lun, 'y'                        ; stellar winds
-          printf, lun, '1'                        ; Basel stellar library
+          printf, lun, '1'                        ; BaSeL stellar library
           printf, lun, imf[ii]                    ; prefix
           printf, lun, 'end'
           free_lun, lun
@@ -157,7 +156,7 @@ pro create_pegase_ssps, cosmic_imf=cosmic_imf, dossps=dossps, $
           printf, lun, scenarios_outfile         ; scenarios.f output file
           printf, lun, sspsfile                  ; SSPs pre-computed by SSPs.f
           printf, lun, '0.05'                    ; default binary fraction
-          printf, lun, '1'                       ; Basel stellar library
+          printf, lun, '1'                       ; BaSeL stellar library
     
           for iZ = 0, nZ-1 do begin ; loop on each metallicity
              sfhfile = 'SSP_'+imfstr[ii]+'_Z'+Zgrid[iZ]+'.fits'
