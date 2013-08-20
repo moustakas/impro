@@ -105,7 +105,7 @@ pro isedfit_models, isedfit_paramfile, params=params, isedfit_dir=isedfit_dir, $
        return
     endif
 
-    splog, 'SYNTHMODELS='+strtrim(params.synthmodels,2)+', '+$
+    splog, 'SPSMODELS='+strtrim(params.spsmodels,2)+', '+$
       'REDCURVE='+strtrim(params.redcurve,2)+', IMF='+$
       strtrim(params.imf,2)+', '+'SFHGRID='+$
       string(params.sfhgrid,format='(I2.2)')

@@ -127,7 +127,7 @@ pro isedfit_kcorrect, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid,
 
 ; initialize the output data structure    
     kcorrect_results = struct_trimtags(isedfit,select=['isedfit_id',$
-      'zobj','maggies','ivarmaggies','chi2'])
+      'z','maggies','ivarmaggies','chi2'])
     kcorrect_results = struct_addtags(temporary(kcorrect_results),replicate({$
       kcorrect:     fltarr(nfilt), $
       absmag:       fltarr(nfilt),$
@@ -156,12 +156,12 @@ pro isedfit_kcorrect, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid,
           isedfit1 = read_isedfit(params=params,isedfit_dir=isedfit_dir,$
             montegrids_dir=montegrids_dir,index=index[sortindx[gthese[good]]],$
             outprefix=outprefix,/flambda,/silent)
-          oneplusz = rebin(reform(1.0+isedfit[sortindx[gthese[good]]].zobj,1,ngood),$
+          oneplusz = rebin(reform(1.0+isedfit[sortindx[gthese[good]]].z,1,ngood),$
             n_elements(isedfit1[0].wave),ngood)
           restwave = isedfit1.wave/oneplusz
           restflux = isedfit1.flux*oneplusz
 
-          chunk_kcorr = im_simple_kcorrect(isedfit[sortindx[gthese[good]]].zobj,$
+          chunk_kcorr = im_simple_kcorrect(isedfit[sortindx[gthese[good]]].z,$
             isedfit[sortindx[gthese[good]]].maggies,isedfit[sortindx[gthese[good]]].ivarmaggies,$
             filterlist,out_filterlist,restwave,restflux,band_shift=band_shift,$
             absmag=chunk_absmag,ivarabsmag=chunk_ivarabsmag,synth_absmag=chunk_synth_absmag,$

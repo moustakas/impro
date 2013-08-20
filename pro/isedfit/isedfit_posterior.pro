@@ -12,12 +12,9 @@
 function isedfit_packit, isedfit, array, type=type, wquant=wquant
 ; support routine for isedfit_posterior()
     
-;   tagavg = tag_indx(isedfit,type+'_avg')
     tag50 = tag_indx(isedfit,type+'_50')
-;   tagmode = tag_indx(isedfit,type+'_mode')
-
-;   tagerr = tag_indx(isedfit,type+'_err')
     tagerr = tag_indx(isedfit,type+'_err')
+;   tagavg = tag_indx(isedfit,type+'_avg')
 ;   tagefferr = tag_indx(isedfit,type+'_eff_err')
 
 ;   isedfit.(tagavg) = djs_mean(array)
@@ -29,16 +26,6 @@ function isedfit_packit, isedfit, array, type=type, wquant=wquant
     isedfit.(tagerr) = (wquant[2]-wquant[0])/4.0
 ;   isedfit.(tagefferr) = (wquant[2]-wquant[0])/4.0
 
-;; get the mode    
-;    binsz = (wquant[2]-wquant[0])/n_elements(array)
-;    if (binsz le 0.0) then binsz = (max(array)-min(array))/n_elements(array)
-;    if (binsz le 0.0) then isedfit.(tagmode) = array[0] else begin
-;       yhist = histogram(array,binsize=binsz,omin=omin,omax=omax)
-;       xhist = dindgen(n_elements(yhist))*binsz+omin+binsz/2.0
-;       mx = max(yhist,this)
-;       isedfit.(tagmode) = xhist[this]
-;    endelse
-    
 return, isedfit
 end
 
@@ -85,6 +72,7 @@ function isedfit_posterior, isedfit, modelgrid=modelgrid, $
           isedfit[igal] = isedfit_packit(isedfit[igal],modelgrid[allow[these]].sfr*10D^logscale,type='sfr')
           isedfit[igal] = isedfit_packit(isedfit[igal],modelgrid[allow[these]].sfr100*10D^logscale,type='sfr100')
 
+          isedfit[igal] = isedfit_packit(isedfit[igal],modelgrid[allow[these]].b100,type='b100')
           isedfit[igal] = isedfit_packit(isedfit[igal],modelgrid[allow[these]].age,type='age')
           isedfit[igal] = isedfit_packit(isedfit[igal],modelgrid[allow[these]].sfrage,type='sfrage')
           isedfit[igal] = isedfit_packit(isedfit[igal],modelgrid[allow[these]].tau,type='tau')
@@ -115,6 +103,7 @@ function isedfit_posterior, isedfit, modelgrid=modelgrid, $
           isedfit[igal].mstar = alog10(modelgrid[mindx].mstar*isedfit[igal].scale)
           isedfit[igal].sfr = modelgrid[mindx].sfr*isedfit[igal].scale
           isedfit[igal].sfr100 = modelgrid[mindx].sfr100*isedfit[igal].scale
+          isedfit[igal].sfr100 = modelgrid[mindx].b100
        endif
     endfor 
 

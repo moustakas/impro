@@ -93,6 +93,7 @@ function init_montegrid, nmodel, nmaxburst=nmaxburst
       mstar:                   -1.0,$
       sfr:                     -1.0,$
       sfr100:                  -1.0,$
+      b100:                    -1.0,$
       sfrage:                  -1.0,$
       nburst:                     0,$
       trunctau:                -1.0,$ ; burst truncation time scale
@@ -267,9 +268,10 @@ function build_modelgrid, montegrid, params=params, debug=debug, $
              inf = where(finite(outflux) eq 0)
              if (inf[0] ne -1) then message, 'Bad bad bad'
 
-; get the instantaneous and 100-Myr averaged SFR
+; get the instantaneous and 100-Myr averaged SFRs, and the birthrate
+; parameter 
              outsfr = isedfit_sfh(modelgrid1[sspindx[jj]],outage=outage,$
-               sfr100=outsfr100,sfrage=outsfrage,b100=b100,mgalaxy=mgal,$
+               sfr100=outsfr100,sfrage=outsfrage,b100=outb100,mgalaxy=mgal,$
                delayed=params.delayed,bursttype=params.bursttype,$
                debug=debug)
 
@@ -343,6 +345,7 @@ function build_modelgrid, montegrid, params=params, debug=debug, $
              modelgrid1[sspindx[jj]].mstar = outmstar
              modelgrid1[sspindx[jj]].sfr = outsfr
              modelgrid1[sspindx[jj]].sfr100 = outsfr100
+             modelgrid1[sspindx[jj]].b100 = outb100
              modelgrid1[sspindx[jj]].sfrage = outsfrage
              modelgrid1[sspindx[jj]].nlyc = outnlyc
              modelgrid1[sspindx[jj]].flux = outflux+nebflux
@@ -393,7 +396,7 @@ pro isedfit_montegrids, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
        return
     endif
     ssppath=ssppath+'/'
-    sspinfofile = ssppath+'info_'+strtrim(params.synthmodels,2)+'_'+strtrim(params.imf,2)+'.fits.gz'
+    sspinfofile = ssppath+'info_'+strtrim(params.spsmodels,2)+'_'+strtrim(params.imf,2)+'.fits.gz'
     if file_test(sspinfofile) eq 0 then begin
        splog, 'SSP info file '+sspinfofile+' not found!'
        splog, 'Run the appropriate BUILD_*_SSP code!'
@@ -404,7 +407,7 @@ pro isedfit_montegrids, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
 ; make directories and delete old files
     sfhgridstring = 'sfhgrid'+string(params.sfhgrid,format='(I2.2)')
     sfhgridpath = montegrids_dir+sfhgridstring+$
-      '/'+strtrim(params.synthmodels,2)+'/'+strtrim(params.redcurve,2)+'/'
+      '/'+strtrim(params.spsmodels,2)+'/'+strtrim(params.redcurve,2)+'/'
 
     if file_test(sfhgridpath,/dir) eq 0 then begin
        splog, 'Making directory '+sfhgridpath
@@ -439,7 +442,7 @@ pro isedfit_montegrids, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
        montegrid.tau = tau
 
 ; metallicity; check to make sure that the prior boundaries do not
-; exceed the metallicity range available from the chosen SYNTHMODELS
+; exceed the metallicity range available from the chosen SPSMODELS
        if (params.Zmetal[0] lt min(sspinfo.Zmetal)) then begin
           splog, 'Adjusting minimum prior metallicity!'
           params.Zmetal[0] = min(sspinfo.Zmetal)
@@ -603,7 +606,7 @@ pro isedfit_montegrids, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
        these = lindgen(nthese)+i1
 
        modelgrid = build_modelgrid(montegrid[these],params=params,debug=debug,$
-         sspinfo=sspinfo,ssppath=ssppath+strtrim(params.synthmodels,2)+'/',$
+         sspinfo=sspinfo,ssppath=ssppath+strtrim(params.spsmodels,2)+'/',$
          minichunksize=minichunksize,ichunk=ichunk,nchunk=nchunk)
        modelgrid.chunkindx = ichunk
 

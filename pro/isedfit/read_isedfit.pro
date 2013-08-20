@@ -96,9 +96,13 @@ function read_isedfit, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid
        for ii = 0, ngrid-1 do begin
           result1 = read_isedfit(params=params[ii],isedfit_dir=isedfit_dir,$
             montegrids_dir=montegrids_dir,in_isedfit=in_isedfit,$
-            outprefix=outprefix,index=index,flambda=flambda,fnu=fnu, $
-            nomodels=nomodels,noigm=noigm,silent=silent)
+            outprefix=outprefix,index=index,isedfit_post=isedfit_post1,$
+            flambda=flambda,fnu=fnu,nomodels=nomodels,noigm=noigm,silent=silent)
           if ii eq 0 then result = result1 else result = [[result],[result1]]
+          if arg_present(isedfit_post) then begin
+             if ii eq 0 then isedfit_post = isedfit_post1 else $
+               isedfit_post = [[isedfit_post],[isedfit_post1]]
+          endif
        endfor
        return, result
     endif 
@@ -135,9 +139,9 @@ function read_isedfit, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid
     endif else begin
        light = 2.99792458D18             ; speed of light [A/s]
        pc10 = 3.085678D19                ; fiducial distance [10 pc in cm]
-       dlum = pc10*10D^(lf_distmod(isedfit.zobj,omega0=params.omega0,$ ; [cm]
+       dlum = pc10*10D^(lf_distmod(isedfit.z,omega0=params.omega0,$ ; [cm]
          omegal0=params.omegal)/5D)/params.h100 
-;      dlum = dluminosity(isedfit.zobj,/cm) ; luminosity distance [cm]
+;      dlum = dluminosity(isedfit.z,/cm) ; luminosity distance [cm]
        
 ; read the models; group by chunks; remove objects that were not
 ; fitted
@@ -183,13 +187,13 @@ function read_isedfit, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid
 ; loop through every object and construct the best-fit model
        for igal = 0L, ngal-1L do begin
           if (result[igal].chi2 lt 1E6) then begin
-             zobj = result[igal].zobj
-             zwave = result[igal].wave*(1+zobj)
+             z = result[igal].z
+             zwave = result[igal].wave*(1+z)
              zflux_flam = result[igal].scale*result[igal].flux*$ ; [erg/s/cm2/A]
-               (pc10/dlum[igal])^2.0/(1.0+zobj)
+               (pc10/dlum[igal])^2.0/(1.0+z)
              if params.igm and (keyword_set(noigm) eq 0) then begin
                 windx = findex(igmgrid.wave,zwave)
-                zindx = findex(igmgrid.zgrid,zobj)
+                zindx = findex(igmgrid.zgrid,z)
                 igm = interpolate(igmgrid.igm,windx,zindx,/grid,missing=1.0)
                 zflux_flam = zflux_flam*igm
              endif

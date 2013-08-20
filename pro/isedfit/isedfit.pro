@@ -10,7 +10,7 @@
 ;   isedfit_paramfile - iSEDfit parameter file
 ;   maggies - input photometry [NFILT,NGAL]
 ;   ivarmaggies - inverse variance array for MAGGIES [NFILT,NGAL]  
-;   zobj - galaxy redshifts [NGAL] 
+;   z - galaxy redshifts [NGAL] 
 ;
 ; OPTIONAL INPUTS:
 ;   params - data structure with the same information contained in
@@ -26,6 +26,10 @@
 ;     different assumptions)
 ;   index - use this optional input to fit a zero-indexed subset of
 ;     the full sample (default is to fit everything)
+;
+;   ra,dec - galaxy right ascension and declination which will be
+;     copied to the output structure for the user's convenience
+;     [NGAL] (decimal degrees)
 ;
 ; KEYWORD PARAMETERS:
 ;   allages - allow solutions with ages that are older than the age of
@@ -78,7 +82,8 @@
 ; General Public License for more details. 
 ;-
 
-function init_isedfit, ngal, nfilt, params=params, isedfit_post=isedfit_post
+function init_isedfit, ngal, nfilt, params=params, ra=ra, dec=dec, $
+  isedfit_post=isedfit_post
 ; ISEDFIT support routine - initialize the output structure 
 
     ndraw = params.ndraw ; number of random draws
@@ -87,7 +92,9 @@ function init_isedfit, ngal, nfilt, params=params, isedfit_post=isedfit_post
 
     isedfit1 = {$
       isedfit_id:            -1L,$ ; unique ID number
-      zobj:                 -1.0,$ ; redshift
+      z:                    -1.0,$ ; redshift
+      ra:                    -1D,$ ; RA [decimal degrees]
+      dec:                   -1D,$ ; Dec [decimal degrees]
       maggies:     fltarr(nfilt),$ ; observed maggies
       ivarmaggies: fltarr(nfilt),$ ; corresponding inverse variance
       bestmaggies: fltarr(nfilt)}  ; best-fitting model photometry
@@ -113,6 +120,7 @@ function init_isedfit, ngal, nfilt, params=params, isedfit_post=isedfit_post
       nlyc:                    -1.0,$ 
       sfr:                     -1.0,$ ; instantaneous
       sfr100:                  -1.0,$ ; 100 Myr timescale
+      b100:                    -1.0,$ ; birthrate parameter
       ewoii:                   -1.0,$ 
       ewoiiihb:                -1.0,$ 
       ewniiha:                 -1.0,$ 
@@ -129,10 +137,11 @@ function init_isedfit, ngal, nfilt, params=params, isedfit_post=isedfit_post
       sfrage_50:   -1.0,$
       tau_50:      -1.0,$
       Zmetal_50:   -1.0,$
-      av_50:       -1.0,$
+      AV_50:       -1.0,$
       mu_50:       -1.0,$
       sfr_50:      -1.0,$ ; instantaneous
       sfr100_50:   -1.0,$ ; 100 Myr
+      b100_50:     -1.0,$
       ewoii_50:    -1.0,$
       ewoiiihb_50: -1.0,$
       ewniiha_50:  -1.0,$
@@ -142,10 +151,11 @@ function init_isedfit, ngal, nfilt, params=params, isedfit_post=isedfit_post
       sfrage_err:   -1.0,$
       tau_err:      -1.0,$
       Zmetal_err:   -1.0,$
-      av_err:       -1.0,$
+      AV_err:       -1.0,$
       mu_err:       -1.0,$
       sfr_err:      -1.0,$
       sfr100_err:   -1.0,$
+      b100_err:     -1.0,$
       ewoii_err:    -1.0,$
       ewoiiihb_err: -1.0,$
       ewniiha_err:  -1.0}
@@ -164,11 +174,11 @@ function init_isedfit, ngal, nfilt, params=params, isedfit_post=isedfit_post
 return, isedfit
 end
 
-pro isedfit, isedfit_paramfile, maggies, ivarmaggies, zobj, params=params, $
+pro isedfit, isedfit_paramfile, maggies, ivarmaggies, z, params=params, $
   thissfhgrid=thissfhgrid, isedfit_dir=isedfit_dir, outprefix=outprefix, $
-  index=index, isedfit_results=isedfit_results, isedfit_post=isedfit_post, $
-  allages=allages, maxold=maxold, silent=silent, nowrite=nowrite, $
-  clobber=clobber
+  index=index, ra=ra, dec=dec, isedfit_results=isedfit_results, $
+  isedfit_post=isedfit_post, allages=allages, maxold=maxold, silent=silent, $
+  nowrite=nowrite, clobber=clobber
 
     if n_elements(isedfit_paramfile) eq 0 and n_elements(params) eq 0 then begin
        doc_library, 'isedfit'
@@ -189,10 +199,10 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, zobj, params=params, $
 
     nmaggies = n_elements(maggies)
     nivarmaggies = n_elements(ivarmaggies)
-    nzobj = n_elements(zobj)
+    nz = n_elements(z)
     
     if (nmaggies eq 0L) or (nivarmaggies eq 0L) or $
-      (nzobj eq 0L) then begin
+      (nz eq 0L) then begin
        doc_library, 'isedfit'
        return
     endif
@@ -207,8 +217,8 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, zobj, params=params, $
        splog, 'Dimensions of MAGGIES and IVARMAGGIES do not match'
        return
     endif
-    if (nzobj ne ngal) then begin
-       splog, 'Dimensions of MAGGIES and ZOBJ do not match'
+    if (nz ne ngal) then begin
+       splog, 'Dimensions of MAGGIES and Z do not match'
        return
     endif
     if (total(finite(maggies) eq 0B) ne 0.0) or $
@@ -216,19 +226,36 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, zobj, params=params, $
        splog, 'MAGGIES and IVARMAGGIES cannot have infinite values!'
        return
     endif
-    if (total(zobj le 0.0) ne 0.0) then begin
-       splog, 'ZOBJ should all be positive'
+    if (total(z le 0.0) ne 0.0) then begin
+       splog, 'Z should all be positive'
        return
     endif
 
+; check for RA,DEC    
+    if n_elements(ra) ne 0L then begin
+       if size(ra,/type) ne 5 then splog, 'Warning: RA should be type double!'
+       if n_elements(ra) ne ngal then begin
+          splog, 'Dimensions of RA must match the input number of galaxies!'
+          return
+       endif
+    endif else ra = dblarr(ngal)-1D
+
+    if n_elements(dec) ne 0L then begin
+       if size(dec,/type) ne 5 then splog, 'Warning: DEC should be type double!'
+       if n_elements(dec) ne ngal then begin
+          splog, 'Dimensions of DEC must match the input number of galaxies!'
+          return
+       endif
+    endif else dec = dblarr(ngal)-1D
+    
 ; treat each SFHgrid separately
     ngrid = n_elements(params)
     if ngrid gt 1 then begin
        for ii = 0, ngrid-1 do begin
-          isedfit, isedfit_paramfile1, maggies, ivarmaggies, zobj, params=params[ii], $
+          isedfit, isedfit_paramfile1, maggies, ivarmaggies, z, params=params[ii], $
             isedfit_dir=isedfit_dir, outprefix=outprefix, index=index, $
-            isedfit_results=isedfit_results, isedfit_post=isedfit_post, allages=allages, $
-            maxold=maxold, silent=silent, nowrite=nowrite, clobber=clobber
+            ra=ra, dec=dec, isedfit_results=isedfit_results, isedfit_post=isedfit_post, $
+            allages=allages, maxold=maxold, silent=silent, nowrite=nowrite, clobber=clobber
        endfor 
        return
     endif
@@ -246,10 +273,12 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, zobj, params=params, $
 ; fit the requested subset of objects and return
     if (n_elements(index) ne 0L) then begin
        isedfit, isedfit_paramfile1, maggies[*,index], ivarmaggies[*,index], $
-         zobj[index], params=params, isedfit_dir=isedfit_dir, outprefix=outprefix, $
-         isedfit_results=isedfit_results1, isedfit_post=isedfit_post1, allages=allages, $
-         maxold=maxold, silent=silent, /nowrite, clobber=clobber
-       isedfit_results = init_isedfit(ngal,nfilt,params=params,isedfit_post=isedfit_post)
+         z[index], params=params, isedfit_dir=isedfit_dir, outprefix=outprefix, $
+         ra=ra[index], dec=dec[index], isedfit_results=isedfit_results1, $
+         isedfit_post=isedfit_post1, allages=allages, maxold=maxold, $
+         silent=silent, /nowrite, clobber=clobber
+       isedfit_results = init_isedfit(ngal,nfilt,params=params,$
+         ra=ra,dec=dec,isedfit_post=isedfit_post)
        isedfit_results[index] = isedfit_results1
        isedfit_post[index] = isedfit_post1
        if (keyword_set(nowrite) eq 0) then begin
@@ -260,7 +289,7 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, zobj, params=params, $
     endif
 
     if (keyword_set(silent) eq 0) then begin
-       splog, 'SYNTHMODELS='+strtrim(params.synthmodels,2)+', '+$
+       splog, 'SPSMODELS='+strtrim(params.spsmodels,2)+', '+$
          'REDCURVE='+strtrim(params.redcurve,2)+', IMF='+$
          strtrim(params.imf,2)+', '+'SFHGRID='+$
          string(params.sfhgrid,format='(I2.2)')
@@ -271,8 +300,8 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, zobj, params=params, $
     nfilt = n_elements(filterlist)
 
     redshift = params.redshift
-    if (min(zobj)-min(redshift) lt -1E-3) or $
-      (max(zobj)-max(redshift) gt 1E-3) then begin
+    if (min(z)-min(redshift) lt -1E-3) or $
+      (max(z)-max(redshift) gt 1E-3) then begin
        splog, 'Need to rebuild model grids using a wider redshift grid!'
        return
     endif
@@ -286,11 +315,12 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, zobj, params=params, $
     endif
 
 ; initialize the output structure(s)
-    isedfit_results = init_isedfit(ngal,nfilt,params=params,isedfit_post=isedfit_post)
+    isedfit_results = init_isedfit(ngal,nfilt,params=params,$
+      ra=ra,dec=dec,isedfit_post=isedfit_post)
     isedfit_results.isedfit_id = lindgen(ngal)
     isedfit_results.maggies = maggies
     isedfit_results.ivarmaggies = ivarmaggies
-    isedfit_results.zobj = zobj
+    isedfit_results.z = z
 
 ; loop on each galaxy chunk
     ngalchunk = ceil(ngal/float(params.galchunksize))    
@@ -303,10 +333,10 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, zobj, params=params, $
        gnthese = g2-g1+1
        gthese = lindgen(gnthese)+g1
 ; do not allow the galaxy to be older than the age of the universe at
-; ZOBJ starting from a maximum formation redshift z=10 [Gyr]
-       maxage = lf_z2t(zobj[gthese],omega0=params.omega0,$ ; [Gyr]
+; Z starting from a maximum formation redshift z=10 [Gyr]
+       maxage = lf_z2t(z[gthese],omega0=params.omega0,$ ; [Gyr]
          omegal0=params.omegal)/params.h100
-       zindx = findex(redshift,zobj[gthese]) ; used for interpolation
+       zindx = findex(redshift,z[gthese]) ; used for interpolation
 ; loop on each "chunk" of output from ISEDFIT_MODELS
        nchunk = n_elements(fp.models_chunkfiles)
        t0 = systime(1)

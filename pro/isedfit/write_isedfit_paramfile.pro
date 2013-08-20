@@ -37,11 +37,11 @@
 ;   omega0 - matter density (default 0.3)
 ;   omegal - vacuum energy density (default 0.7)
 ;
-;   synthmodels - stellar population synthesis models to use (default
+;   spsmodels - stellar population synthesis models to use (default
 ;     'fsps_v2.4_miles'); see the documentation for an up-to-date list
 ;     of available models
 ;   imf - initial mass function to adopt (default 'chab'=Chabrier);
-;     which IMF is available depends on which SYNTHMODELS are adopted;
+;     which IMF is available depends on which SPSMODELS are adopted;
 ;     see the documentation for an up-to-date list of available IMFs
 ;   redcurve - reddening curve (default 'charlot'=Charlot & Fall); see
 ;     the documentation for an up-to-date list of available
@@ -134,7 +134,7 @@ function init_paramfile, filterlist=filterlist, prefix=prefix, $
       omega0:           0.3,$
       omegal:           0.7,$
 ; SPS details
-      synthmodels: 'fsps_v2.4_miles',$
+      spsmodels: 'fsps_v2.4_miles',$
       imf:           'chab',$
       redcurve:  'calzetti',$
       igm:               1L,$ ; include IGM attenuation? [1=yes, 0=no]
@@ -170,14 +170,16 @@ function init_paramfile, filterlist=filterlist, prefix=prefix, $
       flatdtburst:       0L,$ ; log-distributed by default
       bursttype:         1L,$ ; Gaussian burst default
 ; sample-specific parameters
-      filterlist: filterlist,$
-      redshift:     redshift}
+      use_redshift:      0L,$ ; custom redshift? (for plots)
+      zlog:              0L,$ ; zlog? (for plots)
+      redshift:    redshift,$
+      filterlist: filterlist}
 return, params
 end    
 
 pro write_isedfit_paramfile, params=params, isedfit_dir=isedfit_dir, prefix=prefix, $
   filterlist=filterlist, zminmax=zminmax, nzz=nzz, zlog=zlog, use_redshift=use_redshift, $
-  h100=h100, omega0=omega0, omegal=omegal, synthmodels=synthmodels, imf=imf, redcurve=redcurve, $
+  h100=h100, omega0=omega0, omegal=omegal, spsmodels=spsmodels, imf=imf, redcurve=redcurve, $
   igm=igm, sfhgrid=sfhgrid, nmodel=nmodel, ndraw=ndraw, nminphot=nminphot, galchunksize=galchunksize, $
   age=age, tau=tau, Zmetal=Zmetal, AV=AV, mu=mu, pburst=pburst, interval_pburst=interval_pburst, $
   tburst=tburst, fburst=fburst, dtburst=dtburst, trunctau=trunctau, fractrunc=fractrunc, $
@@ -226,6 +228,8 @@ pro write_isedfit_paramfile, params=params, isedfit_dir=isedfit_dir, prefix=pref
 ; initialize the parameter structure    
     params = init_paramfile(filterlist=filterlist,prefix=prefix,$
       redshift=redshift)
+    params.use_redshift = nzz_user gt 0
+    params.zlog = keyword_set(zlog)
 
 ; --------------------
 ; cosmology    
@@ -235,7 +239,7 @@ pro write_isedfit_paramfile, params=params, isedfit_dir=isedfit_dir, prefix=pref
 
 ; --------------------
 ; SPS parameters
-    if n_elements(synthmodels) ne 0 then params.synthmodels = synthmodels
+    if n_elements(spsmodels) ne 0 then params.spsmodels = spsmodels
     if n_elements(imf) ne 0 then params.imf = imf
     if n_elements(redcurve) ne 0 then params.redcurve = strlowcase(strtrim(redcurve,2))
     if n_elements(igm) ne 0 then params.igm = keyword_set(igm)

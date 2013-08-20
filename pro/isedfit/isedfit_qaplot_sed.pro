@@ -3,7 +3,8 @@
 ;   ISEDFIT_SED_QAPLOT
 ;
 ; PURPOSE:
-;   Generate quality-assurance (QA) plots from the iSEDfit output. 
+;   Generate spectral energy distribution (SED) quality-assurance (QA)
+;   plots from the iSEDfit output.
 ;
 ; INPUTS:
 ;   isedfit_paramfile - iSEDfit parameter file
@@ -199,9 +200,10 @@ pro isedfit_sed_qaplot, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
 
 ; allow the user to overwrite PDFFILE
     fp = isedfit_filepaths(params,outprefix=outprefix,isedfit_dir=isedfit_dir,$
-      montegrids_dir=montegrids_dir,pdffile=pdffile)
-    if file_test(fp.isedfit_dir+fp.qaplot_pdffile) and keyword_set(clobber) eq 0 then begin
-       splog, 'Output file '+fp.qaplot_pdffile+' exists; use /CLOBBER'
+      montegrids_dir=montegrids_dir,sed_pdffile=pdffile)
+    if file_test(fp.isedfit_dir+fp.qaplot_sed_pdffile) and $
+      keyword_set(clobber) eq 0 then begin
+       splog, 'Output file '+fp.qaplot_sed_pdffile+' exists; use /CLOBBER'
        return
     endif
 
@@ -250,7 +252,7 @@ pro isedfit_sed_qaplot, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
 ; generate the QA-plot
     wscale = 1D4
     
-    im_plotconfig, 0, pos, psfile=fp.isedfit_dir+fp.qaplot_psfile, $
+    im_plotconfig, 0, pos, psfile=fp.isedfit_dir+fp.qaplot_sed_psfile, $
       ymargin=[1.0,5.9], height=4.1
     pos2 = im_getposition(nx=4,ny=2,ymargin=[6.1,0.8],height=1.8*[1,1],$
       ypage=11.0,yspace=0.5,xmargin=[1.1,0.4],width=1.675*[1,1,1,1],$
@@ -260,7 +262,7 @@ pro isedfit_sed_qaplot, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
          format='("Building QAplot for galaxy ",I0,"/",I0,A10,$)'
 
 ; redshift and best-fit model
-       zobj = isedfit_results[igal].zobj
+       z = isedfit_results[igal].z
        wave = isedfit_results[igal].wave    ; [A]
        flux = isedfit_results[igal].flux    ; [AB]
 
@@ -271,18 +273,18 @@ pro isedfit_sed_qaplot, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
             position=pos
           im_legend, ['No mass estimate available'], /left, /top, $
             box=0, spacing=1.5, charsize=1.6
-          label = [strtrim(galaxy[igal],2),'z = '+strtrim(string(zobj,format='(F12.4)'),2)]
+          label = [strtrim(galaxy[igal],2),'z = '+strtrim(string(z,format='(F12.4)'),2)]
           im_legend, label, /right, /bottom, box=0, spacing=1.5, charsize=1.6
        endif else begin
           if (n_elements(in_xrange) eq 2) then xrange1 = in_xrange else begin
              xrange1 = [0.7*min(weff),1.2*max(weff)]
 ;            xrange1 = [min(filtinfo.weff-1.3*filtinfo.fwhm),$
 ;              max(filtinfo.weff+2*filtinfo.fwhm)]
-             xrange1[0] = xrange1[0]>(700.0*(1+zobj))
+             xrange1[0] = xrange1[0]>(700.0*(1+z))
              xrange1[1] = xrange1[1]<max(wave)
              get_element, wave, xrange1, xx
           endelse
-          xrange2 = xrange1/(1.0+zobj)
+          xrange2 = xrange1/(1.0+z)
 
           notzero = where(isedfit_results[igal].bestmaggies gt 0.0)
           bestmab = -2.5*alog10(isedfit_results[igal].bestmaggies[notzero])
@@ -310,17 +312,14 @@ pro isedfit_sed_qaplot, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
 
 ; overplot the data; distinguish between three different cases, based
 ; on the input photometry
-          mab = maggies2mag(isedfit_results[igal].maggies,ivar=isedfit_results[igal].ivarmaggies,$
-            magerr=maberr,lomagerr=mabloerr,himagerr=mabhierr,magnsigma=mabupper,$
-            nsigma=nsigma)
+          mab = maggies2mag(isedfit_results[igal].maggies,nsigma=nsigma,$
+            ivar=isedfit_results[igal].ivarmaggies,magerr=maberr,$
+            lomagerr=mabloerr,himagerr=mabhierr,magnsigma=mabupper)
           used = where(mab gt -90.0,nused)
           upper = where(mab lt -90.0 and mabupper gt -90,nupper)
 
-;         used = where((isedfit_results[igal].maggies gt 0.0) and $ ; used in the fitting
-;           (isedfit_results[igal].ivarmaggies gt 0.0),nused)
-;         upper = where((isedfit_results[igal].maggies le 0.0) and $ ; upper limit
-;           (isedfit_results[igal].ivarmaggies gt 0.0),nupper)
-          notused = where((isedfit_results[igal].maggies gt 0.0) and $ ; not used in the fitting
+; not used in the fitting          
+          notused = where((isedfit_results[igal].maggies gt 0.0) and $ 
             (isedfit_results[igal].ivarmaggies eq 0.0),nnotused)
           nodata = where((isedfit_results[igal].maggies eq 0.0) and $ ; no measurement
             (isedfit_results[igal].ivarmaggies eq 0.0),nnodata)
@@ -338,9 +337,6 @@ pro isedfit_sed_qaplot, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
           if (nupper ne 0) then begin
              djs_oplot, weff[upper]/wscale, mabupper[upper], $
                psym=symcat(11,thick=6), symsize=3.0, color=im_color('forest green')
-;            oploterror, weff[upper], mabupper[upper], hwhm[upper], mabupper[upper]*0, $
-;              psym=symcat(11,thick=4), symsize=3.0, color=im_color('blue'), $
-;              errcolor=im_color('blue'), errthick=!p.thick
           endif
 
           if (nnotused ne 0L) then begin
@@ -354,21 +350,25 @@ pro isedfit_sed_qaplot, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
             textoidl([$
             'log (M_{*}/M'+sunsymbol()+') = '+strtrim(string(isedfit_results[igal].mstar,format='(F12.2)'),2),$
             'Age = '+strtrim(string(isedfit_results[igal].age,format='(F12.2)'),2)+' Gyr',$
-            'SFR = '+strtrim(string(isedfit_results[igal].sfr100,format='(F12.2)'),2)+' M'+sunsymbol()+' yr^{-1}',$
             '\tau = '+strtrim(string(isedfit_results[igal].tau,format='(F12.1)'),2)+' Gyr',$
             'Z/Z'+sunsymbol()+' = '+strtrim(string(isedfit_results[igal].Zmetal/0.019,format='(F12.2)'),2),$
-            'A_{V} = '+strtrim(string(isedfit_results[igal].av*isedfit_results[igal].mu,format='(F12.2)'),2)+' mag'])
+            'A_{V} = '+strtrim(string(isedfit_results[igal].av*isedfit_results[igal].mu,format='(F12.2)'),2)+' mag',$
+            'SFR_{100} = '+strtrim(string(isedfit_results[igal].sfr100,format='(F12.2)'),2)+' M'+sunsymbol()+' yr^{-1}',$
+            'b_{100} = '+strtrim(string(isedfit_results[igal].b100,format='(F12.2)'),2)])
           im_legend, /right, /bottom, box=0, spacing=1.5, charsize=1.4, margin=0, $
             textoidl([strtrim(repstr(galaxy[igal],'_',' '),2),$
-            'z = '+strtrim(string(zobj,format='(F12.4)'),2),'\chi_{\nu}^{2} = '+$
+            'z = '+strtrim(string(z,format='(F12.4)'),2),'\chi_{\nu}^{2} = '+$
             strtrim(string(isedfit_results[igal].chi2,format='(F12.2)'),2)])
        endelse
 
 ; lower panels: posterior distributions
+
+; mass       
        xrange = minmax(post[igal].mstar)*[0.95,1.05]
        oplot_posteriors, post[igal].mstar, pos2[*,0], /noerase, xrange=xrange, $
          xtitle='log (M_{*}/M'+sunsymbol()+')', xtickinterval=0.5
 
+; age       
        xrange = params.age
 ;      xrange = [min(post.sfrage)<min(post.age),max(post.sfrage)>max(post.age)]
        oplot_posteriors, post[igal].age, pos2[*,1], /noerase, $
@@ -378,65 +378,77 @@ pro isedfit_sed_qaplot, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
          charsize=1.0, color=im_color('powder blue'), /norm
        xyouts, pos2[0,1]+0.05, pos2[3,1]-0.02, textoidl('<Age>_{SFR}'), $
          align=0.0, charsize=1.0, color=im_color('tan'), /norm
-;      im_legend, ['Age'], /left, /top, box=0, charsize=1.0, $
-;        textcolor=['powder blue'], margin=0
-;      im_legend, ['SFR-weighted Age'], /right, /top, box=0, charsize=1.0, $
-;        textcolor=['tan'], margin=0
 
+; SFR       
        xrange = [0,(1.1*weighted_quantile(post[igal].sfr100,quant=0.95))>$
          (1.1*weighted_quantile(post[igal].sfr100,quant=0.95))]
-;      xrange = [0,max(1.05*post[igal].sfr100)>max(1.05*post[igal].sfr100)]
-;      xrange = [min(0.95*post[igal].sfr)<min(0.95*post[igal].sfr100),$
-;        max(1.05*post[igal].sfr100)>max(1.05*post[igal].sfr100)]
        oplot_posteriors, post[igal].sfr, pos2[*,2], /noerase, xrange=xrange, $
          xtitle='SFR (M'+sunsymbol()+' yr^{-1})'
        oplot_posteriors, post[igal].sfr100, pos2[*,2], /overplot
+       xyouts, pos2[0,2]+0.01, pos2[3,2]-0.02, 'SFR', align=0.0, $
+         charsize=1.0, color=im_color('powder blue'), /norm
+       xyouts, pos2[0,2]+0.05, pos2[3,2]-0.02, textoidl('<SFR>_{100 Myr}'), $
+         align=0.0, charsize=1.0, color=im_color('tan'), /norm
 
+; tau       
        if params.oneovertau then xrange = reverse(1.0/params.tau) else $
          xrange = params.tau
        oplot_posteriors, post[igal].tau, pos2[*,3], /noerase, bin=bb, $
          xrange=xrange, xtitle='\tau (Gyr)', logbins=params.oneovertau
 
+; metallicity       
        oplot_posteriors, post[igal].Zmetal/0.019, pos2[*,4], /noerase, $
          xrange=params.Zmetal/0.019, xtitle='Z/Z'+sunsymbol(), $
          xtickinterval=0.5
 
-       if params.nebular then begin
-          xrange = [0,(1.1*weighted_quantile(post[igal].ewoii,quant=0.95))>$
-            (1.1*weighted_quantile(post[igal].ewoiiihb,quant=0.95))>$
-            (1.1*weighted_quantile(post[igal].ewniiha,quant=0.95))]
-;         xrange = [0,max(1.1*post[igal].ewoii)>$
-;           max(1.1*post[igal].ewoiiihb)>max(1.1*post[igal].ewniiha)]
-;         xrange = [min(0.9*post[igal].ewoii)<min(0.9*post[igal].ewoiiihb)<$
-;           min(0.9*post[igal].ewniiha),max(1.1*post[igal].ewoii)>$
-;           max(1.1*post[igal].ewoiiihb)>max(1.1*post[igal].ewniiha)]
-          oplot_posteriors, post[igal].ewoii, pos2[*,5], /noerase, $
-            xrange=xrange, xtitle='EW (\AA)'
-          oplot_posteriors, post[igal].ewoiiihb, pos2[*,5], /overplot
-          oplot_posteriors, post[igal].ewniiha, pos2[*,5], /overplot, color_fill='orange'
-          xyouts, pos2[0,5]+0.01, pos2[3,5]-0.02, '[OII]', align=0.0, $
-            charsize=1.0, color=im_color('powder blue'), /norm
-          xyouts, pos2[0,5]+0.06, pos2[3,5]-0.02, textoidl('[OIII]+H\beta'), $
-            align=0.0, charsize=1.0, color=im_color('tan'), /norm
-          xyouts, pos2[0,5]+0.01, pos2[3,5]-0.04, textoidl('[NII]+H\alpha'), $
-            align=0.0, charsize=1.0, color=im_color('orange'), /norm
-       endif else begin
-          djs_plot, [0], [0], /nodata, /noerase, position=pos2[*,5], $
-            xtitle='EW (\AA)', charsize=1.0, xtickname=replicate(' ',10), $
-            ytickname=replicate(' ',10)
-          im_legend, 'Nebular=0', /left, /top, margin=0, box=0, charsize=1.0
-       endelse
-
+; A(V)       
        if strtrim(params.redcurve,2) eq 'none' then begin
-          djs_plot, [0], [0], /nodata, /noerase, position=pos2[*,6], $
+          djs_plot, [0], [0], /nodata, /noerase, position=pos2[*,5], $
             xtitle='A_{V} (mag)', charsize=1.0, xtickname=replicate(' ',10), $
             ytickname=replicate(' ',10)
           im_legend, 'Redcurve=none', /left, /top, margin=0, box=0, charsize=1.0
        endif else begin
           if params.flatAV then xrange = params.AV else $
             xrange = [0.0,max(post[igal].AV)*1.1]
-          oplot_posteriors, post[igal].AV, pos2[*,6], /noerase, $
+          oplot_posteriors, post[igal].AV, pos2[*,5], /noerase, $
             xrange=xrange, xtitle='A_{V} (mag)'
+       endelse
+
+; b100       
+       vlow = total(post[igal].b100 lt 1D-3)/ngal
+       if vlow ge 0.95 then begin
+          djs_plot, [0], [0], /nodata, /noerase, position=pos2[*,6], $
+            xtitle='b_{100}', charsize=1.0, xtickname=replicate(' ',10), $
+            ytickname=replicate(' ',10)
+          im_legend, '95% of b_{100}<0.001', /left, /top, margin=0, $
+            box=0, charsize=1.0
+       endif else begin
+          xrange = [1D-3,max(post[igal].b100)]
+;         xrange = [1D-3,1.1*weighted_quantile(post[igal].b100,quant=0.95)]
+          oplot_posteriors, post[igal].b100>1D-3, pos2[*,6], /noerase, xrange=xrange, $
+            xtitle='b_{100}', /logbins
+       endelse
+
+; emission lines       
+       if params.nebular then begin
+          xrange = [0,(1.1*weighted_quantile(post[igal].ewoii,quant=0.95))>$
+            (1.1*weighted_quantile(post[igal].ewoiiihb,quant=0.95))>$
+            (1.1*weighted_quantile(post[igal].ewniiha,quant=0.95))]
+          oplot_posteriors, post[igal].ewoii, pos2[*,7], /noerase, $
+            xrange=xrange, xtitle='EW (\AA)'
+          oplot_posteriors, post[igal].ewoiiihb, pos2[*,7], /overplot
+          oplot_posteriors, post[igal].ewniiha, pos2[*,7], /overplot, color_fill='orange'
+          xyouts, pos2[0,7]+0.01, pos2[3,7]-0.02, '[OII]', align=0.0, $
+            charsize=1.0, color=im_color('powder blue'), /norm
+          xyouts, pos2[0,7]+0.06, pos2[3,7]-0.02, textoidl('[OIII]+H\beta'), $
+            align=0.0, charsize=1.0, color=im_color('tan'), /norm
+          xyouts, pos2[0,7]+0.01, pos2[3,7]-0.04, textoidl('[NII]+H\alpha'), $
+            align=0.0, charsize=1.0, color=im_color('orange'), /norm
+       endif else begin
+          djs_plot, [0], [0], /nodata, /noerase, position=pos2[*,7], $
+            xtitle='EW (\AA)', charsize=1.0, xtickname=replicate(' ',10), $
+            ytickname=replicate(' ',10)
+          im_legend, 'Nebular=0', /left, /top, margin=0, box=0, charsize=1.0
        endelse
 
 ; y-title       
@@ -445,7 +457,7 @@ pro isedfit_sed_qaplot, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
        
     endfor 
     print
-    im_plotconfig, psfile=fp.isedfit_dir+fp.qaplot_psfile, /psclose, /pdf
+    im_plotconfig, psfile=fp.isedfit_dir+fp.qaplot_sed_psfile, /psclose, /pdf
     
 return
 end
