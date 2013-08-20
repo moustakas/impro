@@ -8,9 +8,9 @@
 ;
 ; INPUTS:
 ;   isedfit_paramfile - iSEDfit parameter file
-;   maggies - input photometry [NFILT,NGAL]
+;   maggies - input galaxy photometry [NFILT,NGAL]
 ;   ivarmaggies - inverse variance array for MAGGIES [NFILT,NGAL]  
-;   z - galaxy redshifts [NGAL] 
+;   z - input galaxy redshifts [NGAL] 
 ;
 ; OPTIONAL INPUTS:
 ;   params - data structure with the same information contained in

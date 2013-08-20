@@ -3,11 +3,14 @@
 ;   ISEDFIT_QAPLOT_MODELS
 ;
 ; PURPOSE:
-;   Generate color-redshift quality-assurance (QA) plots from the
-;   iSEDfit output.
+;   Generate color-color and redshift-color QAplots to help assess the
+;   choice of iSEDfit model parameters/priors. 
 ;
 ; INPUTS:
 ;   isedfit_paramfile - iSEDfit parameter file
+;   maggies - input galaxy photometry [NFILT,NGAL]
+;   ivarmaggies - inverse variance array for MAGGIES [NFILT,NGAL]  
+;   z - input galaxy redshifts [NGAL] 
 ;
 ; OPTIONAL INPUTS:
 ;   params - data structure with the same information contained in
@@ -15,60 +18,60 @@
 ;   thissfhgrid - if ISEDFIT_PARAMFILE contains multiple grids then
 ;     build this SFHgrid (may be a vector)
 ;   isedfit_dir - full directory path where the QAplots should be
-;     written; must match the directory passed to ISEDFIT (default
-;     PWD=present working directory) 
-;   montegrids_dir - full directory path where the Monte Carlo grids
-;     written by ISEDFIT_MONTEGRIDS can be found (default 'montegrids'
-;     subdirectory of the PWD=present working directory)
-;   index - use this optional input to plot a zero-indexed subset of
-;     the full sample (default is to plot everything, although see
-;     COMMENTS)
-;   galaxy - string array of galaxy names to include in the legend on
-;     each page of the QAplot
-;   outprefix - optional output prefix string (see ISEDFIT) 
-;   pdffile - overwrite the default name of the output PDF file (not
-;     typically necessary since the file name matches the ISEDFIT
-;     output files); must end with a '.PDF' suffix
+;     written; must match the directory passed to ISEDFIT_MODELS
+;     (default PWD=present working directory) 
+;   thesefilters - build the QAplots from this subset of the available
+;     filters; default is to use all the filters, which is *not*
+;     recommended if you have more than 4-5 filters (see COMMENTS)!
+;     the (string) filter names can be missing the '.par' suffix
 ;
-;   nrandom - build a QAplot for NRANDOM randomly selected galaxies
-;     (ignored if INDEX is passed)
-;   nsigma - plot photometry detected at less than NSIGMA-sigma as
-;     upper limits (default 2.0)
-;   xrange, yrange - x- and y-range limits of the plot (useful when
-;     you want all the plots to have the same plot limits)
-;   xlog - logarithmic wavelength spacing (default linear) 
+;   colorcolor_pdffile - overwrite the default name of the output
+;     color-color PDF file (not typically necessary since the file
+;     name matches the ISEDFIT output files); must end with a '.PDF'
+;     suffix 
+;   zcolor_pdffile - same as above but for the redshift-color PDF file
 ;
 ; KEYWORD PARAMETERS:
+;   clobber - overwrite existing files of the same name (the default
+;     is to check for existing files and if they exist to exit
+;     gracefully)  
 ;
 ; OUTPUTS:
-;   This routine generates a handy QAplot showing the input
-;   photometry, the best-fit (maximum likelihood) SED, and the
-;   posterior distributions on several of the key parameters. 
+;   This routine generates two sets of QAplots--color-color diagrams
+;   and color-redshift diagrams---which show how well (or poorly!) the
+;   models overlap the data.  
 ;
 ; OPTIONAL OUTPUTS:
-;   isedfit_results - output data structure containing all the
-;     results; see the iSEDfit documentation for a detailed breakdown
-;     and explanation of all the outputs  
 ;
 ; COMMENTS:
-;   This routine should be not be used to plot too many objects,
-;   otherwise memory problems may occur; use INDEX or NRANDOM.
+;   Left to its own devices, this routine will generate *all*
+;   combinations of color-redshift and color-color diagrams.
+;   Therefore if you have more than a handful of filters you should
+;   use the THESEFILTERS optional input parameter.  For example,
+;   consider your full list of filters consists of:
+;       filterlist = [$
+;         'galex_FUV.par',$
+;         'galex_NUV.par',$
+;         'sdss_u0.par',$
+;         'sdss_g0.par',$
+;         'sdss_r0.par',$
+;         'sdss_i0.par',$
+;         'sdss_z0.par',$
+;         'wise_w1.par',$
+;         'wise_w2.par']
+;
+;   You might call this routine with the following (intelligently
+;   chosen) subset of filters:
+;     IDL> thesefilters = ['galex_NUV','sdss_g0','sdss_r0','sdss_i0','wise_w1']
+;     IDL> isedfit_qaplot_models, isedfit_paramfile, maggies, $
+;     IDL>  ivarmaggies, z, thesefilters=thesefilters
 ;
 ; EXAMPLES:
 ;
 ; MODIFICATION HISTORY:
-;   J. Moustakas, 2005 Feb 12, U of A
-;   jm05aug04uofa - some small changes incorporated
-;   jm06mar06uofa - documented; major changes to support the latest
-;     version of ISEDFIT 
-;   jm06mar23uofa - added FNU, FLAMBDA, MEDIANPLOT, and MAXOLD
-;     keywords   
-;   jm07jun27nyu  - significantly streamlined; the best-fitting SED
-;     models are now read by READ_ISEDFIT()  
-;   jm13aug09siena - updated to conform to the latest data model;
-;     documentation updated 
+;   J. Moustakas, 2013 Aug 19, Siena 
 ;
-; Copyright (C) 2005-2007, 2013, John Moustakas
+; Copyright (C) 2013, John Moustakas
 ; 
 ; This program is free software; you can redistribute it and/or modify 
 ; it under the terms of the GNU General Public License as published by 
@@ -83,8 +86,8 @@
 
 pro isedfit_qaplot_models, isedfit_paramfile, maggies1, ivarmaggies1, z, $
   params=params, thissfhgrid=thissfhgrid, isedfit_dir=isedfit_dir, $
-  montegrids_dir=montegrids_dir, thesefilters=thesefilters, $
-  pdffile=pdffile, clobber=clobber
+  thesefilters=thesefilters, colorcolor_pdffile=colorcolor_pdffile, $
+  zcolor_pdffile=zcolor_pdffile, clobber=clobber
 
     if n_elements(isedfit_paramfile) eq 0 and n_elements(params) eq 0 then begin
        doc_library, 'isedfit_qaplot_models'
@@ -96,7 +99,6 @@ pro isedfit_qaplot_models, isedfit_paramfile, maggies1, ivarmaggies1, z, $
     if (n_elements(params) eq 0) then params = $
       read_isedfit_paramfile(isedfit_paramfile,thissfhgrid=thissfhgrid)
     if (n_elements(isedfit_dir) eq 0) then isedfit_dir = get_pwd()
-    if (n_elements(montegrids_dir) eq 0) then montegrids_dir = get_pwd()+'montegrids/'
 
 ; error checking on the input photometry    
     ndim = size(maggies1,/n_dim)
@@ -142,23 +144,17 @@ pro isedfit_qaplot_models, isedfit_paramfile, maggies1, ivarmaggies1, z, $
     ngrid = n_elements(params)
     if ngrid gt 1 then begin
        for ii = 0, ngrid-1 do begin
-stop 
-          
-          isedfit_qaplot_models, params=params[ii], isedfit_dir=isedfit_dir, $
-            montegrids_dir=montegrids_dir, outprefix=outprefix, index=index, $
-            galaxy=galaxy1, pdffile=pdffile, xrange=in_xrange, yrange=in_yrange, $
-            xlog=xlog, nrandom=nrandom, nsigma=nsigma, clobber=clobber, $
-            isedfit_results=isedfit_results1
-          isedfit_results1 = struct_trimtags(isedfit_results1,except=['WAVE','FLUX'])
-          if ii eq 0 then isedfit_results = isedfit_results1 else $
-            isedfit_results = [[isedfit_results],[isedfit_results1]]
+          sedfit_qaplot_models, isedfit_paramfile1, maggies1, ivarmaggies1, z, $
+            params=params[ii], isedfit_dir=isedfit_dir, thesefilters=thesefilters, $
+            colorcolor_pdffile=colorcolor_pdffile, zcolor_pdffile=zcolor_pdffile, $
+            clobber=clobber
        endfor
        return
     endif
 
 ; allow the user to overwrite PDFFILE
     fp = isedfit_filepaths(params,outprefix=outprefix,isedfit_dir=isedfit_dir,$
-      montegrids_dir=montegrids_dir,sed_pdffile=pdffile)
+      colorcolor_pdffile=colorcolor_pdffile,zcolor_pdffile=zcolor_pdffile)
     if file_test(fp.isedfit_dir+fp.qaplot_zcolor_pdffile) and $
       keyword_set(clobber) eq 0 then begin
        splog, 'Output file '+fp.qaplot_zcolor_pdffile+' exists; use /CLOBBER'
@@ -317,8 +313,6 @@ stop
                outcolor=im_color('dodger blue',100), contour_color=im_color('navy',101), $
                xrange=xrange, yrange=yrange, position=pos[*,ii], xsty=7, ysty=5, $
                levels=mylevels, /internal, c_annotation=mycann
-;            if ngood ne 0L then oplot, z[good], ygal, psym=symcat(6,thick=1), $
-;              color=im_color('blue'), symsize=0.2
              oplot, redshift, quant[*,0], line=0, color=im_color('red'), $
                thick=4, psym=-symcat(16), symsize=0.7
              oplot, redshift, quant[*,1], line=0, color=im_color('red'), $

@@ -57,12 +57,16 @@
 ;     photometry (i.e., excluding upper limits) in order to fit
 ;     (default 3)
 ;   galchunksize - split the sample into GALCHUNKSIZE sized chunks,
-;     which is necessary if the sample is very large (default 500)
+;     which is necessary if the sample is very large (default 5000) 
 ;
-;   age - 
-;   tau - 
-;   Zmetal - 
-;   AV - 
+;   age - minimum and maximum galaxy age (default [0.1,13]) [Gyr] 
+;   tau - minimum and maximum tau value (default [0.01,1.0]) [Gyr or
+;     Gyr^-1 if /ONEOVERTAU]
+;   Zmetal - minimum and maximum stellar metallicity (default
+;     [0.004,0.04]) 
+;   AV - Gamma distribution mean and width (default [0.35,2.0]) or
+;     minimum and maximum V-band extinction/attenuation if /FLATAV
+;     [mag] 
 ;   mu - 
 ; 
 ;   pburst - 

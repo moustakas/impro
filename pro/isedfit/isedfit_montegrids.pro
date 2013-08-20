@@ -13,6 +13,9 @@
 ;     ISEDFIT_PARAMFILE (over-rides ISEDFIT_PARAMFILE)
 ;   thissfhgrid - if ISEDFIT_PARAMFILE contains multiple grids then
 ;     build this SFHgrid (may be a vector)
+;   isedfit_dir - full directory path where the iSEDfit models and
+;     output files will be written (default PWD=present working
+;     directory) 
 ;   montegrids_dir - full directory path where the Monte Carlo grids
 ;     should be written (default 'montegrids' subdirectory of the
 ;     PWD=present working directory) 
@@ -37,16 +40,14 @@
 ;   The grids (spectra, parameters, etc.) are written out in a data
 ;   model that iSEDfit understands, and which should be transparent to
 ;   the user.  However, this routine also generates a QAplot (written
-;   to the appropriate subdirectory of MONTEGRIDS_DIR) which should be
-;   inspected to ensure that proper parameter priors have been
-;   chosen. 
+;   to the ISEDFIT_DIR directory) which should be inspected to ensure
+;   that proper parameter priors have been chosen.  
 ;
 ; COMMENTS:
 ;   Some ToDo items:
-;     * output the UV slope, beta, and maybe D(4000)
+;     * output the UV slope (beta) and maybe D(4000)
 ;     * better debugging diagnostic plots 
-;
-; TODO:
+;     * Speed the routine up?
 ;
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2009 Feb 20, NYU - written
@@ -153,6 +154,339 @@ function read_and_interpolate, files, info=info, $
 return, fits
 end
 
+pro oplot_priors, xx, pos, xrange=xrange, yrange=yrange, $
+  xtitle=xtitle, ytitle=ytitle, binsize=binsize, noerase=noerase, $
+  xtickinterval=xtickinterval, charsize=charsize, nonorm=nonorm, $
+  color_fill=color_fill, color_outline=color_outline, $
+  xlog=xlog, logbins=logbins, _extra=extra, $
+  overplot=overplot, nofill=nofill, linestyle=linestyle, thick=thick
+; ISEDFIT_QAPLOT_SED: internal support routine
+    
+    if n_elements(yrange) eq 0 then yrange = [0,1.4]
+    if (n_elements(xrange) eq 0) then begin
+       if keyword_set(overplot) then xrange = !x.crange else $
+         xrange = minmax(xx)*[0.95,1.05]
+    endif
+    if (n_elements(binsize) eq 0) then begin
+       if keyword_set(logbins) then $
+         binsize = (alog10(xrange[1])-alog10(xrange[0]))/$
+         ceil(0.3*sqrt(n_elements(xx))) else $
+           binsize = (xrange[1]-xrange[0])/ceil(0.3*sqrt(n_elements(xx)))
+    endif
+
+    csize = 1.4
+    
+    if n_elements(color_fill) eq 0 then begin
+       if keyword_set(overplot) then color_fill = 'tan' else $
+         color_fill = 'powder blue'
+    endif
+    if n_elements(color_outline) eq 0 then begin
+       if keyword_set(overplot) then color_outline = 'tan' else $
+         color_outline = 'powder blue'
+    endif
+
+    if keyword_set(overplot) eq 0 then begin
+       plot, [0], [0], xsty=7, ysty=5, /nodata, position=pos, $
+         yrange=yrange, xrange=xrange, noerase=noerase, $
+         xlog=logbins
+    endif
+    im_plothist, xx, bin=binsize, peak=1, /overplot, $
+      fill=(keyword_set(nofill) eq 0), $
+      fcolor=im_color(color_fill), xhist, yhist, charsize=csize, $
+      color=im_color(color_outline,255), logbins=logbins, xlog=logbins, $
+      linestyle=linestyle, thick=thick
+; redraw the axes
+    if keyword_set(overplot) then begin
+       plot, [0], [0], xsty=3, ysty=1, /noerase, /nodata, position=pos, $
+         yrange=yrange, xrange=xrange, ytitle='', $
+         xtitle='', xtickinterval=xtickinterval, $
+         ytickname=replicate(' ',10), xtickname=replicate(' ',10), $
+         charsize=csize, xlog=logbins, xminor=3, yminor=3, _extra=extra
+    endif else begin
+       plot, [0], [0], xsty=3, ysty=1, /noerase, /nodata, position=pos, $
+         yrange=yrange, xrange=xrange, ytitle=ytitle, $
+         xtitle=textoidl(xtitle), xtickinterval=xtickinterval, $
+         ytickname=replicate(' ',10), charsize=csize, xlog=logbins, $
+         xminor=3, yminor=3, _extra=extra
+    endelse
+return
+end
+
+pro montegrids_qaplot, montegrid, params=params, qafile=qafile
+; internal support routine: build a QAplot 
+    
+; page 1: parameter choices
+    im_plotconfig, 0, pos, psfile=qafile, ymargin=[0.4,1.0], height=7.8, $
+      xmargin=[0.75,0.75], width=7.0
+
+    djs_plot, [0], [0], /nodata, position=pos, xsty=5, ysty=5
+    label = ['iSEDfit Prior Parameters',' ',$
+      'prefix='+params.prefix,$
+      'spsmodels='+params.spsmodels,$
+      'imf='+params.imf,$
+      'redcurve='+params.redcurve,$
+      ' ',$
+      'h100='+string(params.h100,format='(G0)'),$
+      'omega0='+string(params.omega0,format='(G0)'),$
+      'omegal='+string(params.omegal,format='(G0)'),$
+      ' ',$
+      'nmodel='+string(params.nmodel,format='(G0)'),$
+      'ndraw='+string(params.ndraw,format='(G0)'),$
+      'nminphot='+string(params.nminphot,format='(G0)'),$
+      'galchunksize='+string(params.galchunksize,format='(G0)'),$
+      ' ',$
+      'pburst='+string(params.pburst,format='(G0)'),$
+      'interval_pburst='+strtrim(string(params.interval_pburst,format='(F12.2)'),2)+' Gyr',$
+      'nmaxburst='+string(params.nmaxburst,format='(G0)'),$
+      'fractrunc='+string(params.fractrunc,format='(G0)'),$
+      ' ',$
+      'igm='+string(params.igm,format='(G0)'),$
+      'nebular='+string(params.nebular,format='(G0)'),$
+      'oneovertau='+string(params.oneovertau,format='(G0)'),$
+      'delayed='+string(params.delayed,format='(G0)'),$
+      'bursttype='+string(params.bursttype,format='(G0)'),$
+      ' ',$
+      'flatav='+string(params.flatav,format='(G0)'),$
+      'flatmu='+string(params.flatmu,format='(G0)'),$
+      'flatfburst='+string(params.flatfburst,format='(G0)'),$
+      'flatdtburst='+string(params.flatdtburst,format='(G0)'),$
+      ' ',$
+      'use_redshift='+string(params.use_redshift,format='(G0)'),$
+      'zlog='+string(params.zlog,format='(G0)'),$
+      'nzz='+string(n_elements(params.redshift),format='(G0)'),$
+      'zminmax='+'['+strjoin(string(minmax(params.redshift),format='(G0.0)'),',')+']']
+    im_legend, label, /left, /top, box=0, charsize=1.3, margin=0, /notextoidl
+
+    csize = 1.1
+    
+; page 2 - primary priors
+    pos = im_getposition(nx=2,ny=3,xmargin=[0.75,0.75],ymargin=[0.4,1.0],$
+      width=3.2*[1,1],height=2.6*[1,1,1],xspace=0.6,yspace=0.9*[1,1],$
+      xpage=8.5,ypage=11.0,landscape=landscape)
+
+; age
+    xrange = minmax(montegrid.age)
+    oplot_priors, montegrid.age, pos[*,0], xrange=xrange, $
+      xtitle='Age (Gyr)'
+    im_legend, '['+strjoin(string(params.age,format='(G0.0)'),',')+'] Gyr', $
+      /left, /top, box=0, charsize=csize, margin=0
+
+    xyouts, pos[0,0], pos[3,0]+0.04, 'Input (Primary) Priors', $
+      align=0.0, /normal, charsize=1.5
+    
+; tau
+    if params.oneovertau then begin
+       xrange = reverse(1.0/params.tau)
+       oplot_priors, montegrid.tau, pos[*,1], /noerase, xrange=xrange, $
+         xtitle='\tau (Gyr)', /logbins
+;      oplot_priors, 1.0/montegrid.tau, pos[*,1], /noerase, xrange=xrange, $
+;        xtitle='1/\tau (Gyr^{-1})';, /logbins
+       im_legend, ['Oneovertau=1','['+strjoin(string(params.tau,format='(G0.0)'),',')+'] Gyr^{-1}'], $
+         /left, /top, box=0, charsize=csize, margin=0
+    endif else begin
+       xrange = params.tau
+       oplot_priors, montegrid.tau, pos[*,1], /noerase, xrange=xrange, $
+         xtitle='\tau (Gyr)'
+       im_legend, '['+strjoin(string(params.tau,format='(G0.0)'),',')+'] Gyr', $
+         /left, /top, box=0, charsize=csize, margin=0
+    endelse
+
+; metallicity       
+    oplot_priors, montegrid.Zmetal, pos[*,2], /noerase, $
+      xrange=params.Zmetal, xtitle='Z_{metal}' ; /Z'+sunsymbol()
+    im_legend, '['+strjoin(string(params.Zmetal,format='(G0.0)'),',')+']', $
+      /left, /top, box=0, charsize=csize, margin=0
+;   im_legend, 'Z'+sunsymbol()+'=0.019', /left, /top, box=0, charsize=csize, margin=0
+
+; A(V)       
+    if strtrim(params.redcurve,2) eq 'none' then begin
+       djs_plot, [0], [0], /nodata, /noerase, position=pos[*,3], $
+         xtitle='A_{V} (mag)', charsize=csize, xtickname=replicate(' ',10), $
+         ytickname=replicate(' ',10)
+       im_legend, 'Redcurve=none', /left, /top, margin=0, box=0, charsize=csize
+    endif else begin
+       if params.flatAV then xrange = params.AV else $
+         xrange = [0.0,max(montegrid.AV)*1.1]
+       oplot_priors, montegrid.AV, pos[*,3], /noerase, $
+         xrange=xrange, xtitle='A_{V} (mag)'
+       if params.flatAV then begin
+          im_legend, ['Redcurve='+strtrim(params.redcurve,2),$
+            '['+strjoin(string(params.AV,format='(G0.0)'),',')+']'], $
+            /left, /top, box=0, charsize=csize, margin=0
+       endif else begin
+          im_legend, ['Redcurve='+strtrim(params.redcurve,2),$
+            '['+string(params.AV[0],format='(G0.0)')+'*\Gamma('+$
+            string(params.AV[1],format='(G0.0)')+')] mag'], $
+            /left, /top, box=0, charsize=csize, margin=0
+       endelse
+    endelse
+
+; mu
+    if strtrim(params.redcurve,2) eq 'charlot' then begin
+       if params.flatmu then xrange = params.mu else $
+         xrange = [0.0,max(montegrid.mu)*1.1]
+       oplot_priors, montegrid.mu, pos[*,4], /noerase, $
+         xrange=xrange, xtitle='\mu'
+       if params.flatmu then begin
+          im_legend, ['Redcurve='+strtrim(params.redcurve,2),$
+            '['+strjoin(string(params.mu,format='(G0.0)'),',')+']'], $
+            /left, /top, box=0, charsize=csize, margin=0
+       endif else begin
+          im_legend, ['Redcurve='+strtrim(params.redcurve,2),$
+            '['+string(params.mu[0],format='(G0.0)')+'*\Gamma('+$
+            string(params.mu[1],format='(G0.0)')+')]'], $
+            /left, /top, box=0, charsize=csize, margin=0
+       endelse
+    endif else begin
+       djs_plot, [0], [0], /nodata, /noerase, position=pos[*,4], $
+         xtitle='\mu', charsize=csize, xtickname=replicate(' ',10), $
+         ytickname=replicate(' ',10)
+       im_legend, 'Redcurve='+strtrim(params.redcurve,2), $
+         /left, /top, margin=0, box=0, charsize=csize
+    endelse
+
+; [OIII]/H-beta
+    if params.nebular then begin
+       oplot_priors, montegrid.oiiihb, pos[*,5], /noerase, $
+         xrange=params.oiiihb, xtitle='log_{10}([OIII \lambda5007]/H\beta)'
+       im_legend, '['+strjoin(string(params.oiiihb,format='(G0.0)'),',')+'] dex', $
+         /left, /top, box=0, charsize=csize, margin=0
+    endif else begin
+       djs_plot, [0], [0], /nodata, /noerase, position=pos[*,5], $
+         xtitle='log_{10} ([OIII \lambda5007]/H\beta)', $
+         charsize=csize, xtickname=replicate(' ',10), $
+         ytickname=replicate(' ',10)
+       im_legend, 'Nebular=0', /left, /top, margin=0, box=0, charsize=csize
+    endelse
+
+; page 3: burst/truncation parameters
+
+; tburst
+    if params.pburst gt 0.0 then begin
+       yes = where(montegrid.tburst gt 0.0)
+       xrange = minmax((montegrid.tburst)[yes])
+       oplot_priors, (montegrid.tburst)[yes], pos[*,0], xrange=xrange, $
+         xtitle='t_{burst} (Gyr)'
+       im_legend, '['+strjoin(string(params.tburst,format='(G0.0)'),',')+'] Gyr', $
+         /left, /top, box=0, charsize=csize, margin=0
+    endif else begin
+       djs_plot, [0], [0], /nodata, position=pos[*,0], $
+         xtitle='t_{burst} (Gyr)', charsize=csize, xtickname=replicate(' ',10), $
+         ytickname=replicate(' ',10)
+       im_legend, 'No bursts', /left, /top, margin=0, box=0, charsize=csize
+    endelse
+
+    xyouts, pos[0,0], pos[3,0]+0.04, 'Input Burst/Truncated SFH Priors', $
+      align=0.0, /normal, charsize=1.5
+
+; fburst
+    if params.pburst gt 0.0 then begin
+       yes = where(montegrid.fburst gt 0.0)
+       xrange = minmax((montegrid.fburst)[yes])
+       oplot_priors, (montegrid.fburst)[yes], pos[*,1], /noerase, xrange=xrange, $
+         xtitle='f_{burst}', logbins=params.flatfburst eq 0
+       im_legend, ['Flatfburst='+strtrim(params.flatfburst,2),$
+         '['+strjoin(string(params.fburst,format='(G0.0)'),',')+']'], $
+         /left, /top, box=0, charsize=csize, margin=0
+    endif else begin
+       djs_plot, [0], [0], /nodata, position=pos[*,1], /noerase, $
+         xtitle='f_{burst}', charsize=csize, xtickname=replicate(' ',10), $
+         ytickname=replicate(' ',10)
+       im_legend, 'No bursts', /left, /top, margin=0, box=0, charsize=csize
+    endelse
+
+; dtburst
+    if params.pburst gt 0.0 then begin
+       yes = where(montegrid.dtburst gt 0.0)
+       xrange = minmax((montegrid.dtburst)[yes])
+       oplot_priors, (montegrid.dtburst)[yes], pos[*,2], /noerase, xrange=xrange, $
+         xtitle='\Delta'+'t_{burst} (Gyr)';, logbins=params.flatdtburst eq 0
+       im_legend, ['Flatdtburst='+strtrim(params.flatdtburst,2),$
+         '['+strjoin(string(params.dtburst,format='(G0.0)'),',')+'] Gyr'], $
+         /left, /top, box=0, charsize=csize, margin=0
+    endif else begin
+       djs_plot, [0], [0], /nodata, position=pos[*,2], /noerase, $
+         xtitle='\Delta'+'t_{burst} (Gyr)', charsize=csize, xtickname=replicate(' ',10), $
+         ytickname=replicate(' ',10)
+       im_legend, 'No bursts', /left, /top, margin=0, box=0, charsize=csize
+    endelse
+
+; trunctau
+    if params.fractrunc gt 0.0 then begin
+       yes = where(montegrid.trunctau gt 0.0)
+       xrange = minmax(montegrid.trunctau[yes])
+       oplot_priors, montegrid.trunctau[yes], pos[*,3], /noerase, xrange=xrange, $
+         xtitle='\tau_{trunc} (Gyr)'
+       im_legend, ['Fractrunc='+string(params.fractrunc,format='(G0.0)'),$
+         '['+strjoin(string(params.trunctau,format='(G0.0)'),',')+'] Gyr'], $
+         /left, /top, box=0, charsize=csize, margin=0
+    endif else begin
+       djs_plot, [0], [0], /nodata, position=pos[*,3], /noerase, $
+         xtitle='\tau_{trunc} (Gyr)', charsize=csize, xtickname=replicate(' ',10), $
+         ytickname=replicate(' ',10)
+       im_legend, 'No truncated SFHs', /left, /top, margin=0, box=0, charsize=csize
+    endelse
+
+; page 4: derived parameters
+
+; t/tau
+    good = where(montegrid.tau gt 0.0)
+    xrange = minmax(montegrid.age[good]/montegrid.tau[good])
+    oplot_priors, montegrid.age[good]/montegrid.tau[good], pos[*,0], $
+      xrange=xrange, xtitle='Age/\tau', /logbins
+
+    xyouts, pos[0,0], pos[3,0]+0.04, 'Derived (Secondary) Priors', $
+      align=0.0, /normal, charsize=1.5
+
+; SFR-weighted age    
+    xrange = minmax(montegrid.sfrage)
+    oplot_priors, montegrid.sfrage, pos[*,1], /noerase, $
+      xrange=xrange, xtitle='Age (SFR-weighted, Gyr)'
+
+; b100
+    xrange = minmax(montegrid.b100>1D-3)
+    oplot_priors, montegrid.b100>1D-3, pos[*,2], /noerase, xrange=xrange, $
+      xtitle='b_{100}', /logbins
+
+; EW([OIII]+Hbeta)
+    if params.nebular then begin
+       xrange = [0,(1.1*weighted_quantile(montegrid.ewoii,quant=0.95))>$
+         (1.1*weighted_quantile(montegrid.ewoiiihb,quant=0.95))>$
+         (1.1*weighted_quantile(montegrid.ewniiha,quant=0.95))]
+       oplot_priors, montegrid.ewoiiihb, pos[*,3], /noerase, $
+         xtitle='EW (\AA, rest)', logbins=0, $
+         /nofill, line=0, xrange=xrange, thick=8
+       oplot_priors, montegrid.ewniiha, pos[*,3], /overplot, logbins=0, $
+         /nofill, line=5, color_outline='tan', xrange=xrange, thick=8
+       oplot_priors, montegrid.ewoii, pos[*,3], /overplot, logbins=0, $
+         /nofill, line=3, color_outline='orange', xrange=xrange, thick=8
+       im_legend, ['EW([OIII]+H\beta)','EW([NII]+H\alpha)','EW([OII])'], $
+         /right, /top, box=0, charsize=1.1, line=[0,5,3], pspacing=1.9, $
+         margin=0, color=['powder blue','tan','orange'], $
+         textcolor=['powder blue','tan','orange']
+    endif else begin
+       djs_plot, [0], [0], /nodata, /noerase, position=pos[*,3], $
+         xtitle='EW (\AA, rest)', $
+         charsize=csize, xtickname=replicate(' ',10), $
+         ytickname=replicate(' ',10)
+       im_legend, 'Nebular=0', /left, /top, margin=0, box=0, charsize=csize
+       
+    endelse
+    
+;; SFR/SFR100
+;    mm = 1D-14
+;    xrange = minmax((montegrid.sfr>mm)*1D11)
+;    oplot_priors, (montegrid.sfr>mm)*1D11, pos[*,2], /noerase, xrange=xrange, $
+;      xtitle='SFR (10^{-11} M'+sunsymbol()+' yr^{-1})', /logbins
+;;   oplot_priors, montegrid.sfr100*1D11, pos[*,2], /overplot
+
+    im_plotconfig, psfile=qafile, /psclose, /pdf
+
+return    
+end   
+
+
+
 function build_modelgrid, montegrid, params=params, debug=debug, $
   sspinfo=sspinfo, ssppath=ssppath, minichunksize=minichunksize, $
   ichunk=ichunk, nchunk=nchunk
@@ -235,10 +569,10 @@ function build_modelgrid, montegrid, params=params, debug=debug, $
 
 ; convolve each model with the specified SFH
           for jj = 0, nsspindx-1 do begin
-              print, format='("Chunk=",I4.4,"/",I4.4,", '+$
-                'Minichunk=",I4.4,"/",I4.4,", SSP(Z)=",I3.3,"/",I4.4,", '+$
-                'Model=",I4.4,"/",I4.4,"   ",A5,$)', ichunk+1, nchunk, $
-                imini+1, nmini, issp+1, nssp, jj+1, nsspindx, string(13b)
+             if ((jj mod 10) eq 0) then print, format='("Chunk=",I4.4,"/",I4.4,", '+$
+               'Minichunk=",I4.4,"/",I4.4,", SSP(Z)=",I3.3,"/",I4.4,", '+$
+               'Model=",I4.4,"/",I4.4,"   ",A5,$)', ichunk+1, nchunk, $
+               imini+1, nmini, issp+1, nssp, jj, nsspindx, string(13b)
 ; attenuation
              alam = klam*(modelgrid1[sspindx[jj]].av/rv)
              if keyword_set(charlot) then begin
@@ -359,8 +693,9 @@ return, modelgrid
 end    
 
 pro isedfit_montegrids, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid, $
-  montegrids_dir=montegrids_dir, chunksize=chunksize, minichunksize=minichunksize, $
-  clobber=clobber, debug=debug
+  isedfit_dir=isedfit_dir, montegrids_dir=montegrids_dir, chunksize=chunksize, $
+  minichunksize=minichunksize, priors_pdffile=priors_pdffile, clobber=clobber, $
+  debug=debug
 
 ; read the SFHGRID parameter file
     if n_elements(isedfit_paramfile) eq 0 and n_elements(params) eq 0 then begin
@@ -368,6 +703,7 @@ pro isedfit_montegrids, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
        return
     endif
 
+    if n_elements(isedfit_dir) eq 0 then isedfit_dir = get_pwd()
     if n_elements(montegrids_dir) eq 0 then montegrids_dir = get_pwd()+'montegrids/'
 
 ; read the parameter file and then optionally call this routine
@@ -378,9 +714,9 @@ pro isedfit_montegrids, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
     ngrid = n_elements(params)
     if ngrid gt 1 then begin
        for ii = 0, ngrid-1 do begin
-          isedfit_montegrids, params=params[ii], montegrids_dir=montegrids_dir, $
-            chunksize=chunksize, minichunksize=minichunksize, clobber=clobber, $
-            debug=debug
+          isedfit_montegrids, params=params[ii], isedfit_dir=isedfit_dir, $
+            montegrids_dir=montegrids_dir, clobber=clobber, chunksize=chunksize, $
+            minichunksize=minichunksize, priors_pdffile=priors_pdffile, debug=debug
        endfor
        return
     endif
@@ -404,7 +740,7 @@ pro isedfit_montegrids, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
     endif
     sspinfo = mrdfits(sspinfofile,1,/silent)
 
-; make directories and delete old files
+; make directories and then check for old files
     sfhgridstring = 'sfhgrid'+string(params.sfhgrid,format='(I2.2)')
     sfhgridpath = montegrids_dir+sfhgridstring+$
       '/'+strtrim(params.spsmodels,2)+'/'+strtrim(params.redcurve,2)+'/'
@@ -415,177 +751,160 @@ pro isedfit_montegrids, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
     endif
 
 ; ---------------------------------------------------------------------------
-; first major step: build the Monte Carlo grid, if it doesn't
-; already exist 
+; first major step: build (or overwrite) the Monte Carlo grid
     montefile = sfhgridpath+strtrim(params.imf,2)+'_montegrid.fits'
-    if (file_test(montefile+'.gz') eq 0) or keyword_set(clobber) then begin
-       cc = 'N'
-       if (keyword_set(clobber) eq 0) then begin
-          splog, 'Delete all *'+strtrim(params.imf,2)+'* files from '+sfhgridpath+' [Y/N]?'
-          cc = get_kbrd(1)
-       endif
-       if keyword_set(clobber) or (strupcase(cc) eq 'Y') then begin
-          delfiles = file_search(sfhgridpath+'*'+strtrim(params.imf,2)+'*.fits.gz',count=ndel)
-          if ndel ne 0 then file_delete, delfiles, /quiet
-       endif
+    if file_test(montefile+'.gz') and keyword_set(clobber) eq 0 then begin
+       splog, 'MonteCarlo grid file '+montefile+' exists; use /CLOBBER'
+       return
+    endif
+
+; clean up old files    
+    delfiles = file_search(sfhgridpath+'*'+strtrim(params.imf,2)+'*.fits.gz',count=ndel)
+    if ndel ne 0 then file_delete, delfiles, /quiet
+
+    splog, 'Building SFHGRID='+sfhgridstring+' REDCURVE='+strtrim(params.redcurve,2)+$
+      ' NMODEL='+string(params.nmodel,format='(I0)')
+    montegrid = init_montegrid(params.nmodel,nmaxburst=params.nmaxburst)
        
-       splog, 'Building SFHGRID='+sfhgridstring+' REDCURVE='+strtrim(params.redcurve,2)+$
-         ' NMODEL='+string(params.nmodel,format='(I0)')
-
-       montegrid = init_montegrid(params.nmodel,nmaxburst=params.nmaxburst)
-
 ; draw uniformly from linear TAU, or 1/TAU?
-       tau = randomu(seed,params.nmodel)*(params.tau[1]-params.tau[0])+params.tau[0]
-       if params.oneovertau eq 1 and params.delayed eq 1 then $
-         message, 'DELAYED and ONEOVERTAU may not work well together.'
-       if params.oneovertau eq 1 then tau = 1D/tau
-       montegrid.tau = tau
-
+    tau = randomu(seed,params.nmodel)*(params.tau[1]-params.tau[0])+params.tau[0]
+    if params.oneovertau eq 1 and params.delayed eq 1 then $
+      message, 'DELAYED and ONEOVERTAU may not work well together.'
+    if params.oneovertau eq 1 then tau = 1D/tau
+    montegrid.tau = tau
+    
 ; metallicity; check to make sure that the prior boundaries do not
 ; exceed the metallicity range available from the chosen SPSMODELS
-       if (params.Zmetal[0] lt min(sspinfo.Zmetal)) then begin
-          splog, 'Adjusting minimum prior metallicity!'
-          params.Zmetal[0] = min(sspinfo.Zmetal)
-       endif
-       if (params.Zmetal[1] gt max(sspinfo.Zmetal)) then begin
-          splog, 'Adjusting maximum prior metallicity!'
-          params.Zmetal[1] = max(sspinfo.Zmetal)
-       endif
-       montegrid.Zmetal = randomu(seed,params.nmodel)*(params.Zmetal[1]-params.Zmetal[0])+params.Zmetal[0]
-
+    if (params.Zmetal[0] lt min(sspinfo.Zmetal)) then begin
+       splog, 'Adjusting minimum prior metallicity!'
+       params.Zmetal[0] = min(sspinfo.Zmetal)
+    endif
+    if (params.Zmetal[1] gt max(sspinfo.Zmetal)) then begin
+       splog, 'Adjusting maximum prior metallicity!'
+       params.Zmetal[1] = max(sspinfo.Zmetal)
+    endif
+    montegrid.Zmetal = randomu(seed,params.nmodel)*(params.Zmetal[1]-params.Zmetal[0])+params.Zmetal[0]
+    
 ; age; unfortunately I think we have to loop to sort
-       montegrid.age = randomu(seed,params.nmodel)*(params.age[1]-params.age[0])+params.age[0]
-
+    montegrid.age = randomu(seed,params.nmodel)*(params.age[1]-params.age[0])+params.age[0]
+    
 ; reddening, if any; Gamma distribution is the default, unless FLATAV==1
-       if (params.av[1] gt 0) then begin
-          if params.flatav then begin
-             montegrid.av = randomu(seed,params.nmodel)*(params.av[1]-params.av[0])+params.av[0] 
-          endif else begin
-             montegrid.av = params.av[0]*randomu(seed,params.nmodel,gamma=params.av[1])
-;            montegrid.av = ((10.0^(randomn(seed,params.nmodel)*params.av[1]+alog10(params.av[0]))>0.0
-;            montegrid.av = randomu(seed,params.nmodel,gamma=1.0)*params.av[1]+params.av[0]
-;            montegrid.av = 10.0^(randomn(seed,params.nmodel)*params.av[1]+alog10(params.av[0]))
-          endelse
+    if (params.av[1] gt 0) then begin
+       if params.flatav then begin
+          montegrid.av = randomu(seed,params.nmodel)*(params.av[1]-params.av[0])+params.av[0] 
+       endif else begin
+          montegrid.av = params.av[0]*randomu(seed,params.nmodel,gamma=params.av[1])
+;         montegrid.av = ((10.0^(randomn(seed,params.nmodel)*params.av[1]+alog10(params.av[0]))>0.0
+;         montegrid.av = randomu(seed,params.nmodel,gamma=1.0)*params.av[1]+params.av[0]
+;         montegrid.av = 10.0^(randomn(seed,params.nmodel)*params.av[1]+alog10(params.av[0]))
+       endelse
        
 ; "mu" is the Charlot & Fall (2000) factor for evolved stellar
 ; populations; Gamma distribution is the default, unless FLATMU==1
-          if (strtrim(params.redcurve,2) eq 'charlot') then begin
-             if params.flatmu then begin
-                montegrid.mu = randomu(seed,params.nmodel)*(params.mu[1]-params.mu[0])+params.mu[0] 
-             endif else begin
-                montegrid.mu = params.mu[0]*randomu(seed,params.nmodel,gamma=params.mu[1])
-;               montegrid.mu = ((10.0^(randomn(seed,params.nmodel)*params.mu[1]+alog10(params.mu[0])))<1.0)>0.0
-             endelse
-          endif
+       if (strtrim(params.redcurve,2) eq 'charlot') then begin
+          if params.flatmu then begin
+             montegrid.mu = randomu(seed,params.nmodel)*(params.mu[1]-params.mu[0])+params.mu[0] 
+          endif else begin
+             montegrid.mu = params.mu[0]*randomu(seed,params.nmodel,gamma=params.mu[1])
+;            montegrid.mu = ((10.0^(randomn(seed,params.nmodel)*params.mu[1]+alog10(params.mu[0])))<1.0)>0.0
+          endelse
        endif
+    endif
 
 ; add emission lines; draw [OIII]/H-beta from a uniform logarithmic
 ; distribution 
-       if params.nebular then begin
-          montegrid.oiiihb = randomu(seed,params.nmodel)*$
-            (params.oiiihb[1]-params.oiiihb[0])+params.oiiihb[0] 
-       endif
+    if params.nebular then begin
+       montegrid.oiiihb = randomu(seed,params.nmodel)*$
+         (params.oiiihb[1]-params.oiiihb[0])+params.oiiihb[0] 
+    endif
 
 ; now assign bursts; note that the bursts can occur outside
 ; (generally, before) the AGE vector; divide the time vector into
 ; NMAXBURST intervals of width INTERVAL_PBURST [Gyr]
-       ntime = 100
-;      ntime = params.nage
+    ntime = 100
+;   ntime = params.nage
        
 ; type of burst: 0 (step function, default), 1 (gaussian), 2 (step
 ; function with exponential wings) 
-       if (params.nmaxburst gt 0) then begin
-          tburst = dblarr(params.nmaxburst,params.nmodel)-1.0
-          ran = randomu(seed,params.nmaxburst,params.nmodel)
-          for imod = 0L, params.nmodel-1 do begin
-             for ib = 0, params.nmaxburst-1 do begin
-                tmin = params.tburst[0]+ib*params.interval_pburst
-                tmax = (params.tburst[0]+(ib+1)*params.interval_pburst)<params.tburst[1]
-;               tmin = params.minage+ib*params.interval_pburst
-;               tmax = (params.minage+(ib+1)*params.interval_pburst)<params.maxage
+    if (params.nmaxburst gt 0) then begin
+       tburst = dblarr(params.nmaxburst,params.nmodel)-1.0
+       ran = randomu(seed,params.nmaxburst,params.nmodel)
+       for imod = 0L, params.nmodel-1 do begin
+          for ib = 0, params.nmaxburst-1 do begin
+             tmin = params.tburst[0]+ib*params.interval_pburst
+             tmax = (params.tburst[0]+(ib+1)*params.interval_pburst)<params.tburst[1]
+;            tmin = params.minage+ib*params.interval_pburst
+;            tmax = (params.minage+(ib+1)*params.interval_pburst)<params.maxage
 
-                if (tmax le tmin) then message, 'This violates causality!'
-                time1 = randomu(seed,ntime)*(tmax-tmin)+tmin
-                time1 = time1[sort(time1)]
-
+             if (tmax le tmin) then message, 'This violates causality!'
+             time1 = randomu(seed,ntime)*(tmax-tmin)+tmin
+             time1 = time1[sort(time1)]
+                
 ; compute the cumulative probability, dealing with edge effects correctly
-                dtimeleft = (time1-shift(time1,1))/2.0
-                dtimeleft[0] = time1[0]-tmin
-                dtimeright = (shift(time1,-1)-time1)/2.0
-                dtimeright[ntime-1] = tmax-time1[ntime-1]
-                prob = params.pburst*total([[dtimeleft],[dtimeright]],2)/$
-                  params.interval_pburst
-                if (prob[0] le 0) then message, 'This should not happen!'
-
-                this = where(total(prob,/cum) gt ran[ib,imod])
-                if (this[0] ne -1) then tburst[ib,imod] = time1[this[0]]
-;               splog, tmin, tmax, ran[ib,imod], tburst[ib,imod] & if ib eq 0 then print
-             endfor
-          endfor 
-          montegrid.nburst = total(tburst gt -1.0,1) ; total number of bursts
-       endif
-       
-; assign burst strengths and durations       
-       hasburst = where(montegrid.nburst gt 0,nhasburst)
-       nallburst = long(total(montegrid.nburst))
-       if (nhasburst ne 0L) then begin
-          if params.flatdtburst then begin
-             dtburst = randomu(seed,nallburst)*(params.dtburst[1]-$
-               params.dtburst[0])+params.dtburst[0]
-          endif else begin
-             dtburst = 10.0^(randomu(seed,nallburst)*(alog10(params.dtburst[1])-$
-               alog10(params.dtburst[0]))+alog10(params.dtburst[0]))
-          endelse
-
-          if params.flatfburst then begin
-             fburst = randomu(seed,nallburst)*(params.fburst[1]-$
-               params.fburst[0])+params.fburst[0]
-          endif else begin
-             fburst = 10.0^(randomu(seed,nallburst)*(alog10(params.fburst[1])-$
-               alog10(params.fburst[0]))+alog10(params.fburst[0]))
-          endelse
-
-          count = 0L
-          for ii = 0L, nhasburst-1 do begin ; sort
-             if (montegrid[hasburst[ii]].nburst gt 0) then begin
-                nb = montegrid[hasburst[ii]].nburst
-                good = where(tburst[*,hasburst[ii]] gt -1.0)
-                montegrid[hasburst[ii]].tburst = tburst[good,hasburst[ii]]
-                montegrid[hasburst[ii]].fburst = fburst[count:count+nb-1]
-                montegrid[hasburst[ii]].dtburst = dtburst[count:count+nb-1]
-                count = count + nb
-             endif
+             dtimeleft = (time1-shift(time1,1))/2.0
+             dtimeleft[0] = time1[0]-tmin
+             dtimeright = (shift(time1,-1)-time1)/2.0
+             dtimeright[ntime-1] = tmax-time1[ntime-1]
+             prob = params.pburst*total([[dtimeleft],[dtimeright]],2)/$
+               params.interval_pburst
+             if (prob[0] le 0) then message, 'This should not happen!'
+             
+             this = where(total(prob,/cum) gt ran[ib,imod])
+             if (this[0] ne -1) then tburst[ib,imod] = time1[this[0]]
+;            splog, tmin, tmax, ran[ib,imod], tburst[ib,imod] & if ib eq 0 then print
           endfor
-
+       endfor 
+       montegrid.nburst = total(tburst gt -1.0,1) ; total number of bursts
+    endif
+    
+; assign burst strengths and durations       
+    hasburst = where(montegrid.nburst gt 0,nhasburst)
+    nallburst = long(total(montegrid.nburst))
+    if (nhasburst ne 0L) then begin
+       if params.flatdtburst then begin
+          dtburst = randomu(seed,nallburst)*(params.dtburst[1]-$
+            params.dtburst[0])+params.dtburst[0]
+       endif else begin
+          dtburst = 10.0^(randomu(seed,nallburst)*(alog10(params.dtburst[1])-$
+            alog10(params.dtburst[0]))+alog10(params.dtburst[0]))
+       endelse
+       
+       if params.flatfburst then begin
+          fburst = randomu(seed,nallburst)*(params.fburst[1]-$
+            params.fburst[0])+params.fburst[0]
+       endif else begin
+          fburst = 10.0^(randomu(seed,nallburst)*(alog10(params.fburst[1])-$
+            alog10(params.fburst[0]))+alog10(params.fburst[0]))
+       endelse
+       
+       count = 0L
+       for ii = 0L, nhasburst-1 do begin ; sort
+          if (montegrid[hasburst[ii]].nburst gt 0) then begin
+             nb = montegrid[hasburst[ii]].nburst
+             good = where(tburst[*,hasburst[ii]] gt -1.0)
+             montegrid[hasburst[ii]].tburst = tburst[good,hasburst[ii]]
+             montegrid[hasburst[ii]].fburst = fburst[count:count+nb-1]
+             montegrid[hasburst[ii]].dtburst = dtburst[count:count+nb-1]
+             count = count + nb
+          endif
+       endfor
+       
 ; allow a FRACTRUNC fraction of the models with bursts to have
 ; truncated bursts 
-          if (params.fractrunc gt 0D) then begin
-             ntrunc = long(params.fractrunc*nhasburst)
-             if params.fractrunc eq 1D then trunc = lindgen(ntrunc) else $
-               trunc = random_indices(nhasburst,ntrunc)
-          endif else ntrunc = 0L
-          if (ntrunc gt 0L) then begin
-             if (params.bursttype ne 1) then message, 'Should use truncated *Gaussian* bursts.'
-;            montegrid[hasburst[trunc]].trunctau = params.trunctau ; [Gyr]
-             montegrid[hasburst[trunc]].trunctau = $
-               randomu(seed,ntrunc)*(params.trunctau[1]-$
-               params.trunctau[0])+params.trunctau[0] ; [Gyr]
-          endif
-       endif  
-
-; write out
-       im_mwrfits, montegrid, montefile, /clobber
-    endif else begin
-; read the Monte Carlo grid
-       splog, 'Reading '+montefile+'.gz'
-       montegrid = mrdfits(montefile+'.gz',1)
-       if (n_elements(montegrid) ne params.nmodel) then begin
-          splog, 'Dimensions of MONTEGRID and PARAMS.NMODEL '+$
-            'do not match; call with /CLOBBER!'
-          return
+       if (params.fractrunc gt 0D) then begin
+          ntrunc = long(params.fractrunc*nhasburst)
+          if params.fractrunc eq 1D then trunc = lindgen(ntrunc) else $
+            trunc = random_indices(nhasburst,ntrunc)
+       endif else ntrunc = 0L
+       if (ntrunc gt 0L) then begin
+          if (params.bursttype ne 1) then message, 'Should use truncated *Gaussian* bursts.'
+;         montegrid[hasburst[trunc]].trunctau = params.trunctau ; [Gyr]
+          montegrid[hasburst[trunc]].trunctau = $
+            randomu(seed,ntrunc)*(params.trunctau[1]-$
+            params.trunctau[0])+params.trunctau[0] ; [Gyr]
        endif
-    endelse 
-
+    endif  
+    
 ; ---------------------------------------------------------------------------
 ; now build the actual composite stellar populations; do it in chunks
 ; to avoid memory issues and pass along all the parameters
@@ -611,19 +930,33 @@ pro isedfit_montegrids, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
        modelgrid.chunkindx = ichunk
 
        im_mwrfits, modelgrid, chunkinfo.chunkfiles[ichunk], /clobber
+
+; build an updated montegrid structure which also contains the derived
+; parameters we want to look at
+       newmontegrid1 = struct_trimtags(modelgrid,except=['wave','flux'])
+       if ichunk eq 0 then newmontegrid = temporary(newmontegrid1) else $
+         newmontegrid = [temporary(newmontegrid),temporary(newmontegrid1)]
     endfor
     splog, 'Total time (min) = ', (systime(1)-t0)/60.0
- 
-; write out the chunkinfofile
+
+; write out MONTEFILE and the chunkinfofile 
+    im_mwrfits, newmontegrid, montefile, /clobber
+;   im_mwrfits, montegrid, montefile, /clobber
+
     chunkinfo.chunkfiles = file_basename(chunkinfo.chunkfiles)+'.gz'
     im_mwrfits, chunkinfo, chunkinfofile, /clobber
 
-;; build a QAplot: age, tau, zmetal, av, mu, oiiihb, sfr, t/tau, sfrage
-;    qafile = sfhgridpath+'qa_'+strtrim(params.imf,2)+'_montegrid.ps'
-;    im_plotconfig, 0, pos, psfile=qafile
-;    im_plotconfig, psfile=qafile, /psclose, /pdf
-;stop       
-    
-    
+; finally, build a QAplot; allow the user to overwrite PDFFILE 
+    fp = isedfit_filepaths(params,isedfit_dir=isedfit_dir,$
+      montegrids_dir=montegrids_dir,priors_pdffile=priors_pdffile)
+    if file_test(fp.isedfit_dir+fp.qaplot_priors_pdffile) and $
+      keyword_set(clobber) eq 0 then begin
+       splog, 'Output file '+fp.qaplot_priors_pdffile+' exists; use /CLOBBER'
+       return
+    endif
+
+    qafile = fp.isedfit_dir+fp.qaplot_priors_psfile
+    montegrids_qaplot, newmontegrid, params=params, qafile=qafile
+
 return
 end

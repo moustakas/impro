@@ -1,6 +1,6 @@
 ;+
 ; NAME:
-;   ISEDFIT_SED_QAPLOT
+;   ISEDFIT_QAPLOT_SED
 ;
 ; PURPOSE:
 ;   Generate spectral energy distribution (SED) quality-assurance (QA)
@@ -39,7 +39,10 @@
 ;   xlog - logarithmic wavelength spacing (default linear) 
 ;
 ; KEYWORD PARAMETERS:
-;   maxold     - see ISEDFIT
+;   clobber - overwrite existing files of the same name (the default
+;     is to check for existing files and if they exist to exit
+;     gracefully)  
+;   maxold - see ISEDFIT
 ;
 ; OUTPUTS:
 ;   This routine generates a handy QAplot showing the input
@@ -89,7 +92,7 @@ pro oplot_posteriors, xx, pos, xrange=xrange, yrange=yrange, $
   color_outline=color_outline, color_monte=color_monte, $
   fill_monte=fill_monte, xlog=xlog, logbins=logbins, _extra=extra, $
   overplot=overplot, nofill=nofill, linestyle=linestyle, thick=thick
-; ISEDFIT_SED_QAPLOT: internal support routine
+; ISEDFIT_QAPLOT_SED: internal support routine
     
     if n_elements(yrange) eq 0 then yrange = [0,1.4]
 ;   yrange = [0,1.05]
@@ -161,14 +164,14 @@ pro oplot_posteriors, xx, pos, xrange=xrange, yrange=yrange, $
 return
 end
 
-pro isedfit_sed_qaplot, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid, $
+pro isedfit_qaplot_sed, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid, $
   isedfit_dir=isedfit_dir, montegrids_dir=montegrids_dir, outprefix=outprefix, $
   index=index, galaxy=galaxy1, pdffile=pdffile, nrandom=nrandom, nsigma=nsigma, $
   xrange=in_xrange, yrange=in_yrange, xlog=xlog, isedfit_results=isedfit_results, $
   clobber=clobber
 
     if n_elements(isedfit_paramfile) eq 0 and n_elements(params) eq 0 then begin
-       doc_library, 'isedfit_sed_qaplot'
+       doc_library, 'isedfit_qaplot_sed'
        return
     endif
 
@@ -186,7 +189,7 @@ pro isedfit_sed_qaplot, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
     ngrid = n_elements(params)
     if ngrid gt 1 then begin
        for ii = 0, ngrid-1 do begin
-          isedfit_sed_qaplot, params=params[ii], isedfit_dir=isedfit_dir, $
+          isedfit_qaplot_sed, params=params[ii], isedfit_dir=isedfit_dir, $
             montegrids_dir=montegrids_dir, outprefix=outprefix, index=index, $
             galaxy=galaxy1, pdffile=pdffile, xrange=in_xrange, yrange=in_yrange, $
             xlog=xlog, nrandom=nrandom, nsigma=nsigma, clobber=clobber, $
@@ -393,7 +396,7 @@ pro isedfit_sed_qaplot, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
 ; tau       
        if params.oneovertau then xrange = reverse(1.0/params.tau) else $
          xrange = params.tau
-       oplot_posteriors, post[igal].tau, pos2[*,3], /noerase, bin=bb, $
+       oplot_posteriors, post[igal].tau, pos2[*,3], /noerase, $
          xrange=xrange, xtitle='\tau (Gyr)', logbins=params.oneovertau
 
 ; metallicity       
@@ -435,7 +438,7 @@ pro isedfit_sed_qaplot, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
             (1.1*weighted_quantile(post[igal].ewoiiihb,quant=0.95))>$
             (1.1*weighted_quantile(post[igal].ewniiha,quant=0.95))]
           oplot_posteriors, post[igal].ewoii, pos2[*,7], /noerase, $
-            xrange=xrange, xtitle='EW (\AA)'
+            xrange=xrange, xtitle='EW (\AA, rest)'
           oplot_posteriors, post[igal].ewoiiihb, pos2[*,7], /overplot
           oplot_posteriors, post[igal].ewniiha, pos2[*,7], /overplot, color_fill='orange'
           xyouts, pos2[0,7]+0.01, pos2[3,7]-0.02, '[OII]', align=0.0, $
@@ -446,7 +449,7 @@ pro isedfit_sed_qaplot, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
             align=0.0, charsize=1.0, color=im_color('orange'), /norm
        endif else begin
           djs_plot, [0], [0], /nodata, /noerase, position=pos2[*,7], $
-            xtitle='EW (\AA)', charsize=1.0, xtickname=replicate(' ',10), $
+            xtitle='EW (\AA, rest)', charsize=1.0, xtickname=replicate(' ',10), $
             ytickname=replicate(' ',10)
           im_legend, 'Nebular=0', /left, /top, margin=0, box=0, charsize=1.0
        endelse

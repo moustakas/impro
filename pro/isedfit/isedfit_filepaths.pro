@@ -14,7 +14,8 @@
 function isedfit_filepaths, params, isedfit_dir=isedfit_dir, $
   montegrids_dir=montegrids_dir, outprefix=outprefix1, $
   sed_pdffile=sed_pdffile1, zcolor_pdffile=zcolor_pdffile1, $
-  colorcolor_pdffile=colorcolor_pdffile1, band_shift=band_shift
+  colorcolor_pdffile=colorcolor_pdffile1, priors_pdffile=priors_pdffile, $
+  band_shift=band_shift
 
     if (n_elements(params) eq 0) then $
       message, 'PARAMS input required'
@@ -100,6 +101,14 @@ function isedfit_filepaths, params, isedfit_dir=isedfit_dir, $
        colorcolor_psfile = repstr(colorcolor_pdffile,'.pdf','.ps')
     endelse
 
+    if n_elements(priors_pdffile1) eq 0 then begin
+       priors_psfile = 'qaplot_priors_'+outfile+'.ps'
+       priors_pdffile = repstr(priors_psfile,'.ps','.pdf')
+    endif else begin
+       priors_pdffile = file_basename(priors_pdffile1)
+       priors_psfile = repstr(priors_pdffile,'.pdf','.ps')
+    endelse
+
 ; file paths and filenames
     filepaths = {$
       isedfit_dir:               isedfit_dir,        $
@@ -114,6 +123,8 @@ function isedfit_filepaths, params, isedfit_dir=isedfit_dir, $
       qaplot_zcolor_pdffile:     zcolor_pdffile,$
       qaplot_colorcolor_psfile:  colorcolor_psfile,$
       qaplot_colorcolor_pdffile: colorcolor_pdffile,$
+      qaplot_priors_psfile:      priors_psfile,$
+      qaplot_priors_pdffile:     priors_pdffile,$
       montegrids_fullpath:       montegrids_fullpath,$
       montegrids_chunkinfofile:  montegrids_chunkinfofile,$ 
       montegrids_chunkfiles:     montegrids_chunkfiles}
