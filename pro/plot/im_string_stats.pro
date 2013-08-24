@@ -13,6 +13,7 @@
 ;   type - type of string array to build:
 ;     1 - median (mean+/-sigma)
 ;     2 - median+/-sigma
+;     3 - like TYPE=1 but with rejection
 ;   ndecimal - number of decimal points to allow (default 2)
 ;   extra - extra keywords for IM_STATS()
 ;
@@ -52,6 +53,9 @@ function im_string_stats, arr, type=type, ndecimal=ndecimal, _extra=extra
          strtrim(string(ss.sigma,format='(F12.'+nd+')'),2)+')'
        2: str = strtrim(string(ss.median,format='(F12.'+nd+')'),2)+$
          '\pm'+strtrim(string(ss.sigma,format='(F12.'+nd+')'),2)
+       3: str = strtrim(string(ss.median_rej,format='(F12.'+nd+')'),2)+$
+         ' ('+strtrim(string(ss.mean_rej,format='(F12.'+nd+')'),2)+'\pm'+$
+         strtrim(string(ss.sigma_rej,format='(F12.'+nd+')'),2)+')'
        else: message, 'STRING type not supported'
     endcase
     

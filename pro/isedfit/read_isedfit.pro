@@ -78,6 +78,8 @@ function read_isedfit, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid
   outprefix=outprefix, index=index, isedfit_post=isedfit_post, flambda=flambda, $
   fnu=fnu, getmodels=getmodels, noigm=noigm, silent=silent
 
+    common isedfit_igmgrid, igmgrid
+    
     if n_elements(isedfit_paramfile) eq 0 and n_elements(params) eq 0 then begin
        doc_library, 'read_isedfit'
        return, -1
@@ -179,9 +181,11 @@ function read_isedfit, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid
        endfor
 
 ; read the IGM absorption table
-       if params.igm and (keyword_set(noigm) eq 0) then begin
-          splog, 'Reading IGM attenuation lookup table'
-          igmgrid = mrdfits(getenv('IMPRO_DIR')+'/etc/igmtau_grid.fits.gz',1)
+       if n_elements(igmgrid) eq 0 then begin
+          if params.igm and (keyword_set(noigm) eq 0) then begin
+             splog, 'Reading IGM attenuation lookup table'
+             igmgrid = mrdfits(getenv('IMPRO_DIR')+'/etc/igmtau_grid.fits.gz',1)
+          endif
        endif
 
 ; loop through every object and construct the best-fit model
