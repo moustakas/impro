@@ -92,9 +92,9 @@ function init_isedfit, ngal, nfilt, params=params, ra=ra, dec=dec, $
 
     isedfit1 = {$
       isedfit_id:            -1L,$ ; unique ID number
-      z:                    -1.0,$ ; redshift
       ra:                    -1D,$ ; RA [decimal degrees]
       dec:                   -1D,$ ; Dec [decimal degrees]
+      z:                    -1.0,$ ; redshift
       maggies:     fltarr(nfilt),$ ; observed maggies
       ivarmaggies: fltarr(nfilt),$ ; corresponding inverse variance
       bestmaggies: fltarr(nfilt)}  ; best-fitting model photometry
@@ -106,8 +106,8 @@ function init_isedfit, ngal, nfilt, params=params, ra=ra, dec=dec, $
       delayed:       params.delayed,$ ; delayed tau model?
       bursttype:   params.bursttype,$ ; burst type
       chi2:                     1E6,$ ; chi2 minimum
-      scale:                   -1.0,$ 
-      scale_err:               -1.0,$ 
+      totalmass:               -1.0,$ 
+      totalmass_err:           -1.0,$ 
 
       mstar:                   -1.0,$ 
       age:                     -1.0,$
@@ -139,12 +139,28 @@ function init_isedfit, ngal, nfilt, params=params, ra=ra, dec=dec, $
       Zmetal_50:   -1.0,$
       AV_50:       -1.0,$
       mu_50:       -1.0,$
+      oiiihb_50:   -1.0,$
       sfr_50:      -1.0,$ ; instantaneous
       sfr100_50:   -1.0,$ ; 100 Myr
       b100_50:     -1.0,$
       ewoii_50:    -1.0,$
       ewoiiihb_50: -1.0,$
       ewniiha_50:  -1.0,$
+
+      mstar_avg:   -1.0,$
+      age_avg:     -1.0,$
+      sfrage_avg:  -1.0,$
+      tau_avg:     -1.0,$
+      Zmetal_avg:  -1.0,$
+      AV_avg:      -1.0,$
+      mu_avg:      -1.0,$
+      oiiihb_avg:  -1.0,$
+      sfr_avg:     -1.0,$ ; instantaneous
+      sfr100_avg:  -1.0,$ ; 100 Myr
+      b100_avg:    -1.0,$
+      ewoii_avg:   -1.0,$
+      ewoiiihb_avg:-1.0,$
+      ewniiha_avg: -1.0,$
 
       mstar_err:    -1.0,$
       age_err:      -1.0,$
@@ -153,6 +169,7 @@ function init_isedfit, ngal, nfilt, params=params, ra=ra, dec=dec, $
       Zmetal_err:   -1.0,$
       AV_err:       -1.0,$
       mu_err:       -1.0,$
+      oiiihb_err:   -1.0,$
       sfr_err:      -1.0,$
       sfr100_err:   -1.0,$
       b100_err:     -1.0,$
@@ -163,12 +180,17 @@ function init_isedfit, ngal, nfilt, params=params, ra=ra, dec=dec, $
     isedfit = struct_addtags(temporary(isedfit1),struct_addtags(best,qmed))
     isedfit = replicate(temporary(isedfit),ngal)
 
+    if n_elements(ra) ne 0L and n_elements(dec) ne 0L then begin
+       isedfit.ra = ra
+       isedfit.dec = dec
+    endif
+    
 ; initialize the posterior distribution structure
     isedfit_post = {$
-      draws:     lonarr(ndraw)-1,$
-      chi2:      fltarr(ndraw)-1,$
-      scale:     fltarr(ndraw)-1,$
-      scale_err: fltarr(ndraw)-1}
+      draws:         lonarr(ndraw)-1,$
+      chi2:          fltarr(ndraw)-1,$
+      totalmass:     fltarr(ndraw)-1,$
+      totalmass_err: fltarr(ndraw)-1}
     isedfit_post = replicate(temporary(isedfit_post),ngal)
     
 return, isedfit
@@ -263,8 +285,7 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, z, params=params, $
     fp = isedfit_filepaths(params,isedfit_dir=isedfit_dir,outprefix=outprefix)
 
     isedfit_outfile = fp.isedfit_dir+fp.isedfit_outfile
-    if file_test(isedfit_outfile+'.gz',/regular) and $
-      (keyword_set(clobber) eq 0) and $
+    if file_test(isedfit_outfile+'.gz') and (keyword_set(clobber) eq 0) and $
       (keyword_set(nowrite) eq 0) then begin
        splog, 'Output file '+isedfit_outfile+' exists; use /CLOBBER'
        return
@@ -338,14 +359,14 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, z, params=params, $
          omegal0=params.omegal)/params.h100
        zindx = findex(redshift,z[gthese]) ; used for interpolation
 ; loop on each "chunk" of output from ISEDFIT_MODELS
-       nchunk = n_elements(fp.models_chunkfiles)
+       nchunk = params.nmodelchunk
        t0 = systime(1)
        mem0 = memory(/current)
        for ichunk = 0, nchunk-1 do begin
           print, format='("ISEDFIT: Chunk ",I0,"/",I0, A10,$)', ichunk+1, nchunk, string(13b)
-          chunkfile = fp.models_chunkfiles[ichunk]+'.gz'
+          chunkfile = fp.models_chunkfiles[ichunk]
 ;         if (keyword_set(silent) eq 0) then splog, 'Reading '+chunkfile
-          modelchunk = mrdfits(chunkfile,1,/silent)
+          modelchunk = gz_mrdfits(chunkfile,1,/silent)
           nmodel = n_elements(modelchunk)
 ; compute chi2
           galaxychunk = isedfit_chi2(maggies[*,gthese],ivarmaggies[*,gthese],$
@@ -361,7 +382,7 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, z, params=params, $
           endelse
        endfor ; close ModelChunk
 ; minimize chi2
-       if (keyword_set(silent) eq 0) then splog, 'Building the posterior distributions...'
+;      if (keyword_set(silent) eq 0) then splog, 'Building the posterior distributions...'
        temp_isedfit_post = isedfit_post[gthese]
        isedfit_results[gthese] = isedfit_posterior(isedfit_results[gthese],$
          modelgrid=modelgrid,galaxygrid=galaxygrid,params=params,$

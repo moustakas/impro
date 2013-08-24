@@ -219,7 +219,8 @@ pro im_legend, items, BOTTOM_LEGEND=bottom, BOX = box, CENTER_LEGEND=center, $
   POSITION=position,PSPACING=pspacing, PSYM=psymi, RIGHT_LEGEND=right, $
   SPACING=spacing, SYMSIZE=symsizei, TEXTCOLORS=textcolorsi, THICK=thicki, $
   TOP_LEGEND=top, USERSYM=usersym,  VECTORFONT=vectorfonti, VERTICAL=vertical, $
-  OUTLINE_COLOR = outline_color, FONT = font, symTHICK=symthicki
+  OUTLINE_COLOR = outline_color, FONT = font, symTHICK=symthicki, $
+  notextoidl=notextoidl
 ;
 ;       =====>> HELP
 ;
@@ -475,9 +476,15 @@ pro im_legend, items, BOTTOM_LEGEND=bottom, BOX = box, CENTER_LEGEND=center, $
           x = x + width*xsign
           if width ne 0 then x = x + 0.5*xspacing
 
-          xyouts,x,y,textoidl(items[i]),width=width,/norm,$
-            color=col, size=charsize, $
-            align=xalign,charthick=charthick,font=font
+          if keyword_set(notextoidl) then begin ; sometimes I need the "_" and "^" characters
+             xyouts,x,y,items[i],width=width,/norm,$
+               color=col, size=charsize, $
+               align=xalign,charthick=charthick,font=font
+          endif else begin
+             xyouts,x,y,textoidl(items[i]),width=width,/norm,$
+               color=col, size=charsize, $
+               align=xalign,charthick=charthick,font=font
+          endelse
           x = x + width*xsign
           if not vertical and (i lt (n-1)) then x = x+2*xspacing ; ADD INTER-ITEM SPACE
           xfinal = (x + xspacing*margin)

@@ -224,7 +224,7 @@ pro isedfit_qaplot_sed, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
     
     isedfit_results = read_isedfit(params=params,isedfit_dir=isedfit_dir,$
       montegrids_dir=montegrids_dir,index=index,outprefix=outprefix,$
-      isedfit_post=post,silent=silent)
+      isedfit_post=post,silent=silent,/getmodels)
     ngal = n_elements(isedfit_results)
 
     filterlist = strtrim(params.filterlist,2)
@@ -356,8 +356,8 @@ pro isedfit_qaplot_sed, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
             '\tau = '+strtrim(string(isedfit_results[igal].tau,format='(F12.1)'),2)+' Gyr',$
             'Z/Z'+sunsymbol()+' = '+strtrim(string(isedfit_results[igal].Zmetal/0.019,format='(F12.2)'),2),$
             'A_{V} = '+strtrim(string(isedfit_results[igal].av*isedfit_results[igal].mu,format='(F12.2)'),2)+' mag',$
-            'SFR_{100} = '+strtrim(string(isedfit_results[igal].sfr100,format='(F12.2)'),2)+' M'+sunsymbol()+' yr^{-1}',$
-            'b_{100} = '+strtrim(string(isedfit_results[igal].b100,format='(F12.2)'),2)])
+            'log SFR_{100} = '+strtrim(string(isedfit_results[igal].sfr100,format='(F12.2)'),2)+' M'+sunsymbol()+' yr^{-1}',$
+            'log b_{100} = '+strtrim(string(isedfit_results[igal].b100,format='(F12.2)'),2)])
           im_legend, /right, /bottom, box=0, spacing=1.5, charsize=1.4, margin=0, $
             textoidl([strtrim(repstr(galaxy[igal],'_',' '),2),$
             'z = '+strtrim(string(z,format='(F12.4)'),2),'\chi_{\nu}^{2} = '+$
@@ -383,10 +383,12 @@ pro isedfit_qaplot_sed, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
          align=0.0, charsize=1.0, color=im_color('tan'), /norm
 
 ; SFR       
-       xrange = [0,(1.1*weighted_quantile(post[igal].sfr100,quant=0.95))>$
-         (1.1*weighted_quantile(post[igal].sfr100,quant=0.95))]
+       xrange = [min(post[igal].sfr100)<min(post[igal].sfr),$
+         max(post[igal].sfr100)>max(post[igal].sfr)]
+;      xrange = [0,(1.1*weighted_quantile(post[igal].sfr100,quant=0.95))>$
+;        (1.1*weighted_quantile(post[igal].sfr100,quant=0.95))]
        oplot_posteriors, post[igal].sfr, pos2[*,2], /noerase, xrange=xrange, $
-         xtitle='SFR (M'+sunsymbol()+' yr^{-1})'
+         xtitle='log SFR (M'+sunsymbol()+' yr^{-1})'
        oplot_posteriors, post[igal].sfr100, pos2[*,2], /overplot
        xyouts, pos2[0,2]+0.01, pos2[3,2]-0.02, 'SFR', align=0.0, $
          charsize=1.0, color=im_color('powder blue'), /norm
@@ -418,19 +420,9 @@ pro isedfit_qaplot_sed, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
        endelse
 
 ; b100       
-       vlow = total(post[igal].b100 lt 1D-3)/ngal
-       if vlow ge 0.95 then begin
-          djs_plot, [0], [0], /nodata, /noerase, position=pos2[*,6], $
-            xtitle='b_{100}', charsize=1.0, xtickname=replicate(' ',10), $
-            ytickname=replicate(' ',10)
-          im_legend, '95% of b_{100}<0.001', /left, /top, margin=0, $
-            box=0, charsize=1.0
-       endif else begin
-          xrange = [1D-3,max(post[igal].b100)]
-;         xrange = [1D-3,1.1*weighted_quantile(post[igal].b100,quant=0.95)]
-          oplot_posteriors, post[igal].b100>1D-3, pos2[*,6], /noerase, xrange=xrange, $
-            xtitle='b_{100}', /logbins
-       endelse
+       xrange = minmax(post[igal].b100)
+       oplot_posteriors, post[igal].b100, pos2[*,6], /noerase, xrange=xrange, $
+         xtitle='log b_{100}'
 
 ; emission lines       
        if params.nebular then begin

@@ -94,17 +94,23 @@ pro isedfit_models, isedfit_paramfile, params=params, isedfit_dir=isedfit_dir, $
        file_mkdir, fp.models_fullpath
     endif
 
-    chunkfile = strtrim(fp.models_chunkfiles[0],2) ; check the first file
-    if file_test(chunkfile+'.gz') and keyword_set(clobber) eq 0 then begin
-       splog, 'First ChunkFile '+chunkfile+' exists; use /CLOBBER'
+    modelfile = strtrim(fp.models_chunkfiles[0],2) ; check the first file
+    if file_test(modelfile+'*') and keyword_set(clobber) eq 0 then begin
+       splog, 'First ISEDFIT_MODELS ChunkFile '+modelfile+' exists; use /CLOBBER'
        return
     endif
 
-    if file_test(fp.montegrids_chunkfiles[0]) eq 0 then begin
-       splog, 'First Montegrids ChunkFile '+fp.montegrids_chunkfiles[0]+' not found!'
+    montefile = strtrim(fp.montegrids_chunkfiles[0],2) ; check the first file
+    if file_test(montefile+'*') eq 0 then begin
+       splog, 'First ISEDFIT_MONTEGRIDS ChunkFile '+montefile+' not found!'
        return
     endif
 
+; clean up old files which might conflict with this routine
+    delfiles = file_search(fp.models_fullpath+strtrim(params.prefix,2)+'_'+$
+      strtrim(params.spsmodels,2)+'_'+strtrim(params.imf,2)+'_chunk_*.fits*',count=ndel)
+    if ndel ne 0 then file_delete, delfiles, /quiet
+    
     splog, 'SPSMODELS='+strtrim(params.spsmodels,2)+', '+$
       'REDCURVE='+strtrim(params.redcurve,2)+', IMF='+$
       strtrim(params.imf,2)+', '+'SFHGRID='+$
@@ -121,9 +127,13 @@ pro isedfit_models, isedfit_paramfile, params=params, isedfit_dir=isedfit_dir, $
     redshift = params.redshift
     nredshift = n_elements(redshift)
     splog, 'Redshift grid: '
-    splog, '  Nz   = '+string(nredshift,format='(I0)')
+    if params.user_redshift then splog, '  USE_REDSHIFT adopted.'
     splog, '  zmin = '+strtrim(string(min(redshift),format='(F12.3)'),2)
     splog, '  zmax = '+strtrim(string(max(redshift),format='(F12.3)'),2)
+    if params.zlog then begin
+       splog, '  zlog=1'
+       splog, '  nz   = '+string(nredshift,format='(I0)')       
+    endif else splog, '  zbin = '+string(params.zbin,format='(G0.0)')
 
     if (im_double(min(redshift)) le 0D) then begin
        splog, 'REDSHIFT should be positive and non-zero'
@@ -151,14 +161,14 @@ pro isedfit_models, isedfit_paramfile, params=params, isedfit_dir=isedfit_dir, $
           splog, 'File '+igmfile+' not found!'
           return
        endif
-       igmgrid = mrdfits(igmfile,1)
+       igmgrid = gz_mrdfits(igmfile,1)
     endif else begin
        splog, 'Neglecting IGM absorption'
     endelse 
 
 ; now loop on each "chunk" of models (spectra) and compute the model
 ; photometry (modelmaggies)
-    nchunk = n_elements(fp.montegrids_chunkfiles)
+    nchunk = params.nmodelchunk
     splog, 'NCHUNK = '+string(nchunk,format='(I0)')
     t1 = systime(1)
     mem1 = memory(/current)
@@ -168,7 +178,7 @@ pro isedfit_models, isedfit_paramfile, params=params, isedfit_dir=isedfit_dir, $
        print, format='("ISEDFIT_MODELS: Chunk ",I0,"/",I0, A10,$)', $
          ichunk+1, nchunk, string(13b)
 ;      splog, 'Reading '+fp.montegrids_chunkfiles[ichunk]
-       chunk = mrdfits(fp.montegrids_chunkfiles[ichunk],1,/silent)
+       chunk = gz_mrdfits(fp.montegrids_chunkfiles[ichunk],1,/silent)
        nmodel = n_elements(chunk)
        npix = n_elements(chunk[0].flux)
        distfactor = rebin(reform((pc10/dlum)^2.0,nredshift,1),nredshift,nmodel)
@@ -221,8 +231,7 @@ pro isedfit_models, isedfit_paramfile, params=params, isedfit_dir=isedfit_dir, $
           splog, 'First chunk = '+string((systime(1)-t0)/60.0,format='(G0)')+$
             ' minutes, '+strtrim(string((memory(/high)-mem0)/1.07374D9,format='(F12.3)'),2)+' GB'
        endif
-       outfile = fp.models_chunkfiles[ichunk]
-       im_mwrfits, isedfit_models, outfile, /clobber, /silent
+       im_mwrfits, isedfit_models, fp.models_chunkfiles[ichunk], /clobber, /silent
     endfor 
     splog, 'All chunks = '+string((systime(1)-t1)/60.0,format='(G0)')+$
       ' minutes, '+strtrim(string((memory(/high)-mem1)/1.07374D9,format='(F12.3)'),2)+' GB'

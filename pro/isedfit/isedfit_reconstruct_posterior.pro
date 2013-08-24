@@ -147,14 +147,15 @@ function isedfit_reconstruct_posterior, isedfit_paramfile, params=params, $
 
 ; optionally restore the spectra!
 
-
 ; build the posteriors
     good = where(result.chi2 lt 0.9E6,ngood)
     if ngood gt 0L then begin
-       logscale = alog10(post[good].scale)
+       logscale_err = post[good].totalmass_err/post[good].totalmass/alog(10.0)
+       logscale = alog10(post[good].totalmass)+randomn(seed,ndraw,ngal)*logscale_err
+
        result[good].mstar = alog10(modelgrid[post[good].draws].mstar)+logscale   ; [log Msun]
-       result[good].sfr = modelgrid[post[good].draws].sfr*post[good].scale       ; [Msun/yr]
-       result[good].sfr100 = modelgrid[post[good].draws].sfr100*post[good].scale ; [Msun/yr]
+       result[good].sfr = modelgrid[post[good].draws].sfr+logscale               ; [Msun/yr]
+       result[good].sfr100 = modelgrid[post[good].draws].sfr100+logscale         ; [Msun/yr]
        result[good].b100 = modelgrid[post[good].draws].b100
 
        result[good].age = modelgrid[post[good].draws].age             ; [Gyr]

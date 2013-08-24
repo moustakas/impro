@@ -17,20 +17,23 @@
 ;   zminmax - two-element array specifying the minimum and maximum
 ;     redshift range to consider in the calculations; ZMINMAX should
 ;     span the range of redshifts of the sample, as the code will not
-;     extrapolate
-;   nzz - number of redshifts in the range (ZMINMAX[0],ZMINMAX[1]);
-;     this parameter controls the redshift resolution at which the
-;     filters are convolved with the models; it should not be too
-;     small nor too large (20-50 are good numbers, depending on
-;     ZMINMAX) 
-;   zlog - set this keyword to distribute redshifts logarithmically in
-;     the range (ZMINMAX[0],ZMINMAX[1]) [0=no, 1=yes] (default 0;
-;     ignored if USE_REDSHIFT is used) 
-;   use_redshift - in lieu of MINZ,MAXZ,NZZ, the user can instead pass
-;     the desired model redshift array directly using this parameter;
-;     this is useful if there are a small number of objects in the
-;     sample spanning a wide range of redshifts (see COMMENTS!); note
-;     that this parameter takes precedence over MINZ,MAXZ,NZZ
+;     extrapolate (ignored if USE_REDSHIFT is used)
+;   zbin - redshift bin spacing between ZMINMAX[0] and ZMINMAX[1]
+;     (you probably don't want the spacing to be much bigger
+;     than 0.1 in Delta-z); parameter ignored if /ZLOG
+;   zlog - set this keyword to distribute NZZ redshifts
+;     logarithmically in the range (ZMINMAX[0],ZMINMAX[1]) [0=no,
+;     1=yes] (default 0; ignored if USE_REDSHIFT is used); this is
+;     only really necessary if your sample extends all the way down to
+;     z~0 (e.g., if z ranges between 1E-3 and 0.1 you'll want
+;     to use /ZLOG) 
+;   nzz - number of *logarithmic* redshifts in the range
+;     (ZMINMAX[0],ZMINMAX[1]); only used if /ZLOG
+;   use_redshift - in lieu of ZMINMAX and ZBIN (or ZLOG and NZZ), the
+;     user can instead pass the desired model redshift array directly
+;     using this parameter; this is useful if you have a small number
+;     of objects in the sample spanning a wide range of redshifts (see
+;     COMMENTS!)
 ;
 ; OPTIONAL INPUTS: 
 ;   h100 - Hubble constant relative to 100 km/s/Mpc (default 0.7)
@@ -56,8 +59,11 @@
 ;   nminphot - require at least NMINPHOT bandpasses with well-measured
 ;     photometry (i.e., excluding upper limits) in order to fit
 ;     (default 3)
+;   modelchunksize - split the Monte Carlo model grids into
+;     MODELCHUNKSIZE sized chunks (see ISEDFIT_MONTEGRIDS for details;
+;     default is 5000L) 
 ;   galchunksize - split the sample into GALCHUNKSIZE sized chunks,
-;     which is necessary if the sample is very large (default 5000) 
+;     which is necessary if the sample is very large (default 2500) 
 ;
 ;   age - minimum and maximum galaxy age (default [0.1,13]) [Gyr] 
 ;   tau - minimum and maximum tau value (default [0.01,1.0]) [Gyr or
@@ -67,29 +73,49 @@
 ;   AV - Gamma distribution mean and width (default [0.35,2.0]) or
 ;     minimum and maximum V-band extinction/attenuation if /FLATAV
 ;     [mag] 
-;   mu - 
+;   mu - Gamma distribution mean and width (default [0.1,4.0]) or
+;     minimum and maximum values if /FLATMU
 ; 
-;   pburst - 
-;   interval_pburst - 
-;   tburst - 
-;   fburst - 
-;   dtburst - 
-;   trunctau - 
-;   fractrunc - 
+;   pburst - cumulative probability of a burst occurring during each
+;     INTERVAL_PBURST time interval between TBURST[0] and TBURST[1]
+;     (default 0.0); note that all the subsequent burst parameters are
+;     ignored if PBURST<=0!
+;   interval_pburst - time interval during which a burst can occur
+;     with probability PBURST (default 2.0 Gyr) 
+;   tburst - minimum and maximum time for a burst to occur (default
+;     [0.1,13]) (Gyr)
+;   fburst - minimum and maximum burst mass fraction (default
+;     [0.03,4.0]) 
+;   dtburst - minimum and maximum burst duration (default [0.03,0.3])
+;     (Gyr) 
+;   trunctau - minimum and maximum truncation timescale (default
+;     [-1.0,-1.0], i.e., no truncated bursts)
+;   fractrunc - fraction of models with truncated bursts (default 0) 
 ; 
 ;   oiiihb - if /NEBULAR then include draw the [OIII]/H-beta emission
 ;     line ratios from a uniform distribution
 ;  
-;   bursttype - 
+;   bursttype - type of burst (see iSEDfit documentation)
+;     0 - step function
+;     1 - Gaussian (default)
+;     2 - step function with exponential wings
 ;
 ; KEYWORD PARAMETERS:
 ;   nebular - include nebular emission lines
-;   oneovertau - 
-;   delayed - 
-;   flatAV - 
-;   flatmu - 
-;   flatfburst - 
-;   flatdtburst - 
+;   oneovertau - interpret TAU to be 1/TAU (i.e., "gamma" in the
+;     parlance of Salim+07); in other words, we draw uniformly from
+;     the range [1/max(TAU),1/min(TAU)]
+;   delayed - use a delayed "tau" model (see Appendix A of
+;     J. Moustakas et al. 2013) 
+;   flatAV - draw A(V) from a uniform/flat distribution rather than
+;     the default Gamma distribution
+;   flatmu - draw mu from a uniform/flat distribution rather than the
+;     default Gamma distribution 
+;   flatfburst - draw FBURST from a uniform/flat distribution rather
+;     than the default uniform *logarithmic* distribution 
+;   flatdtburst - draw DTBURST from a uniform/flat distribution rather 
+;     than the default uniform *logarithmic* distribution 
+; 
 ;   append - append a new set of parameters to an existing parameter file
 ;   help - print the documentation to STDOUT
 ;   clobber - overwrite an existing parameter file
@@ -106,6 +132,8 @@
 ;   If /APPEND then neither the number of elements in the redshift
 ;   array nor the number of filters can change, otherwise the
 ;   structures can't be stacked.
+;
+;   See J. Moustakas et al. (2013, ApJ, 767, 50) for many details. 
 ;
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2012 Sep 19, Siena
@@ -147,7 +175,8 @@ function init_paramfile, filterlist=filterlist, prefix=prefix, $
       nmodel:        10000L,$
       ndraw:          2000L,$
       nminphot:          3L,$
-      galchunksize:   5000L,$
+      galchunksize:   2500L,$
+      modelchunksize: 5000L,$
 ; model grid parameters; basic SFH priors
       age:       [0.1,13.0],$ ; range of model ages [Gyr]
       tau:       [0.01,1.0],$ ; [Gyr] or [Gyr^-1] if /ONEOVERTAU
@@ -174,22 +203,26 @@ function init_paramfile, filterlist=filterlist, prefix=prefix, $
       flatdtburst:       0L,$ ; log-distributed by default
       bursttype:         1L,$ ; Gaussian burst default
 ; sample-specific parameters
-      use_redshift:      0L,$ ; custom redshift? (for plots)
+      user_redshift:     0L,$ ; custom redshift? (for plots)
       zlog:              0L,$ ; zlog? (for plots)
+      nzz:               0L,$
+      zbin:             0.0,$
       redshift:    redshift,$
       filterlist: filterlist}
 return, params
 end    
 
-pro write_isedfit_paramfile, params=params, isedfit_dir=isedfit_dir, prefix=prefix, $
-  filterlist=filterlist, zminmax=zminmax, nzz=nzz, zlog=zlog, use_redshift=use_redshift, $
-  h100=h100, omega0=omega0, omegal=omegal, spsmodels=spsmodels, imf=imf, redcurve=redcurve, $
-  igm=igm, sfhgrid=sfhgrid, nmodel=nmodel, ndraw=ndraw, nminphot=nminphot, galchunksize=galchunksize, $
-  age=age, tau=tau, Zmetal=Zmetal, AV=AV, mu=mu, pburst=pburst, interval_pburst=interval_pburst, $
-  tburst=tburst, fburst=fburst, dtburst=dtburst, trunctau=trunctau, fractrunc=fractrunc, $
-  oiiihb=oiiihb, nebular=nebular, oneovertau=oneovertau, delayed=delayed, $
-  flatAV=flatAV, flatmu=flatmu, flatfburst=flatfburst, flatdtburst=flatdtburst, $
-  bursttype=bursttype, append=append, help=help, clobber=clobber
+pro write_isedfit_paramfile, params=params, isedfit_dir=isedfit_dir, $
+  prefix=prefix, filterlist=filterlist, zminmax=zminmax, zbin=zbin, nzz=nzz, $
+  zlog=zlog, use_redshift=use_redshift, h100=h100, omega0=omega0, omegal=omegal, $
+  spsmodels=spsmodels, imf=imf, redcurve=redcurve, igm=igm, sfhgrid=sfhgrid, $
+  nmodel=nmodel, ndraw=ndraw, nminphot=nminphot, galchunksize=galchunksize, $
+  modelchunksize=modelchunksize, age=age, tau=tau, Zmetal=Zmetal, AV=AV, mu=mu, $
+  pburst=pburst, interval_pburst=interval_pburst, tburst=tburst, fburst=fburst, $
+  dtburst=dtburst, trunctau=trunctau, fractrunc=fractrunc, oiiihb=oiiihb, $
+  nebular=nebular, oneovertau=oneovertau, delayed=delayed, flatAV=flatAV, $
+  flatmu=flatmu, flatfburst=flatfburst, flatdtburst=flatdtburst, bursttype=bursttype, $
+  append=append, help=help, clobber=clobber
 
     if keyword_set(help) then begin
        doc_library, 'write_isedfit_paramfile'
@@ -213,17 +246,22 @@ pro write_isedfit_paramfile, params=params, isedfit_dir=isedfit_dir, prefix=pref
 ; build the redshift array    
     nzz_user = n_elements(use_redshift)
     if nzz_user eq 0 then begin
-       if n_elements(zminmax) eq 0 or n_elements(nzz) eq 0 then begin
-          splog, 'Redshift parameters ZMINMAX and NZZ must be specified!' 
+       if n_elements(zminmax) eq 0 and (n_elements(zbin) eq 0 or n_elements(nzz) eq 0) then begin
+          splog, 'Redshift parameters ZMINMAX and ZBIN *or* NZZ (with /ZLOG) must be specified!' 
           return
        endif else begin
-          if nzz le 0 then message, 'NZZ must be greater than zero!'
           if n_elements(zminmax) ne 2 then message, 'ZMINMAX must be a 2-element array!'
-          if im_double(zminmax[0]) gt im_double(zminmax[1]) then $
-            message, 'MINZ must be less than MAXZ!'
-          if im_double(zminmax[0]) eq im_double(zminmax[1]) then $
-            redshift = zminmax[0] else $
-              redshift = range(zminmax[0],zminmax[1],nzz,log=keyword_set(zlog))
+          if im_double(zminmax[0]) ge im_double(zminmax[1]) then $
+            message, 'ZMINMAX[0] must be less than ZMINMAX[1]!'
+          if keyword_set(zlog) then begin
+             if n_elements(nzz) eq 0 then message, 'NZZ must be specified in tandem with /ZLOG'
+             if nzz le 0 then message, 'NZZ must be greater than zero!'
+             redshift = range(zminmax[0],zminmax[1],nzz,/log)
+          endif else begin
+             if n_elements(zbin) eq 0 then message, 'ZBIN input required!'
+             nzz = ceil((zminmax[1]-zminmax[0])/float(zbin)+1)
+             redshift = range(zminmax[0],zminmax[1],nzz)
+          endelse
        endelse
     endif else begin
        redshift = use_redshift
@@ -232,8 +270,10 @@ pro write_isedfit_paramfile, params=params, isedfit_dir=isedfit_dir, prefix=pref
 ; initialize the parameter structure    
     params = init_paramfile(filterlist=filterlist,prefix=prefix,$
       redshift=redshift)
-    params.use_redshift = nzz_user gt 0
+    params.user_redshift = nzz_user gt 0
+    params.nzz = n_elements(redshift)
     params.zlog = keyword_set(zlog)
+    if n_elements(zbin) ne 0 then params.zbin = zbin
 
 ; --------------------
 ; cosmology    
@@ -262,6 +302,7 @@ pro write_isedfit_paramfile, params=params, isedfit_dir=isedfit_dir, prefix=pref
     if n_elements(ndraw) ne 0 then params.ndraw = ndraw
     if n_elements(nminphot) ne 0 then params.nminphot = nminphot
     if n_elements(galchunksize) ne 0 then params.galchunksize = galchunksize
+    if n_elements(modelchunksize) ne 0 then params.modelchunksize = modelchunksize
 
 ; basic SFH
     if n_elements(age) ne 0 then begin
@@ -285,6 +326,14 @@ pro write_isedfit_paramfile, params=params, isedfit_dir=isedfit_dir, prefix=pref
        params.mu = mu
     endif
 
+; some error checking
+    if params.redcurve eq 'none' then begin
+       if total(params.AV gt 0) ne 0.0 then begin
+          splog, 'If REDCURVE=none then AV must be explicitly set to zero!'
+          return
+       endif
+    endif
+    
 ; burst parameters    
     if n_elements(pburst) ne 0 then params.pburst = pburst
     if n_elements(interval_pburst) ne 0 then params.interval_pburst = interval_pburst

@@ -44,13 +44,15 @@ function read_isedfit_paramfile, isedfit_paramfile, thissfhgrid=thissfhgrid
 
     params = yanny_readone(isedfit_paramfile)
 
-; add NMAXBURST (see ISEDFIT_BUILD_MONTEGRIDS)
-    params = struct_addtags(params,replicate({nmaxburst: 0L},n_elements(params)))
-    for ii = 0, n_elements(params)-1 do if (params[ii].pburst gt 0D) then $
-      params[ii].nmaxburst = ceil((params[ii].tburst[1]-params[ii].tburst[0])/$
-      params[ii].interval_pburst)
+; add NMAXBURST and NMODELCHUNK (see ISEDFIT_MONTEGRIDS)
+    params = struct_addtags(params,replicate({nmaxburst: 0L, nmodelchunk: 0L},n_elements(params)))
+    for ii = 0, n_elements(params)-1 do begin
+       if (params[ii].pburst gt 0D) then params[ii].nmaxburst = $
+         ceil((params[ii].tburst[1]-params[ii].tburst[0])/params[ii].interval_pburst)
+       params[ii].nmodelchunk = ceil(params[ii].nmodel/float(params[ii].modelchunksize))
+    endfor
     
-; build the parameter arrays for the specified SFHGRID
+; choose one particular SFHGRID
     if (n_elements(thissfhgrid) ne 0) then begin
        match = where(params.sfhgrid eq thissfhgrid)
        if (match[0] eq -1) then message, 'No matching SFHgrid '+$

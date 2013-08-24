@@ -9,7 +9,7 @@
 ; INPUTS: 
 ;   sfhinfo - iSEDfit-style star formation history structure with the
 ;     following tags (note, only .TAU is mandatory, but see also the
-;     TAU optional input):
+;     TAU and MGAL optional inputs):
 ;       .TAU - characteristic e-folding time [Gyr]
 ;       .TRUNCTAU - characteristic e-folding time over which the last
 ;         burst should be truncated [Gyr]
@@ -17,21 +17,30 @@
 ;       .TBURST - time/age at which each burst begins [Gyr]
 ;       .DTBURST - burst duration (exact meaning depends on BURSTTTYPE) [Gyr]
 ;       .FBURST - total stellar mass fraction formed in each burst
+;       .TOTALMASS - if this tag is present, then normalize everything
+;         (SFH, SFR100, MGALAXY, etc.) to this value at the final
+;         age/time bin (i.e., the last element of OUTAGE); this
+;         parameter corresponds to the total (time-integrated) stellar
+;         mass formed (ignoring mass lost through winds, SNe, etc.)
+;         over the age of the "galaxy" (the default is to normalize to
+;         the  value of MGALAXY at the last time/age bin) 
 ;   tau - in lieu of passing SFHINFO, a basic star-formation history
 ;     (no bursts, truncated or otherwise) be constructed by simply
 ;     passing the characteristic e-folding time through this variable
 ;     [Gyr] 
+;   totalmass - drop-in replacement for SFHINFO.TOTALMASS
 ; 
 ; OPTIONAL INPUTS: 
 ;   nagemax - maximum number of age/time points to use internally
 ;     (default 200); probably shouldn't change this!
 ;   dage - minimum time resolution at which the SFH should be sampled
 ;     internally (default 20 Myr); probably shouldn't change
-;     this! [Gyr] 
-;   outage - return SFH at this time/age [Gyr, NOUTAGE]
-;   useage - optionally force this routine to use this age/time vector
-;     [NAGE, GYR]; not generally recommended!
-;   mtau - normalization of the TAU model (default 1.0) [Msun] 
+;     this! [Gyr]
+;   outage - time/age corresponding to SFH [Gyr, NOUTAGE]
+;   useage - optionally force this routine to internally use this
+;     age/time vector [NAGE, GYR]; not generally recommended!
+;   mtau - normalization of the TAU model after infinite time (default
+;     1.0) [Msun]  
 ;   
 ; KEYWORD PARAMETERS:
 ;   delayed - construct a "delayed" rather a "simple" tau model (see
@@ -85,11 +94,12 @@
 ; General Public License for more details. 
 ;-
 
-function isedfit_sfh, sfhinfo, tau=tau, outage=outage, mtau=mtau, useage=useage, $
-  nagemax=nagemax, dage=dage, sfhtau=outsfhtau, sfhburst=outsfhburst, $
-  aburst=aburst, mburst=mburst, mgalaxy=outmgalaxy, sfr100=outsfr100, $
-  b100=outb100, sfrage=outsfrage, delayed=delayed, bursttype=bursttype, $
-  notruncate=notruncate, linear=linear, debug=debug, _extra=extra
+function isedfit_sfh, sfhinfo, tau=tau, outage=outage, totalmass=totalmass, $
+  mtau=mtau, useage=useage, nagemax=nagemax, dage=dage, sfhtau=outsfhtau, $
+  sfhburst=outsfhburst, aburst=aburst, mburst=mburst, mgalaxy=outmgalaxy, $
+  sfr100=outsfr100, b100=outb100, sfrage=outsfrage, delayed=delayed, $
+  bursttype=bursttype, notruncate=notruncate, linear=linear, debug=debug, $
+  _extra=extra
     
     if n_elements(sfhinfo) eq 0 and n_elements(tau) eq 0 then begin
        doc_library, 'isedfit_sfh'
@@ -122,6 +132,7 @@ function isedfit_sfh, sfhinfo, tau=tau, outage=outage, mtau=mtau, useage=useage,
        endif
        if tag_exist(sfhinfo,'TRUNCTAU') then $
          trunctau = sfhinfo.trunctau else trunctau = 0.0D
+       if tag_exist(sfhinfo,'TOTALMASS') then totalmass = sfhinfo.totalmass
     endelse
     
 ; need a highly sampled age grid to get the integrations right; this
@@ -172,7 +183,8 @@ function isedfit_sfh, sfhinfo, tau=tau, outage=outage, mtau=mtau, useage=useage,
                 t1 = (findex(age,tburst[ib]))>0
                 t2 = (findex(age,tburst[ib]+dtburst[ib]))<(nage-1)
                 sfhburst1[t1:t2,ib] = aburst[ib]
-                mburst[ib] = aburst[ib]*(interpolate(age,t2)-interpolate(age,t1))*1D9 ; =dtburst[ib] except on the edges
+; this should equal dtburst[ib] except on the edges
+                mburst[ib] = aburst[ib]*(interpolate(age,t2)-interpolate(age,t1))*1D9 
              endif
           endif
 ; Gaussian burst; could do the integral analytically, but no need to
@@ -246,9 +258,6 @@ function isedfit_sfh, sfhinfo, tau=tau, outage=outage, mtau=mtau, useage=useage,
 ; analytically
           if dotruncate and (iage gt ilast) then begin
              mtot100 = im_integral(age*1D9,sfh,1D9*(age[iage]-dt)>0,1D9*age[iage])
-;if n_elements(uniq(age,sort(age))) ne 500 then stop
-;if age[ilast] eq age[iage] then stop
-;stop
              mgalaxy[iage] = mgalaxy[ilast] + im_integral(age*1D9,sfh,1D9*age[ilast],1D9*age[iage])
           endif else begin
              if (nb eq 0) then begin
@@ -268,9 +277,9 @@ function isedfit_sfh, sfhinfo, tau=tau, outage=outage, mtau=mtau, useage=useage,
           endelse
           if (age[iage] gt 0D) then begin
              sfr100[iage] = mtot100/(dt*1D9)
-             b100[iage] = sfr100[iage]/(mgalaxy[iage]/(1D9*age[iage]))
+             b100[iage] = sfr100[iage]/(mgalaxy[iage]/(1D9*age[iage])) ; see Brinchmann+04
           endif
-; compute the SFR-weighted age
+; compute the SFR/mass-weighted age
           if (tau eq 0D) then sfrage[iage] = age[iage] else begin
              norm = im_integral(age*1D9,sfh,0D,1D9*age[iage])
              if (norm eq 0D) then sfrage[iage] = age[iage] else $
@@ -279,6 +288,19 @@ function isedfit_sfh, sfhinfo, tau=tau, outage=outage, mtau=mtau, useage=useage,
        endfor
     endif
 ;   splog, systime(1)-t0
+
+; normalize?
+    if n_elements(totalmass) ne 0 then begin
+       if n_elements(mgalaxy) ne 0L then mgal = mgalaxy[nage-1L] else $
+         mgal = im_integral(age*1D9,sfh,0D,1D9*age[nage-1L])
+       if mgal eq 0.0 then mgal = 1.0 ; special case for tau=0
+       massnorm = totalmass/mgal
+       sfh *= massnorm
+       sfhtau *= massnorm
+       sfhburst *= massnorm
+       if n_elements(mgalaxy) ne 0L then mgalaxy *= massnorm
+       if n_elements(sfr100) ne 0L then sfr100 *= massnorm
+    endif
 
 ; interpolate onto OUTAGE
     findx = findex(age,outage)
@@ -291,7 +313,7 @@ function isedfit_sfh, sfhinfo, tau=tau, outage=outage, mtau=mtau, useage=useage,
     if arg_present(outsfr100) then outsfr100 = interpolate(sfr100,findx)
     if arg_present(outb100) then outb100 = interpolate(b100,findx)
     if arg_present(outsfrage) then outsfrage = interpolate(sfrage,findx)/1D9 ; [Gyr]
-
+    
 ; QAplot    
     if keyword_set(debug) then begin
        djs_plot, age, sfh, xlog=0, xsty=3, ysty=3, psym=-6, _extra=extra;, xr=[min(age)>0.01,max(age)]

@@ -38,35 +38,15 @@ function isedfit_filepaths, params, isedfit_dir=isedfit_dir, $
     redcurve = strtrim(params.redcurve,2)
     sfhgridstring = 'sfhgrid'+string(params.sfhgrid,format='(I2.2)')
 
-; montegrids output directory and output files; only
-; ISEDFIT_MONTEGRIDS, ISEDFIT_MODELS, READ_ISEDFIT(), and possibly
-; ISEDFIT_RECONSTRUCT_POSTERIOR should need the CHUNKINFO file,
-; so don't crash if we don't find it (just move on)
+; montegrids output directory and output files
     montegrids_fullpath = montegrids_dir+sfhgridstring+'/'+spsmodels+'/'+redcurve+'/'
-    montegrids_chunkinfofile = montegrids_fullpath+imf+'_chunkinfo.fits.gz'
-    if file_test(montegrids_chunkinfofile) eq 0 then begin
-;      message, 'CHUNKINFOFILE '+montegrids_chunkinfofile+' not found!'
-       montegrids_chunkfiles = ''
-    endif else begin
-       chunkinfo = mrdfits(montegrids_chunkinfofile,1,/silent)
-       montegrids_chunkfiles = montegrids_fullpath+strtrim(chunkinfo.chunkfiles,2)
-    endelse
+    montegrids_chunkfiles = montegrids_fullpath+imf+'_chunk_'+$
+      string(lindgen(params.nmodelchunk)+1,format='(I4.4)')+'.fits'
 
-; convolved photometry (ISEDFIT_MODELS) output directory; get these
-; files from the MONTEGRIDS_DIR directory if possible in case
-; ISEDFIT_MODELS is being rerun with a different number of
-; models/chunks; otherwise, construct the file names from the input
-; parameters 
+; convolved photometry (ISEDFIT_MODELS) output directory and files 
     models_fullpath = isedfit_dir+sfhgridstring+'/'+redcurve+'/'
-    if file_test(montegrids_chunkinfofile) then begin
-       models_chunkfiles = models_fullpath+prefix+'_'+spsmodels+'_'+$
-         strtrim(chunkinfo.chunkfiles,2)
-    endif else begin
-       models_chunkfiles = file_search(models_fullpath+prefix+'_'+spsmodels+'_'+$
-         imf+'_chunk_????.fits.gz',count=nfile)
-       if (nfile eq 0) then message, 'MONTEGRIDS_DIR input needed to construct MODELS_CHUNKFILES!'
-    endelse
-    models_chunkfiles = repstr(models_chunkfiles,'.gz','')
+    models_chunkfiles = models_fullpath+prefix+'_'+spsmodels+'_'+imf+$
+      '_chunk_'+string(lindgen(params.nmodelchunk)+1,format='(I4.4)')+'.fits'
     
 ; iSEDfit output file names    
     outfile = thisprefix+'_'+spsmodels+'_'+imf+'_'+redcurve+'_'+sfhgridstring+suffix
@@ -126,7 +106,6 @@ function isedfit_filepaths, params, isedfit_dir=isedfit_dir, $
       qaplot_priors_psfile:      priors_psfile,$
       qaplot_priors_pdffile:     priors_pdffile,$
       montegrids_fullpath:       montegrids_fullpath,$
-      montegrids_chunkinfofile:  montegrids_chunkinfofile,$ 
       montegrids_chunkfiles:     montegrids_chunkfiles}
 
 return, filepaths

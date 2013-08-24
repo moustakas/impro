@@ -93,7 +93,7 @@ pro im_hogg_scatterplot, xxx,yyy,weight=weight, $
                       usegrid=usegrid, overplot=overplot, $
                       invert=invert, mingrey=mingrey, contour_color=contour_color, $
                       axis_color=axis_color, position=position, noerase=noerase, $
-                      c_linestyle=c_linestyle, $
+                      c_linestyle=c_linestyle, c_annotation=c_annotation, $
                       _EXTRA=KeywordsForPlot
 
 if(n_params() lt 2) then begin
@@ -264,7 +264,8 @@ endif else begin
     if (NOT keyword_set(nocontours)) then begin
         contour, cumimage,xvec,yvec,levels=levels,/overplot, $
           c_labels=lonarr(n_elements(levels))+labelcont,c_thick=cthick,$
-          c_color=contour_color, c_linestyle=c_linestyle
+          c_color=contour_color, c_linestyle=c_linestyle, $
+          c_annotation=c_annotation
     endif
 endelse
 

@@ -122,7 +122,7 @@ pro isedfit_kcorrect, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid,
 ; the number of galaxies and other goodies
     isedfit = read_isedfit(params=params,isedfit_dir=isedfit_dir,$
       montegrids_dir=montegrids_dir,index=index,outprefix=outprefix,$
-      silent=silent,/nomodels)
+      silent=silent)
     ngal = n_elements(isedfit)
 
 ; initialize the output data structure    
@@ -155,7 +155,7 @@ pro isedfit_kcorrect, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid,
        if (ngood ne 0L) then begin
           isedfit1 = read_isedfit(params=params,isedfit_dir=isedfit_dir,$
             montegrids_dir=montegrids_dir,index=index[sortindx[gthese[good]]],$
-            outprefix=outprefix,/flambda,/silent)
+            outprefix=outprefix,/flambda,/silent,/getmodels)
           oneplusz = rebin(reform(1.0+isedfit[sortindx[gthese[good]]].z,1,ngood),$
             n_elements(isedfit1[0].wave),ngood)
           restwave = isedfit1.wave/oneplusz

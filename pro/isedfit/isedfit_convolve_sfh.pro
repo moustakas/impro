@@ -67,8 +67,8 @@
 
 function isedfit_convolve_sfh, flux, age=age, infosfh=infosfh, tau=tau, $
   time=time, sfh=sfh, mstar=mstar, nlyc=nlyc, cspmstar=cspmstar, $
-  cspnlyc=cspnlyc, nsamp=nsamp, debug=debug, bigdebug=bigdebug, $
-  delayed=delayed, bursttype=bursttype, _extra=extra
+  cspnlyc=cspnlyc, nsamp=nsamp, debug=debug, delayed=delayed, $
+  bursttype=bursttype
 
     if n_elements(flux) eq 0 or n_elements(age) eq 0 or $
       ((n_elements(infosfh) eq 0) and (n_elements(tau) eq 0)) then begin
@@ -89,7 +89,7 @@ function isedfit_convolve_sfh, flux, age=age, infosfh=infosfh, tau=tau, $
 
 ; get the basic SFH    
     sfh = isedfit_sfh(infosfh,tau=tau,outage=time,debug=debug,$
-      delayed=delayed,bursttype=bursttype,_extra=extra)
+      delayed=delayed,bursttype=bursttype)
     nsfh = n_elements(sfh)
     cspflux = fltarr(npix,nsfh)
 
@@ -128,32 +128,14 @@ function isedfit_convolve_sfh, flux, age=age, infosfh=infosfh, tau=tau, $
        thistime = isedfit_agegrid(infosfh,tau=tau,inage=thistime/1D9,$
          delayed=delayed,bursttype=bursttype)*1D9
        nthistime = n_elements(thistime)
-       
+
 ; interpolate       
        sspindx = findex(age,reverse(thistime))>0
        isspflux = interpolate(flux,sspindx)
        thissfh = isedfit_sfh(infosfh,tau=tau,useage=thistime/1D9,$
-         delayed=delayed,bursttype=bursttype,_extra=extra)
+         delayed=delayed,bursttype=bursttype)
 
-       if keyword_set(bigdebug) then begin
-          djs_plot, time, sfh, psym=6, xsty=3, ysty=3, /xlog, /ylog, $
-            yrange=[min(sfh),max(sfh)>max(thissfh)], xr=[5,10]
-          djs_oplot, thistime/1D9, thissfh, psym=6, sym=0.2, color='orange'
-          ww = where(max(thistime)-thistime lt 0.01D9)
-          djs_oplot, thistime[ww]/1D9, thissfh[ww], psym=6, sym=0.6, color='blue'
-          nb = infosfh.nburst
-          if (nb gt 0) and (max(thistime/1D9) ge infosfh.tburst[0]) then begin
-             t1 = findex(thistime/1D9,infosfh.tburst[0:nb-1])
-             t2 = findex(thistime/1D9,infosfh.tburst[0:nb-1]+infosfh.dtburst[0:nb-1])
-;            niceprint, t1, t2
-;            cc = get_kbrd(1)
-          endif
-;         if ii eq nsfh-25 then stop          
-;         print, ii, nthistime
-;         cc = get_kbrd(1)
-       endif
-
-; do the convolution integral       
+; do the convolution integral
        dt = (shift(thistime,-1)-shift(thistime,+1))/2.0
        dt[0] = (thistime[1]-thistime[0])/2.0
        dt[nthistime-1] = (thistime[nthistime-1]-thistime[nthistime-2])/2.0

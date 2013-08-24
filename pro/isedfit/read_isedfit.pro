@@ -32,8 +32,8 @@
 ; KEYWORD PARAMETERS:
 ;   flambda - convert to F(lambda) (erg/s/cm^2/A) (default is AB mag)
 ;   fnu - convert to F(nu) (erg/s/cm^2/Hz) (default is AB mag) 
-;   nomodels - restore the ISEDFIT output structure, but not the model
-;     spectra
+;   getmodels - restore the ISEDFIT output structure *and* the model
+;     spectra 
 ;   noigm - do not convolve with the IGM, over-riding the content of
 ;     ISEDFIT_PARAMFILE; this can be useful for testing but should not
 ;     in general be used
@@ -41,7 +41,7 @@
 ;
 ; OUTPUTS:
 ;   model - output data structure array containing all the ISEDFIT
-;     outputs plus the following tags [NGAL]
+;     outputs plus the following tags if /GETMODELS [NGAL]
 ;     .WAVE - observed-frame wavelength array (Angstrom)
 ;     .FLUX - observed-frame flux array (AB mag)
 ;
@@ -49,9 +49,9 @@
 ;   isedfit_post - iSEDfit result structure (see ISEDFIT) [NGAL] 
 ;
 ; COMMENTS:
-;   This routine should be not be used to restore too many spectra
-;   (unless /NOMODELS), otherwise memory problems may occur; use
-;   INDEX. 
+;   This routine should be not be used to restore too many galaxy
+;   spectra (if /GETMODELS) or posteriors (if ISEDFIT_POST is
+;   requested), otherwise memory problems may occur; use INDEX. 
 ;
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2007 Jun 27, NYU - largely excised from
@@ -76,7 +76,7 @@
 function read_isedfit, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid, $
   isedfit_dir=isedfit_dir, montegrids_dir=montegrids_dir, in_isedfit=in_isedfit, $
   outprefix=outprefix, index=index, isedfit_post=isedfit_post, flambda=flambda, $
-  fnu=fnu, nomodels=nomodels, noigm=noigm, silent=silent
+  fnu=fnu, getmodels=getmodels, noigm=noigm, silent=silent
 
     if n_elements(isedfit_paramfile) eq 0 and n_elements(params) eq 0 then begin
        doc_library, 'read_isedfit'
@@ -97,11 +97,11 @@ function read_isedfit, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid
           result1 = read_isedfit(params=params[ii],isedfit_dir=isedfit_dir,$
             montegrids_dir=montegrids_dir,in_isedfit=in_isedfit,$
             outprefix=outprefix,index=index,isedfit_post=isedfit_post1,$
-            flambda=flambda,fnu=fnu,nomodels=nomodels,noigm=noigm,silent=silent)
+            flambda=flambda,fnu=fnu,getmodels=getmodels,noigm=noigm,silent=silent)
           if ii eq 0 then result = result1 else result = [[result],[result1]]
           if arg_present(isedfit_post) then begin
-             if ii eq 0 then isedfit_post = isedfit_post1 else $
-               isedfit_post = [[isedfit_post],[isedfit_post1]]
+             if ii eq 0 then isedfit_post = temporary(isedfit_post1) else $
+               isedfit_post = [[temporary(isedfit_post)],[temporary(isedfit_post1)]]
           endif
        endfor
        return, result
@@ -134,8 +134,8 @@ function read_isedfit, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid
     endif
 
 ; restore the models    
-    if keyword_set(nomodels) then begin
-       return, isedfit
+    if keyword_set(getmodels) eq 0 then begin
+       return, isedfit ; done!
     endif else begin
        light = 2.99792458D18             ; speed of light [A/s]
        pc10 = 3.085678D19                ; fiducial distance [10 pc in cm]
@@ -150,12 +150,13 @@ function read_isedfit, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid
        nchunk = n_elements(chunks)
        
 ; initialize the model structure (need to get the number of pixels)
-       if file_test(fp.montegrids_chunkfiles[0]) eq 0 then begin
-          splog, 'First Montegrids ChunkFile '+fp.montegrids_chunkfiles[0]+' not found!'
+       montefile = strtrim(fp.montegrids_chunkfiles[0],2) ; check the first file
+       if file_test(montefile+'*') eq 0 then begin
+          splog, 'First ISEDFIT_MONTEGRIDS ChunkFile '+montefile+' not found!'
           return, -1
        endif
 
-       junk = mrdfits(fp.montegrids_chunkfiles[0],1,row=0,/silent)
+       junk = gz_mrdfits(fp.montegrids_chunkfiles[0],1,row=0,/silent)
        npix = n_elements(junk.wave)
 
        result = struct_addtags(temporary(isedfit),replicate($
@@ -165,9 +166,8 @@ function read_isedfit, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid
           these = where(chunks[ichunk] eq allchunks,nthese)
           if (nthese ne 0L) and (chunks[ichunk] ge 0) then begin
              chunkfile = strtrim(fp.montegrids_chunkfiles[chunks[ichunk]],2)
-             if (not keyword_set(silent)) then $
-               splog, 'Reading '+chunkfile
-             grid = mrdfits(chunkfile,1,/silent)
+             if (not keyword_set(silent)) then splog, 'Reading '+chunkfile
+             grid = gz_mrdfits(chunkfile,1,/silent)
              for ii = 0L, nthese-1L do begin
                 if (result[these[ii]].chi2 lt 1E6) then begin
                    i1 = result[these[ii]].modelindx ; mod 100
@@ -189,7 +189,7 @@ function read_isedfit, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid
           if (result[igal].chi2 lt 1E6) then begin
              z = result[igal].z
              zwave = result[igal].wave*(1+z)
-             zflux_flam = result[igal].scale*result[igal].flux*$ ; [erg/s/cm2/A]
+             zflux_flam = result[igal].totalmass*result[igal].flux*$ ; [erg/s/cm2/A]
                (pc10/dlum[igal])^2.0/(1.0+z)
              if params.igm and (keyword_set(noigm) eq 0) then begin
                 windx = findex(igmgrid.wave,zwave)

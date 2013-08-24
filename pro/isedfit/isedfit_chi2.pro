@@ -21,8 +21,8 @@ function isedfit_chi2, maggies, ivarmaggies, modelchunk, maxage, $
     if (ndim eq 1) then ngal = 1 else ngal = dims[1] ; number of galaxies
     
     nmodel = n_elements(modelchunk)
-    gridchunk = {scale: -1.0, scale_err: -1.0, chi2: 1E6, $ ; zptoffset: fltarr(nfilt), $
-      bestmaggies: fltarr(nfilt)}
+    gridchunk = {totalmass: -1.0, totalmass_err: -1.0, $
+      chi2: 1E6, bestmaggies: fltarr(nfilt)}
     gridchunk = replicate(gridchunk,nmodel,ngal)
 
 ;   t0 = systime(1)
@@ -61,9 +61,9 @@ function isedfit_chi2, maggies, ivarmaggies, modelchunk, maxage, $
           modelmaggies = interpolate(modelchunk[these].modelmaggies,$
             findgen(nfilt),zindx[igal],findgen(nthese),/grid)
 ; perform acrobatic dimensional juggling to get the maximum likelihood
-; scale-factor and corresponding chi2 as a function of age; VSCALE is
-; the maximum likelihood value of SCALE and VSCALE_ERR is the 1-sigma
-; error (see pg 84 of
+; scale-factor (total mass) and corresponding chi2 as a function of
+; age; VSCALE is the maximum likelihood value of TOTALMASS and
+; VSCALE_ERR is the 1-sigma error (see pg 84 of
 ; http://www.hep.phy.cam.ac.uk/~thomson/lectures/statistics/FittingHandout.pdf)
           vmodelmaggies = reform(1D*modelmaggies,nfilt,nthese)
           vmaggies = rebin(reform(nmaggies,nfilt,1),nfilt,nthese)
@@ -81,8 +81,8 @@ function isedfit_chi2, maggies, ivarmaggies, modelchunk, maxage, $
           if inf[0] ne -1 then message, 'Problem here'
           check = where((vscale le 0) or (finite(vscale) eq 0))
           if (check[0] ne -1) then message, 'Zero scale?!?'
-          gridchunk[these,igal].scale = vscale            ; alog10(vscale)
-          gridchunk[these,igal].scale_err = vscale_err    ; /vscale/alog(10)
+          gridchunk[these,igal].totalmass = vscale            ; alog10(vscale)
+          gridchunk[these,igal].totalmass_err = vscale_err    ; /vscale/alog(10)
           gridchunk[these,igal].bestmaggies = bestmaggies
        endif 
 ;      splog, format='("All models = ",G0," minutes")', (systime(1)-t1)/60.0       
