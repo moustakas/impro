@@ -254,10 +254,10 @@ pro montegrids_qaplot, montegrid, params=params, qafile=qafile
       'flatdtburst='+string(params.flatdtburst,format='(G0)'),$
       ' ',$
       'user_redshift='+string(params.user_redshift,format='(G0)'),$
-      'zminmax='+'['+strjoin(string(minmax(params.redshift),format='(G0.0)'),',')+']',$
+      'zminmax='+'['+strjoin(string(params.zminmax,format='(G0.0)'),',')+']',$
       'zbin='+string(params.zbin,format='(G0)'),$
-      'zlog='+string(params.zlog,format='(I0)'),$
-      'nzz='+string(n_elements(params.redshift),format='(G0)')]
+      'nzz='+string(params.nzz,format='(G0)'),$
+      'zlog='+string(params.zlog,format='(I0)')]
     im_legend, label, /left, /top, box=0, charsize=1.3, margin=0, /notextoidl
 
     csize = 1.4

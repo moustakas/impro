@@ -154,11 +154,14 @@
 ;-
 
 function init_paramfile, filterlist=filterlist, prefix=prefix, $
-  redshift=redshift
+  use_redshift=use_redshift1
 ; populate the iSEDfit parameter file with defaults; note that all the
 ; integers have to be type LONG to avoid issues with the Yanny
 ; parameter files 
 
+    if n_elements(use_redshift1) eq 0 then use_redshift = 0.0 else $
+      use_redshift = float(use_redshift1)
+    
     params = {$
 ; preliminaries
       prefix:        prefix,$
@@ -203,12 +206,13 @@ function init_paramfile, filterlist=filterlist, prefix=prefix, $
       flatdtburst:       0L,$ ; log-distributed by default
       bursttype:         1L,$ ; Gaussian burst default
 ; sample-specific parameters
-      user_redshift:     0L,$ ; custom redshift? (for plots)
-      zlog:              0L,$ ; zlog? (for plots)
+      filterlist: filterlist,$
+      zlog:              0L,$ ; zlog?
       nzz:               0L,$
       zbin:             0.0,$
-      redshift:    redshift,$
-      filterlist: filterlist}
+      zminmax:    [0.0,0.0],$
+      user_redshift: n_elements(use_redshift1) gt 0,$ ; custom redshift?
+      use_redshift: use_redshift}
 return, params
 end    
 
@@ -243,11 +247,14 @@ pro write_isedfit_paramfile, params=params, isedfit_dir=isedfit_dir, $
        return
     endif
 
-; build the redshift array    
-    nzz_user = n_elements(use_redshift)
-    if nzz_user eq 0 then begin
+; initialize the parameter structure    
+    params = init_paramfile(filterlist=filterlist,prefix=prefix,$
+      use_redshift=use_redshift)
+
+; check the redshift parameters
+    if params.user_redshift eq 0 then begin
        if n_elements(zminmax) eq 0 and (n_elements(zbin) eq 0 or n_elements(nzz) eq 0) then begin
-          splog, 'Redshift parameters ZMINMAX and ZBIN *or* NZZ (with /ZLOG) must be specified!' 
+          splog, 'Redshift parameters ZMINMAX and ZBIN *or* NZZ must be specified!' 
           return
        endif else begin
           if n_elements(zminmax) ne 2 then message, 'ZMINMAX must be a 2-element array!'
@@ -258,22 +265,22 @@ pro write_isedfit_paramfile, params=params, isedfit_dir=isedfit_dir, $
              if nzz le 0 then message, 'NZZ must be greater than zero!'
              redshift = range(zminmax[0],zminmax[1],nzz,/log)
           endif else begin
-             if n_elements(zbin) eq 0 then message, 'ZBIN input required!'
-             nzz = ceil((zminmax[1]-zminmax[0])/float(zbin)+1)
-             redshift = range(zminmax[0],zminmax[1],nzz)
-          endelse
-       endelse
+             if n_elements(zbin) eq 0 then begin ; use NZZ
+                zbin = (zminmax[1]-zminmax[0])/(nzz-1.0)
+             endif else begin   ; use ZBIN
+                nzz = ceil((zminmax[1]-zminmax[0])/float(zbin)+1)
+                redshift = range(zminmax[0],zminmax[1],nzz)
+             endelse
+          endelse 
+          params.zminmax = zminmax
+          params.nzz = nzz
+          params.zbin = zbin
+          params.zlog = keyword_set(zlog)
+       endelse 
     endif else begin
-       redshift = use_redshift
+       params.nzz = n_elements(use_redshift)
+       params.zminmax = minmax(use_redshift)
     endelse
-    
-; initialize the parameter structure    
-    params = init_paramfile(filterlist=filterlist,prefix=prefix,$
-      redshift=redshift)
-    params.user_redshift = nzz_user gt 0
-    params.nzz = n_elements(redshift)
-    params.zlog = keyword_set(zlog)
-    if n_elements(zbin) ne 0 then params.zbin = zbin
 
 ; --------------------
 ; cosmology    
@@ -387,6 +394,12 @@ pro write_isedfit_paramfile, params=params, isedfit_dir=isedfit_dir, $
        if n_elements(sfhgrid) eq 0 then params.sfhgrid = max(params1.sfhgrid)+1 else $
          params.sfhgrid = sfhgrid
        params = [params1,params]
+; we need NZZ to be the same because of the simplistic code in
+; READ_ISEDFIT_PARAMFILE
+       if total(params.nzz eq params[0].nzz) ne n_elements(params) then begin
+          splog, 'NZZ must be the same for each SFHGRID in '+isedfit_paramfile
+          return
+       endif
     endif else begin
        if n_elements(sfhgrid) eq 0 then params.sfhgrid = 1 else $
          params.sfhgrid = sfhgrid

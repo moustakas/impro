@@ -94,6 +94,7 @@ pro im_hogg_scatterplot, xxx,yyy,weight=weight, $
                       invert=invert, mingrey=mingrey, contour_color=contour_color, $
                       axis_color=axis_color, position=position, noerase=noerase, $
                       c_linestyle=c_linestyle, c_annotation=c_annotation, $
+  ytick_get=ytick_get, xtick_get=xtick_get, $
                       _EXTRA=KeywordsForPlot
 
 if(n_params() lt 2) then begin
@@ -145,7 +146,7 @@ y= reform(yyy,ndata)
 ; initialize the axes without any plotting keywords
 if (not keyword_set(overplot)) then $
 plot, [0],[0],xrange=xrange,yrange=yrange,xstyle=5,ystyle=5, /nodata, $
-  position=position, noerase=noerase
+  position=position, noerase=noerase, ytick_get=ytick_get, xtick_get=xtick_get
 ;plot, [0],[0],xrange=xrange,yrange=yrange,xstyle=5,ystyle=5, $
 ;  _EXTRA=KeywordsForPlot,/nodata
 

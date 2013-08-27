@@ -24,6 +24,7 @@
 ;     filters; default is to use all the filters, which is *not*
 ;     recommended if you have more than 4-5 filters (see COMMENTS)!
 ;     the (string) filter names can be missing the '.par' suffix
+;   outprefix - optional output prefix string (see ISEDFIT) 
 ;
 ;   colorcolor_pdffile - overwrite the default name of the output
 ;     color-color PDF file (not typically necessary since the file
@@ -86,7 +87,7 @@
 
 pro isedfit_qaplot_models, isedfit_paramfile, maggies1, ivarmaggies1, z, $
   params=params, thissfhgrid=thissfhgrid, isedfit_dir=isedfit_dir, $
-  thesefilters=thesefilters, colorcolor_pdffile=colorcolor_pdffile, $
+  thesefilters=thesefilters, outprefix=outprefix, colorcolor_pdffile=colorcolor_pdffile, $
   zcolor_pdffile=zcolor_pdffile, clobber=clobber
 
     if n_elements(isedfit_paramfile) eq 0 and n_elements(params) eq 0 then begin
@@ -146,8 +147,8 @@ pro isedfit_qaplot_models, isedfit_paramfile, maggies1, ivarmaggies1, z, $
        for ii = 0, ngrid-1 do begin
           sedfit_qaplot_models, isedfit_paramfile1, maggies1, ivarmaggies1, z, $
             params=params[ii], isedfit_dir=isedfit_dir, thesefilters=thesefilters, $
-            colorcolor_pdffile=colorcolor_pdffile, zcolor_pdffile=zcolor_pdffile, $
-            clobber=clobber
+            outprefix=outprefix, colorcolor_pdffile=colorcolor_pdffile, $
+            zcolor_pdffile=zcolor_pdffile, clobber=clobber
        endfor
        return
     endif
@@ -269,10 +270,10 @@ pro isedfit_qaplot_models, isedfit_paramfile, maggies1, ivarmaggies1, z, $
     endfor
 
 ; some plotting preferences
-    npix = ((long(nmodel*1E-3)+(odd(long(nmodel*1E-3)) eq 0))>21L)<101L
-    mylevels = [0.5,0.75,0.98]
+    npix = ((long(nmodel*1E-3)+(odd(long(nmodel*1E-3)) eq 0))>21L)<51L
+    mylevels = [0.5,0.75,0.99]
     mycann = string(mylevels,format='(F4.2)')
-    mylevels = [0.5,0.75,0.98]
+    mylevels = [0.5,0.75,0.99]
     
     nperpage = 4
     

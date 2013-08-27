@@ -44,8 +44,19 @@ function read_isedfit_paramfile, isedfit_paramfile, thissfhgrid=thissfhgrid
 
     params = yanny_readone(isedfit_paramfile)
 
+; build the redshift array; WRITE_ISEDFIT_PARAMFILE makes sure that
+; NZZ is the same for each SFHGRID
+    params = struct_addtags(params,replicate({redshift: $
+      fltarr(params[0].nzz)},n_elements(params)))
+    for ii = 0, n_elements(params)-1 do begin
+       if params[ii].user_redshift then params[ii].redshift = params[ii].use_redshift else $
+         params[ii].redshift = range(params[ii].zminmax[0],params[ii].zminmax[1],$
+         params[ii].nzz,log=params[ii].zlog)
+    endfor
+    
 ; add NMAXBURST and NMODELCHUNK (see ISEDFIT_MONTEGRIDS)
-    params = struct_addtags(params,replicate({nmaxburst: 0L, nmodelchunk: 0L},n_elements(params)))
+    params = struct_addtags(params,replicate({nmaxburst: 0L, $
+      nmodelchunk: 0L},n_elements(params)))
     for ii = 0, n_elements(params)-1 do begin
        if (params[ii].pburst gt 0D) then params[ii].nmaxburst = $
          ceil((params[ii].tburst[1]-params[ii].tburst[0])/params[ii].interval_pburst)

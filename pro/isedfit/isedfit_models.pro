@@ -130,10 +130,15 @@ pro isedfit_models, isedfit_paramfile, params=params, isedfit_dir=isedfit_dir, $
     if params.user_redshift then splog, '  USE_REDSHIFT adopted.'
     splog, '  zmin = '+strtrim(string(min(redshift),format='(F12.3)'),2)
     splog, '  zmax = '+strtrim(string(max(redshift),format='(F12.3)'),2)
-    if params.zlog then begin
-       splog, '  zlog=1'
-       splog, '  nz   = '+string(nredshift,format='(I0)')       
-    endif else splog, '  zbin = '+string(params.zbin,format='(G0.0)')
+    if params.user_redshift eq 0 then begin
+       if params.zlog then begin
+          splog, '  zlog=1'
+          splog, '  nzz  = '+string(params.nzz,format='(I0)')
+       endif else begin
+          splog, '  zbin = '+string(params.zbin,format='(G0.0)')
+          splog, '  nzz  = '+string(params.nzz,format='(I0)')
+       endelse
+    endif
 
     if (im_double(min(redshift)) le 0D) then begin
        splog, 'REDSHIFT should be positive and non-zero'
