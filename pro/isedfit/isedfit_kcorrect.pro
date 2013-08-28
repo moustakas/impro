@@ -22,9 +22,8 @@
 ;     compute K-corrections for everything)
 ;   outprefix - optional output prefix string (see ISEDFIT) 
 ;
-;   out_filterlist - list of output filters in which outputs
-;     (KCORRECT, ABSMAG, etc.) are desired (default SDSS ugriz)
-;     [NFILT] 
+;   absmag_filterlist - list of output filters in which K-corrected
+;     absolute magnitudes are desired (default SDSS ugriz) [NFILT] 
 ;   band_shift - use band-shifted rest-frame bandpasses (default 0.0) 
 ;
 ; KEYWORD PARAMETERS:
@@ -71,7 +70,7 @@
 
 pro isedfit_kcorrect, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid, $
   isedfit_dir=isedfit_dir, montegrids_dir=montegrids_dir, outprefix=outprefix, $
-  index=index, out_filterlst=out_filterlist, band_shift=band_shift, $
+  index=index, absmag_filterlst=absmag_filterlist, band_shift=band_shift, $
   kcorrect_results=kcorrect_results, vega=vega, nowrite=nowrite, clobber=clobber
 
     if n_elements(isedfit_paramfile) eq 0 and n_elements(params) eq 0 then begin
@@ -92,7 +91,7 @@ pro isedfit_kcorrect, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid,
        for ii = 0, ngrid-1 do begin
           isedfit_kcorrect, params=params[ii], isedfit_dir=isedfit_dir,$
             montegrids_dir=montegrids_dir, outprefix=outprefix, index=index, $
-            out_filterlst=out_filterlist, band_shift=band_shift, $
+            absmag_filterlist=absmag_filterlist, band_shift=band_shift, $
             kcorrect_results=kcorrect_results1, vega=vega, nowrite=nowrite, $
             clobber=clobber
           if ii eq 0 then kcorrect_results = kcorrect_results1 else $
@@ -111,11 +110,11 @@ pro isedfit_kcorrect, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid,
 
 ; input/output filters
     filterlist = strtrim(params.filterlist,2)
-    nfilt = n_elements(out_filterlist)
+    nfilt = n_elements(absmag_filterlist)
     if (nfilt eq 0) then begin
        splog, 'No output filters defined! Adopting SDSS/ugriz'
-       out_filterlist = sdss_filterlist()
-       nfilt = n_elements(out_filterlist)
+       absmag_filterlist = sdss_filterlist()
+       nfilt = n_elements(absmag_filterlist)
     endif
 
 ; restore the ISEDFIT results without the best-fitting models to get
@@ -129,10 +128,11 @@ pro isedfit_kcorrect, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid,
     kcorrect_results = struct_trimtags(isedfit,select=['isedfit_id',$
       'z','maggies','ivarmaggies','chi2'])
     kcorrect_results = struct_addtags(temporary(kcorrect_results),replicate({$
-      kcorrect:     fltarr(nfilt), $
-      absmag:       fltarr(nfilt),$
-      ivarabsmag:   fltarr(nfilt),$
-      synth_absmag: fltarr(nfilt)},ngal))
+      kcorrect:          fltarr(nfilt), $
+      absmag:            fltarr(nfilt),$
+      ivarabsmag:        fltarr(nfilt),$
+      synth_absmag:      fltarr(nfilt),$
+      absmag_filterlist: absmag_filterlist},ngal))
     
 ; compute K-corrections; split the problem into chunks because the
 ; arrays can be memory intensive for large samples
@@ -163,7 +163,7 @@ pro isedfit_kcorrect, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid,
 
           chunk_kcorr = im_simple_kcorrect(isedfit[sortindx[gthese[good]]].z,$
             isedfit[sortindx[gthese[good]]].maggies,isedfit[sortindx[gthese[good]]].ivarmaggies,$
-            filterlist,out_filterlist,restwave,restflux,band_shift=band_shift,$
+            filterlist,absmag_filterlist,restwave,restflux,band_shift=band_shift,$
             absmag=chunk_absmag,ivarabsmag=chunk_ivarabsmag,synth_absmag=chunk_synth_absmag,$
             chi2=chi2,vega=vega,/silent)
 
