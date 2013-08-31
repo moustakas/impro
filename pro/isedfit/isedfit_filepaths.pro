@@ -40,8 +40,10 @@ function isedfit_filepaths, params, isedfit_dir=isedfit_dir, $
 
 ; montegrids output directory and output files
     montegrids_fullpath = montegrids_dir+sfhgridstring+'/'+spsmodels+'/'+redcurve+'/'
-    montegrids_chunkfiles = montegrids_fullpath+imf+'_chunk_'+$
-      string(lindgen(params.nmodelchunk)+1,format='(I4.4)')+'.fits'
+    montegrids_montefile = montegrids_fullpath+prefix+'_'+$
+      spsmodels+'_'+imf+'_montegrid.fits'
+    montegrids_chunkfiles = montegrids_fullpath+prefix+'_'+spsmodels+'_'+imf+$
+      '_chunk_'+string(lindgen(params.nmodelchunk)+1,format='(I4.4)')+'.fits'
 
 ; convolved photometry (ISEDFIT_MODELS) output directory and files 
     models_fullpath = isedfit_dir+sfhgridstring+'/'+redcurve+'/'
@@ -106,6 +108,7 @@ function isedfit_filepaths, params, isedfit_dir=isedfit_dir, $
       qaplot_priors_psfile:      priors_psfile,$
       qaplot_priors_pdffile:     priors_pdffile,$
       montegrids_fullpath:       montegrids_fullpath,$
+      montegrids_montefile:      montegrids_montefile,$
       montegrids_chunkfiles:     montegrids_chunkfiles}
 
 return, filepaths

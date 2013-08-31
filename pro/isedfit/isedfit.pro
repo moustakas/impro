@@ -53,10 +53,11 @@
 ;     from the posterior distribution function, which can be used to
 ;     rebuild the posterior distributions of any of the output
 ;     parameters (using ISEDFIT_RECONSTRUCT_POSTERIOR) 
+;   isedfit_outfile - output file name of the iSEDfit results
 ;
 ; COMMENTS:
 ;   Better documentation of the output data structures would be
-;   helpful. 
+;   helpful here.
 ;
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2011 Sep 01, UCSD - I began writing iSEDfit in 2005
@@ -199,8 +200,8 @@ end
 pro isedfit, isedfit_paramfile, maggies, ivarmaggies, z, params=params, $
   thissfhgrid=thissfhgrid, isedfit_dir=isedfit_dir, outprefix=outprefix, $
   index=index, ra=ra, dec=dec, isedfit_results=isedfit_results, $
-  isedfit_post=isedfit_post, allages=allages, maxold=maxold, silent=silent, $
-  nowrite=nowrite, clobber=clobber
+  isedfit_post=isedfit_post, isedfit_outfile=isedfit_outfile, allages=allages, $
+  maxold=maxold, silent=silent, nowrite=nowrite, clobber=clobber
 
     if n_elements(isedfit_paramfile) eq 0 and n_elements(params) eq 0 then begin
        doc_library, 'isedfit'
@@ -277,7 +278,8 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, z, params=params, $
           isedfit, isedfit_paramfile1, maggies, ivarmaggies, z, params=params[ii], $
             isedfit_dir=isedfit_dir, outprefix=outprefix, index=index, $
             ra=ra, dec=dec, isedfit_results=isedfit_results, isedfit_post=isedfit_post, $
-            allages=allages, maxold=maxold, silent=silent, nowrite=nowrite, clobber=clobber
+            isedfit_outfile=isedfit_outfile, allages=allages, maxold=maxold, $
+            silent=silent, nowrite=nowrite, clobber=clobber
        endfor 
        return
     endif
@@ -296,8 +298,8 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, z, params=params, $
        isedfit, isedfit_paramfile1, maggies[*,index], ivarmaggies[*,index], $
          z[index], params=params, isedfit_dir=isedfit_dir, outprefix=outprefix, $
          ra=ra[index], dec=dec[index], isedfit_results=isedfit_results1, $
-         isedfit_post=isedfit_post1, allages=allages, maxold=maxold, $
-         silent=silent, /nowrite, clobber=clobber
+         isedfit_post=isedfit_post1, isedfit_outfile=isedfit_outfile, allages=allages, $
+         maxold=maxold, silent=silent, /nowrite, clobber=clobber
        isedfit_results = init_isedfit(ngal,nfilt,params=params,$
          ra=ra,dec=dec,isedfit_post=isedfit_post)
        isedfit_results[index] = isedfit_results1

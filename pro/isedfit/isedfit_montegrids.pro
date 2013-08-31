@@ -752,7 +752,8 @@ pro isedfit_montegrids, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
        return
     endif
     ssppath=ssppath+'/'
-    sspinfofile = ssppath+'info_'+strtrim(params.spsmodels,2)+'_'+strtrim(params.imf,2)+'.fits.gz'
+    sspinfofile = ssppath+'info_'+strtrim(params.spsmodels,2)+'_'+$
+      strtrim(params.imf,2)+'.fits.gz'
     if file_test(sspinfofile) eq 0 then begin
        splog, 'SSP info file '+sspinfofile+' not found!'
        splog, 'Run the appropriate BUILD_*_SSP code!'
@@ -761,29 +762,31 @@ pro isedfit_montegrids, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
     sspinfo = gz_mrdfits(sspinfofile,1,/silent)
 
 ; make directories and then check for old files
-    sfhgridstring = 'sfhgrid'+string(params.sfhgrid,format='(I2.2)')
-    sfhgridpath = montegrids_dir+sfhgridstring+$
-      '/'+strtrim(params.spsmodels,2)+'/'+strtrim(params.redcurve,2)+'/'
+    fp = isedfit_filepaths(params,isedfit_dir=isedfit_dir,$
+      montegrids_dir=montegrids_dir,priors_pdffile=priors_pdffile)
 
-    if file_test(sfhgridpath,/dir) eq 0 then begin
-       splog, 'Making directory '+sfhgridpath
-       file_mkdir, sfhgridpath
+    if file_test(fp.montegrids_fullpath,/dir) eq 0 then begin
+       splog, 'Making directory '+fp.montegrids_fullpath
+       file_mkdir, fp.montegrids_fullpath
     endif
 
 ; ---------------------------------------------------------------------------
 ; first major step: build (or overwrite) the Monte Carlo grid
-    montefile = sfhgridpath+strtrim(params.imf,2)+'_montegrid.fits'
-    if file_test(montefile+'.gz') and keyword_set(clobber) eq 0 then begin
+    montefile = strtrim(fp.montegrids_fullpath+fp.montegrids_montefile,2)
+
+    if file_test(montefile+'*') and keyword_set(clobber) eq 0 then begin
        splog, 'MonteCarlo grid file '+montefile+' exists; use /CLOBBER'
        return
     endif
 
 ; clean up old files which can conflict with this routine
-    delfiles = file_search(sfhgridpath+'*'+strtrim(params.imf,2)+'*.fits.gz',count=ndel)
+    delfiles = file_search(strtrim(fp.montegrids_fullpath+$
+      fp.montegrids_chunkfiles,2)+'*',count=ndel)
     if ndel ne 0 then file_delete, delfiles, /quiet
 
-    splog, 'Building SFHGRID='+sfhgridstring+' REDCURVE='+strtrim(params.redcurve,2)+$
-      ' IMF='+strtrim(params.imf,2)+' NMODEL='+string(params.nmodel,format='(I0)')
+    splog, 'Building SFHGRID='+'sfhgrid'+string(params.sfhgrid,format='(I2.2)')+$
+      ' REDCURVE='+strtrim(params.redcurve,2)+' IMF='+strtrim(params.imf,2)+$
+      ' NMODEL='+string(params.nmodel,format='(I0)')
     montegrid = init_montegrid(params.nmodel,nmaxburst=params.nmaxburst)
        
 ; draw uniformly from linear TAU, or 1/TAU?
@@ -928,13 +931,11 @@ pro isedfit_montegrids, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
 ; ---------------------------------------------------------------------------
 ; now build the actual composite stellar populations; do it in chunks
 ; to avoid memory issues and pass along all the parameters
-    fp = isedfit_filepaths(params,isedfit_dir=isedfit_dir,$
-      montegrids_dir=montegrids_dir,priors_pdffile=priors_pdffile)
-    chunkfiles = strtrim(fp.montegrids_chunkfiles,2)
 
 ; loop on each chunk of models
     t0 = systime(1)
     nchunk = params.nmodelchunk
+    chunkfiles = strtrim(fp.montegrids_chunkfiles,2)
     for ichunk = 0, nchunk-1 do begin
        i1 = ichunk*modelchunksize
        i2 = ((ichunk*modelchunksize+modelchunksize)<params.nmodel)-1L
