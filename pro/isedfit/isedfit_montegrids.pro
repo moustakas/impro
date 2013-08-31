@@ -772,16 +772,14 @@ pro isedfit_montegrids, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
 
 ; ---------------------------------------------------------------------------
 ; first major step: build (or overwrite) the Monte Carlo grid
-    montefile = strtrim(fp.montegrids_fullpath+fp.montegrids_montefile,2)
-
+    montefile = strtrim(fp.montegrids_montefile,2)
     if file_test(montefile+'*') and keyword_set(clobber) eq 0 then begin
        splog, 'MonteCarlo grid file '+montefile+' exists; use /CLOBBER'
        return
     endif
 
 ; clean up old files which can conflict with this routine
-    delfiles = file_search(strtrim(fp.montegrids_fullpath+$
-      fp.montegrids_chunkfiles,2)+'*',count=ndel)
+    delfiles = file_search(strtrim(fp.montegrids_chunkfiles,2)+'*',count=ndel)
     if ndel ne 0 then file_delete, delfiles, /quiet
 
     splog, 'Building SFHGRID='+'sfhgrid'+string(params.sfhgrid,format='(I2.2)')+$
