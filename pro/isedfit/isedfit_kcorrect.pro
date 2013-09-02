@@ -70,7 +70,7 @@
 
 pro isedfit_kcorrect, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid, $
   isedfit_dir=isedfit_dir, montegrids_dir=montegrids_dir, outprefix=outprefix, $
-  index=index, absmag_filterlst=absmag_filterlist, band_shift=band_shift, $
+  index=index, absmag_filterlist=absmag_filterlist, band_shift=band_shift, $
   kcorrect_results=kcorrect_results, vega=vega, nowrite=nowrite, clobber=clobber
 
     if n_elements(isedfit_paramfile) eq 0 and n_elements(params) eq 0 then begin

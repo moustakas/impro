@@ -110,11 +110,11 @@ function isedfit_agegrid, sfhinfo, tau=tau, inage=inage1, nage=nage, $
     dtb = im_double(dtburst)
 
 ; demand that at least NSAMP points are used to sample the burst, but
-; (in the limit of lots of bursts) no more than 80% of NAGE
-    nsamp = long(round(nage*0.15)<(0.8*nage/float(nb))) ; ages per burst
+; (in the limit of lots of bursts) no more than 70% of NAGE
+    nsamp = long(round(nage*0.12)<(0.7*nage/float(nb))) ; ages per burst
     nsamp = nsamp+1*(odd(nsamp) eq 0) ; ensure odd
     if (nsamp gt 5) then begin                ; if NAGE is really small....
-       fact = [1D,range(0.05,4.0,(nsamp-1)/2-1,/log)] ; 0.1-4-sigma
+       fact = [1D,range(0.05,8.0,(nsamp-1)/2-1,/log)] ; 0.05-8-sigma
        fact = fact[sort(fact)]
        
        for ib = 0, nb-1 do begin

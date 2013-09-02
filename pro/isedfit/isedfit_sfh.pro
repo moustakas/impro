@@ -70,6 +70,9 @@
 ;     mass loss) [Msun, NOUTAGE]
 ;   sfr100 - SFR averaged over the previous 100 Myr [Msun/yr, NOUTAGE] 
 ;   b100 - birthrate parameter averaged over the previous 100 Myr [NOUTAGE] 
+;   b_1000 - birthrate parameter averaged over the previous 1000 Myr
+;     (note the underscore, needed to circumvent IDL's keyword
+;     rules!) [NOUTAGE]  
 ;   sfrage - SFR-weighted age [Gyr, NOUTAGE]
 ;
 ; COMMENTS:
@@ -97,9 +100,9 @@
 function isedfit_sfh, sfhinfo, tau=tau, outage=outage, totalmass=totalmass, $
   mtau=mtau, useage=useage, nagemax=nagemax, dage=dage, sfhtau=outsfhtau, $
   sfhburst=outsfhburst, aburst=aburst, mburst=mburst, mgalaxy=outmgalaxy, $
-  sfr100=outsfr100, b100=outb100, sfrage=outsfrage, delayed=delayed, $
-  bursttype=bursttype, notruncate=notruncate, linear=linear, debug=debug, $
-  _extra=extra
+  sfr100=outsfr100, b100=outb100, b_1000=outb1000, sfrage=outsfrage, $
+  delayed=delayed, bursttype=bursttype, notruncate=notruncate, linear=linear, $
+  debug=debug, _extra=extra
     
     if n_elements(sfhinfo) eq 0 and n_elements(tau) eq 0 then begin
        doc_library, 'isedfit_sfh'
@@ -139,11 +142,11 @@ function isedfit_sfh, sfhinfo, tau=tau, outage=outage, totalmass=totalmass, $
 ; grid is used internally and then the output quantities are
 ; interpolated at OUTAGE
     if n_elements(nagemin) eq 0 then nagemin = 10
-    if n_elements(nagemax) eq 0 then nagemax = 200
+    if n_elements(nagemax) eq 0 then nagemax = 250
     if n_elements(dage) eq 0 then dage = 0.02D ; default 20 Myr time interval
     if n_elements(bursttype) eq 0 then bursttype = 1 ; Gaussian burst
 
-    minage = 0D
+    minage = 0D ; never change this!
     if (n_elements(outage) eq 0) then maxage = 13.8D else $
       maxage = im_double(max(outage))
 
@@ -246,38 +249,49 @@ function isedfit_sfh, sfhinfo, tau=tau, outage=outage, totalmass=totalmass, $
 ; birthrate parameter, and the SFH-weighted age
 ;   t0 = systime(1)
     if arg_present(outmgalaxy) or arg_present(outsfr100) or $
-      arg_present(outb100) or arg_present(outsfrage) then begin
-       dt = 0.1D ; [100 Myr]
+      arg_present(outb100) or arg_present(outb1000) or $
+      arg_present(outsfrage) then begin
+       dt100 = 0.1D ; [100 Myr]
+       dt1000 = 1D ; [1000 Myr = 1 Gyr]
        mgalaxy = sfh*0D
        sfr100 = sfh*0D
+       sfr1000 = sfh*0D
        b100 = sfh*0D
+       b1000 = sfh*0D
        sfrage = sfh*0D
        for iage = 0L, nage-1 do begin
 ; if the SFH has been truncated then do the integrals, otherwise
 ; calculate the burst masses with integrals and the tau-model
 ; analytically
           if dotruncate and (iage gt ilast) then begin
-             mtot100 = im_integral(age*1D9,sfh,1D9*(age[iage]-dt)>0,1D9*age[iage])
+             mtot100 = im_integral(age*1D9,sfh,1D9*(age[iage]-dt100)>0,1D9*age[iage])
+             mtot1000 = im_integral(age*1D9,sfh,1D9*(age[iage]-dt1000)>0,1D9*age[iage])
              mgalaxy[iage] = mgalaxy[ilast] + im_integral(age*1D9,sfh,1D9*age[ilast],1D9*age[iage])
           endif else begin
              if (nb eq 0) then begin
                 m100burst = 0D
+                m1000burst = 0D
                 mtotburst = 0D
              endif else begin
-                m100burst = im_integral(age*1D9,sfhburst,1D9*(age[iage]-dt)>0,1D9*age[iage])
+                m100burst = im_integral(age*1D9,sfhburst,1D9*(age[iage]-dt100)>0,1D9*age[iage])
+                m1000burst = im_integral(age*1D9,sfhburst,1D9*(age[iage]-dt1000)>0,1D9*age[iage])
                 mtotburst = im_integral(age*1D9,sfhburst,0D,1D9*age[iage])
              endelse
              if (tau eq 0D) then begin
                 mtot100 = 0D + m100burst
+                mtot1000 = 0D + m1000burst
                 mgalaxy[iage] = mtau + mtotburst
              endif else begin
-                mtot100 = mtau*(exp(-((age[iage]-dt)>0)/tau)-exp(-age[iage]/tau)) + m100burst
+                mtot100 = mtau*(exp(-((age[iage]-dt100)>0)/tau)-exp(-age[iage]/tau)) + m100burst
+                mtot1000 = mtau*(exp(-((age[iage]-dt1000)>0)/tau)-exp(-age[iage]/tau)) + m1000burst
                 mgalaxy[iage] = mtau*(1D0-exp(-age[iage]/tau)) + mtotburst
              endelse
           endelse
           if (age[iage] gt 0D) then begin
-             sfr100[iage] = mtot100/(dt*1D9)
+             sfr100[iage] = mtot100/(dt100*1D9)
+             sfr1000[iage] = mtot1000/(dt1000*1D9)
              b100[iage] = sfr100[iage]/(mgalaxy[iage]/(1D9*age[iage])) ; see Brinchmann+04
+             b1000[iage] = sfr1000[iage]/(mgalaxy[iage]/(1D9*age[iage]))
           endif
 ; compute the SFR/mass-weighted age
           if (tau eq 0D) then sfrage[iage] = age[iage] else begin
@@ -312,6 +326,7 @@ function isedfit_sfh, sfhinfo, tau=tau, outage=outage, totalmass=totalmass, $
     if arg_present(outmgalaxy) then outmgalaxy = interpolate(mgalaxy,findx)
     if arg_present(outsfr100) then outsfr100 = interpolate(sfr100,findx)
     if arg_present(outb100) then outb100 = interpolate(b100,findx)
+    if arg_present(outb1000) then outb1000 = interpolate(b1000,findx)
     if arg_present(outsfrage) then outsfrage = interpolate(sfrage,findx)/1D9 ; [Gyr]
     
 ; QAplot    

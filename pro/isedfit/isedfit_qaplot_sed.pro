@@ -357,7 +357,8 @@ pro isedfit_qaplot_sed, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
             'Z/Z'+sunsymbol()+' = '+strtrim(string(isedfit_results[igal].Zmetal/0.019,format='(F12.2)'),2),$
             'A_{V} = '+strtrim(string(isedfit_results[igal].av*isedfit_results[igal].mu,format='(F12.2)'),2)+' mag',$
             'log SFR_{100} = '+strtrim(string(isedfit_results[igal].sfr100,format='(F12.2)'),2)+' M'+sunsymbol()+' yr^{-1}',$
-            'log b_{100} = '+strtrim(string(isedfit_results[igal].b100,format='(F12.2)'),2)])
+            'log b_{100} = '+strtrim(string(isedfit_results[igal].b100,format='(F12.2)'),2),$
+            'log b_{1000} = '+strtrim(string(isedfit_results[igal].b1000,format='(F12.2)'),2)])
           im_legend, /right, /bottom, box=0, spacing=1.5, charsize=1.4, margin=0, $
             textoidl([strtrim(repstr(galaxy[igal],'_',' '),2),$
             'z = '+strtrim(string(z,format='(F12.4)'),2),'\chi_{\nu}^{2} = '+$
@@ -373,7 +374,8 @@ pro isedfit_qaplot_sed, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
 
 ; age       
        xrange = params.age
-;      xrange = [min(post.sfrage)<min(post.age),max(post.sfrage)>max(post.age)]
+;      xrange = [min(post[igal].sfrage)<min(post[igal].age),$
+;        max(post[igal].sfrage)>max(post[igal].age)]
        oplot_posteriors, post[igal].age, pos2[*,1], /noerase, $
          xtitle='AGE (Gyr)', xtickinterval=1, xrange=xrange
        oplot_posteriors, post[igal].sfrage, pos2[*,1], /overplot
@@ -419,10 +421,17 @@ pro isedfit_qaplot_sed, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
             xrange=xrange, xtitle='A_{V} (mag)'
        endelse
 
-; b100       
-       xrange = minmax(post[igal].b100)
+; b100 and b1000
+       xrange = [min(post[igal].b100)<min(post[igal].b1000),$
+         max(post[igal].b100)>max(post[igal].b1000)]
+;      xrange = minmax(post[igal].b100)
        oplot_posteriors, post[igal].b100, pos2[*,6], /noerase, xrange=xrange, $
-         xtitle='log b_{100}'
+         xtitle='log b'
+       oplot_posteriors, post[igal].b1000, pos2[*,6], /overplot
+       xyouts, pos2[0,6]+0.01, pos2[3,6]-0.02, 'b_{100}', align=0.0, $
+         charsize=1.0, color=im_color('powder blue'), /norm
+       xyouts, pos2[0,6]+0.05, pos2[3,6]-0.02, textoidl('b_{1000}'), $
+         align=0.0, charsize=1.0, color=im_color('tan'), /norm
 
 ; emission lines       
        if params.nebular then begin

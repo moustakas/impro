@@ -74,6 +74,7 @@ function isedfit_posterior, isedfit, modelgrid=modelgrid, $
           isedfit[igal] = isedfit_packit(isedfit[igal],modelgrid[allow[these]].sfr100+logscale,type='sfr100')
           
           isedfit[igal] = isedfit_packit(isedfit[igal],modelgrid[allow[these]].b100,type='b100')
+          isedfit[igal] = isedfit_packit(isedfit[igal],modelgrid[allow[these]].b1000,type='b1000')
           isedfit[igal] = isedfit_packit(isedfit[igal],modelgrid[allow[these]].age,type='age')
           isedfit[igal] = isedfit_packit(isedfit[igal],modelgrid[allow[these]].sfrage,type='sfrage')
           isedfit[igal] = isedfit_packit(isedfit[igal],modelgrid[allow[these]].tau,type='tau')
@@ -106,6 +107,7 @@ function isedfit_posterior, isedfit, modelgrid=modelgrid, $
           isedfit[igal].sfr = modelgrid[mindx].sfr+alog10(isedfit[igal].totalmass)
           isedfit[igal].sfr100 = modelgrid[mindx].sfr100+alog10(isedfit[igal].totalmass)
           isedfit[igal].b100 = modelgrid[mindx].b100
+          isedfit[igal].b1000 = modelgrid[mindx].b1000
        endif
     endfor 
 

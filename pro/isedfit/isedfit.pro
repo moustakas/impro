@@ -121,7 +121,8 @@ function init_isedfit, ngal, nfilt, params=params, ra=ra, dec=dec, $
       nlyc:                    -1.0,$ 
       sfr:                     -1.0,$ ; instantaneous
       sfr100:                  -1.0,$ ; 100 Myr timescale
-      b100:                    -1.0,$ ; birthrate parameter
+      b100:                    -1.0,$ ; birthrate parameter [100 Myr]
+      b1000:                   -1.0,$ ; birthrate parameter [1 Gyr]
       ewoii:                   -1.0,$ 
       ewoiiihb:                -1.0,$ 
       ewniiha:                 -1.0,$ 
@@ -144,6 +145,7 @@ function init_isedfit, ngal, nfilt, params=params, ra=ra, dec=dec, $
       sfr_50:      -1.0,$ ; instantaneous
       sfr100_50:   -1.0,$ ; 100 Myr
       b100_50:     -1.0,$
+      b1000_50:    -1.0,$
       ewoii_50:    -1.0,$
       ewoiiihb_50: -1.0,$
       ewniiha_50:  -1.0,$
@@ -159,6 +161,7 @@ function init_isedfit, ngal, nfilt, params=params, ra=ra, dec=dec, $
       sfr_avg:     -1.0,$ ; instantaneous
       sfr100_avg:  -1.0,$ ; 100 Myr
       b100_avg:    -1.0,$
+      b1000_avg:   -1.0,$
       ewoii_avg:   -1.0,$
       ewoiiihb_avg:-1.0,$
       ewniiha_avg: -1.0,$
@@ -174,6 +177,7 @@ function init_isedfit, ngal, nfilt, params=params, ra=ra, dec=dec, $
       sfr_err:      -1.0,$
       sfr100_err:   -1.0,$
       b100_err:     -1.0,$
+      b1000_err:    -1.0,$
       ewoii_err:    -1.0,$
       ewoiiihb_err: -1.0,$
       ewniiha_err:  -1.0}

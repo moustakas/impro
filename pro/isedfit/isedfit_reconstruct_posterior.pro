@@ -114,7 +114,7 @@ function isedfit_reconstruct_posterior, isedfit_paramfile, params=params, $
 
 ; need all the chunks in memory!
     tags = ['chunkindx','modelindx','age','tau','zmetal','av','mu',$
-      'mstar','sfr','sfr100','b100','sfrage','ewoii','ewoiiihb','ewniiha']
+      'mstar','sfr','sfr100','b100','b1000','sfrage','ewoii','ewoiiihb','ewniiha']
     nchunk = n_elements(fp.montegrids_chunkfiles)
     for jj = 0, nchunk-1 do begin
        chunkfile = fp.models_chunkfiles[jj]+'.gz'
@@ -139,6 +139,7 @@ function isedfit_reconstruct_posterior, isedfit_paramfile, params=params, $
       sfr:      fltarr(ndraw),$
       sfr100:   fltarr(ndraw),$
       b100:     fltarr(ndraw),$
+      b1000:    fltarr(ndraw),$
       ewoii:    fltarr(ndraw),$
       ewoiiihb: fltarr(ndraw),$
       ewniiha:  fltarr(ndraw)}
@@ -157,6 +158,7 @@ function isedfit_reconstruct_posterior, isedfit_paramfile, params=params, $
        result[good].sfr = modelgrid[post[good].draws].sfr+logscale               ; [Msun/yr]
        result[good].sfr100 = modelgrid[post[good].draws].sfr100+logscale         ; [Msun/yr]
        result[good].b100 = modelgrid[post[good].draws].b100
+       result[good].b1000 = modelgrid[post[good].draws].b1000
 
        result[good].age = modelgrid[post[good].draws].age             ; [Gyr]
        result[good].sfrage = modelgrid[post[good].draws].sfrage       ; [Gyr]

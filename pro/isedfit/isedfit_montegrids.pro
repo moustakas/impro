@@ -96,6 +96,7 @@ function init_montegrid, nmodel, nmaxburst=nmaxburst
       sfr:                     -1.0,$
       sfr100:                  -1.0,$
       b100:                    -1.0,$
+      b1000:                   -1.0,$
       sfrage:                  -1.0,$
       nburst:                     0,$
       trunctau:                -1.0,$ ; burst truncation time scale
@@ -463,26 +464,31 @@ pro montegrids_qaplot, montegrid, params=params, qafile=qafile
 ; b100
     xrange = minmax(montegrid.b100)
     oplot_priors, montegrid.b100, pos[*,2], /noerase, xrange=xrange, $
-      xtitle='b_{100}'
+      xtitle='log b_{100}'
+
+; b1000
+    xrange = minmax(montegrid.b1000)
+    oplot_priors, montegrid.b1000, pos[*,3], /noerase, xrange=xrange, $
+      xtitle='log b_{1000}'
 
 ; EW([OIII]+Hbeta)
     if params.nebular then begin
        xrange = [0,(1.1*weighted_quantile(montegrid.ewoii,quant=0.95))>$
          (1.1*weighted_quantile(montegrid.ewoiiihb,quant=0.95))>$
          (1.1*weighted_quantile(montegrid.ewniiha,quant=0.95))]
-       oplot_priors, montegrid.ewoiiihb, pos[*,3], /noerase, $
+       oplot_priors, montegrid.ewoiiihb, pos[*,4], /noerase, $
          xtitle='EW (\AA, rest)', logbins=0, $
          /nofill, line=0, xrange=xrange, thick=8
-       oplot_priors, montegrid.ewniiha, pos[*,3], /overplot, logbins=0, $
+       oplot_priors, montegrid.ewniiha, pos[*,4], /overplot, logbins=0, $
          /nofill, line=5, color_outline='tan', xrange=xrange, thick=8
-       oplot_priors, montegrid.ewoii, pos[*,3], /overplot, logbins=0, $
+       oplot_priors, montegrid.ewoii, pos[*,4], /overplot, logbins=0, $
          /nofill, line=3, color_outline='orange', xrange=xrange, thick=8
        im_legend, ['EW([OIII]+H\beta)','EW([NII]+H\alpha)','EW([OII])'], $
          /right, /top, box=0, charsize=1.1, line=[0,5,3], pspacing=1.9, $
          margin=0, color=['powder blue','tan','orange'], $
          textcolor=['powder blue','tan','orange']
     endif else begin
-       djs_plot, [0], [0], /nodata, /noerase, position=pos[*,3], $
+       djs_plot, [0], [0], /nodata, /noerase, position=pos[*,4], $
          xtitle='EW (\AA, rest)', $
          charsize=csize, xtickname=replicate(' ',10), $
          ytickname=replicate(' ',10)
@@ -620,8 +626,8 @@ function build_modelgrid, montegrid, params=params, debug=debug, $
 ; parameter, and the total galaxy mass; normalize by OUTMGAL so that
 ; everything corresponds to a 1 Msun galaxy
              outsfr = isedfit_sfh(modelgrid1[sspindx[jj]],outage=outage,$
-               sfr100=outsfr100,sfrage=outsfrage,b100=outb100,mgalaxy=outmgal,$
-               delayed=params.delayed,bursttype=params.bursttype,$
+               sfr100=outsfr100,sfrage=outsfrage,b100=outb100,b_1000=outb1000,$
+               mgalaxy=outmgal,delayed=params.delayed,bursttype=params.bursttype,$
                debug=debug)
              outmstar = float(outmstar/outmgal)
              outsfr = float(outsfr/outmgal)
@@ -698,9 +704,10 @@ function build_modelgrid, montegrid, params=params, debug=debug, $
              modelgrid1[sspindx[jj]].age = outage
              modelgrid1[sspindx[jj]].sfrage = outsfrage
 
-             modelgrid1[sspindx[jj]].sfr = alog10(outsfr>1D-25)
-             modelgrid1[sspindx[jj]].sfr100 = alog10(outsfr100>1D-25)
-             modelgrid1[sspindx[jj]].b100 = alog10(outb100>1D-25)
+             modelgrid1[sspindx[jj]].sfr = alog10(outsfr>1D-15)
+             modelgrid1[sspindx[jj]].sfr100 = alog10(outsfr100>1D-15)
+             modelgrid1[sspindx[jj]].b100 = alog10(outb100>1D-15)
+             modelgrid1[sspindx[jj]].b1000 = alog10(outb1000>1D-15)
 
              modelgrid1[sspindx[jj]].nlyc = outnlyc
              modelgrid1[sspindx[jj]].flux = outflux+nebflux
