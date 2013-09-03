@@ -96,10 +96,19 @@ function read_isedfit, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid
     ngrid = n_elements(params)
     if ngrid gt 1 then begin
        for ii = 0, ngrid-1 do begin
-          result1 = read_isedfit(params=params[ii],isedfit_dir=isedfit_dir,$
-            montegrids_dir=montegrids_dir,in_isedfit=in_isedfit,$
-            outprefix=outprefix,index=index,isedfit_post=isedfit_post1,$
-            flambda=flambda,fnu=fnu,getmodels=getmodels,noigm=noigm,silent=silent)
+; there's no clean way (that I can think of!) to prevent
+; isedfit_post from being read even if the user does not want it 
+          if arg_present(isedfit_post) then begin
+             result1 = read_isedfit(params=params[ii],isedfit_dir=isedfit_dir,$
+               montegrids_dir=montegrids_dir,in_isedfit=in_isedfit,$
+               outprefix=outprefix,index=index,isedfit_post=isedfit_post1,$
+               flambda=flambda,fnu=fnu,getmodels=getmodels,noigm=noigm,silent=silent)
+          endif else begin
+             result1 = read_isedfit(params=params[ii],isedfit_dir=isedfit_dir,$
+               montegrids_dir=montegrids_dir,in_isedfit=in_isedfit,$
+               outprefix=outprefix,index=index,$;isedfit_post=isedfit_post1,$
+               flambda=flambda,fnu=fnu,getmodels=getmodels,noigm=noigm,silent=silent)
+          endelse
           if ii eq 0 then result = result1 else result = [[result],[result1]]
           if arg_present(isedfit_post) then begin
              if ii eq 0 then isedfit_post = temporary(isedfit_post1) else $

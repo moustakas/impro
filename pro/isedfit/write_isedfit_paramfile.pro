@@ -211,8 +211,8 @@ function init_paramfile, filterlist=filterlist, prefix=prefix, $
       nzz:               0L,$
       zbin:             0.0,$
       zminmax:    [0.0,0.0],$
-      user_redshift: n_elements(use_redshift1) gt 0,$ ; custom redshift?
-      use_redshift: use_redshift}
+      user_redshift: long(n_elements(use_redshift1) gt 0),$ ; custom redshift?
+      use_redshift: float(use_redshift)}
 return, params
 end    
 
@@ -275,9 +275,14 @@ pro write_isedfit_paramfile, params=params, isedfit_dir=isedfit_dir, $
           params.zminmax = zminmax
           params.nzz = nzz
           params.zbin = zbin
-          params.zlog = keyword_set(zlog)
+          params.zlog = long(keyword_set(zlog))
        endelse 
     endif else begin
+; USE_REDSHIFT needs to be monotonic
+       if monotonic(use_redshift) eq 0 then begin
+          splog, 'USE_REDSHIFT must be a monotonically increasing or decreasing array!'
+          return
+       endif
        params.nzz = n_elements(use_redshift)
        params.zminmax = minmax(use_redshift)
     endelse

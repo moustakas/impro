@@ -428,7 +428,7 @@ pro isedfit_qaplot_sed, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
        oplot_posteriors, post[igal].b100, pos2[*,6], /noerase, xrange=xrange, $
          xtitle='log b'
        oplot_posteriors, post[igal].b1000, pos2[*,6], /overplot
-       xyouts, pos2[0,6]+0.01, pos2[3,6]-0.02, 'b_{100}', align=0.0, $
+       xyouts, pos2[0,6]+0.01, pos2[3,6]-0.02, textoidl('b_{100}'), align=0.0, $
          charsize=1.0, color=im_color('powder blue'), /norm
        xyouts, pos2[0,6]+0.05, pos2[3,6]-0.02, textoidl('b_{1000}'), $
          align=0.0, charsize=1.0, color=im_color('tan'), /norm

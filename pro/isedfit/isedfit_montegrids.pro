@@ -368,7 +368,8 @@ pro montegrids_qaplot, montegrid, params=params, qafile=qafile
 
 ; nburst
     if params.pburst gt 0.0 then begin
-       oplot_priors, montegrid.nburst, pos[*,0], xtitle='N_{burst}', binsize=0.5, edge=-1
+       oplot_priors, montegrid.nburst, pos[*,0], xtitle='N_{burst}', $
+         binsize=0.5, edge=-1, xtickinterval=1
     endif else begin
        djs_plot, [0], [0], /nodata, position=pos[*,0], $
          xtitle='N_{burst}', charsize=csize, xtickname=replicate(' ',10), $
@@ -432,8 +433,8 @@ pro montegrids_qaplot, montegrid, params=params, qafile=qafile
 ; trunctau
     if params.fractrunc gt 0.0 then begin
        yes = where(montegrid.trunctau gt 0.0)
-       xrange = minmax(montegrid.trunctau[yes])
-       oplot_priors, montegrid.trunctau[yes], pos[*,4], /noerase, xrange=xrange, $
+       xrange = minmax(montegrid[yes].trunctau)
+       oplot_priors, montegrid[yes].trunctau, pos[*,4], /noerase, xrange=xrange, $
          xtitle='\tau_{trunc} (Gyr)'
        im_legend, ['Fractrunc='+string(params.fractrunc,format='(G0.0)'),$
          '['+strjoin(string(params.trunctau,format='(G0.0)'),',')+'] Gyr'], $
