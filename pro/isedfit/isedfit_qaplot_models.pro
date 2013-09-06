@@ -145,7 +145,7 @@ pro isedfit_qaplot_models, isedfit_paramfile, maggies1, ivarmaggies1, z, $
     ngrid = n_elements(params)
     if ngrid gt 1 then begin
        for ii = 0, ngrid-1 do begin
-          sedfit_qaplot_models, isedfit_paramfile1, maggies1, ivarmaggies1, z, $
+          isedfit_qaplot_models, isedfit_paramfile1, maggies1, ivarmaggies1, z, $
             params=params[ii], isedfit_dir=isedfit_dir, thesefilters=thesefilters, $
             outprefix=outprefix, colorcolor_pdffile=colorcolor_pdffile, $
             zcolor_pdffile=zcolor_pdffile, clobber=clobber
@@ -309,11 +309,16 @@ pro isedfit_qaplot_models, isedfit_paramfile, maggies1, ivarmaggies1, z, $
              plot, [0], [0], /nodata, position=pos[*,ii], xsty=3, ysty=1, $
                xrange=xrange, yrange=yrange, xtitle='Redshift', $
                ytitle=colortitle[count], noerase=ii gt 0, xticks=3
-             im_hogg_scatterplot, z[good], ygal, /overplot, $
-               /outlier, outpsym=symcat(6,thick=1), outsymsize=0.3, /nogrey, $
-               outcolor=im_color('dodger blue',100), contour_color=im_color('navy',101), $
-               xrange=xrange, yrange=yrange, position=pos[*,ii], xsty=7, ysty=5, $
-               levels=mylevels, /internal, c_annotation=mycann
+             if ngood gt 500 then begin
+                im_hogg_scatterplot, z[good], ygal, /overplot, $
+                  /outlier, outpsym=symcat(6,thick=1), outsymsize=0.3, /nogrey, $
+                  outcolor=im_color('dodger blue',100), contour_color=im_color('navy',101), $
+                  xrange=xrange, yrange=yrange, position=pos[*,ii], xsty=7, ysty=5, $
+                  levels=mylevels, /internal, c_annotation=mycann
+             endif else begin
+                djs_oplot, z[good], ygal, psym=symcat(6,thick=3), symsize=0.5, $
+                  color=im_color('dodger blue',100)
+             endelse
              oplot, redshift, quant[*,0], line=0, color=im_color('red'), $
                thick=4, psym=-symcat(16), symsize=0.7
              oplot, redshift, quant[*,1], line=0, color=im_color('red'), $
@@ -375,12 +380,16 @@ pro isedfit_qaplot_models, isedfit_paramfile, maggies1, ivarmaggies1, z, $
                ytitle=ccinfo[count].ytitle, noerase=ii gt 0, outlier=0, /nogrey, $
                contour_color=[252,253,254], cthick=6, $
                xnpix=npix, ynpix=npix, /internal, c_annotation=mycann
-             im_hogg_scatterplot, xgal, ygal, /overplot, $
-               /outlier, outpsym=symcat(6,thick=1), outsymsize=0.3, /nogrey, $
-               outcolor=im_color('dodger blue',100), contour_color=im_color('navy',101), $
-               levels=mylevels, xrange=xrange, yrange=yrange, position=pos[*,ii], $
-               xnpix=npix, ynpix=npix, /internal, c_annotation=mycann
-;            djs_oplot, xgal, ygal, psym=3, $ ; psym=symcat(8,thick=1), symsize=0.5, $
+             if ngood gt 500 then begin
+                im_hogg_scatterplot, xgal, ygal, /overplot, $
+                  /outlier, outpsym=symcat(6,thick=1), outsymsize=0.3, /nogrey, $
+                  outcolor=im_color('dodger blue',100), contour_color=im_color('navy',101), $
+                  levels=mylevels, xrange=xrange, yrange=yrange, position=pos[*,ii], $
+                  xnpix=npix, ynpix=npix, /internal, c_annotation=mycann
+             endif else begin
+                djs_oplot, xgal, ygal, psym=symcat(6,thick=3), symsize=0.5, $
+                  color=im_color('dodger blue',100)
+             endelse
              count++
           endif
        endfor

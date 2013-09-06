@@ -32,10 +32,12 @@
 ; 
 ; OPTIONAL INPUTS: 
 ;   nagemax - maximum number of age/time points to use internally
-;     (default 200); probably shouldn't change this!
+;     (default 250); probably shouldn't change this!
 ;   dage - minimum time resolution at which the SFH should be sampled
 ;     internally (default 20 Myr); probably shouldn't change
 ;     this! [Gyr]
+;   maxage - compute the SFH between 0 and MAXAGE [Gyr] (this optional
+;     input is trumped by OUTAGE)
 ;   outage - time/age corresponding to SFH [Gyr, NOUTAGE]
 ;   useage - optionally force this routine to internally use this
 ;     age/time vector [NAGE, GYR]; not generally recommended!
@@ -98,11 +100,11 @@
 ;-
 
 function isedfit_sfh, sfhinfo, tau=tau, outage=outage, totalmass=totalmass, $
-  mtau=mtau, useage=useage, nagemax=nagemax, dage=dage, sfhtau=outsfhtau, $
-  sfhburst=outsfhburst, aburst=aburst, mburst=mburst, mgalaxy=outmgalaxy, $
-  sfr100=outsfr100, b100=outb100, b_1000=outb1000, sfrage=outsfrage, $
-  delayed=delayed, bursttype=bursttype, notruncate=notruncate, linear=linear, $
-  debug=debug, _extra=extra
+  mtau=mtau, useage=useage, nagemax=nagemax, dage=dage, maxage=maxage, $
+  sfhtau=outsfhtau, sfhburst=outsfhburst, aburst=aburst, mburst=mburst, $
+  mgalaxy=outmgalaxy, sfr100=outsfr100, b100=outb100, b_1000=outb1000, $
+  sfrage=outsfrage, delayed=delayed, bursttype=bursttype, notruncate=notruncate, $
+  linear=linear, debug=debug, _extra=extra
     
     if n_elements(sfhinfo) eq 0 and n_elements(tau) eq 0 then begin
        doc_library, 'isedfit_sfh'
@@ -147,8 +149,10 @@ function isedfit_sfh, sfhinfo, tau=tau, outage=outage, totalmass=totalmass, $
     if n_elements(bursttype) eq 0 then bursttype = 1 ; Gaussian burst
 
     minage = 0D ; never change this!
-    if (n_elements(outage) eq 0) then maxage = 13.8D else $
-      maxage = im_double(max(outage))
+    if n_elements(maxage) eq 0 then begin
+       if (n_elements(outage) eq 0) then maxage = 13.8D else $
+         maxage = im_double(max(outage))
+    endif
 
     nage = long((((maxage-minage)/dage)<nagemax)>nagemin)
     if (n_elements(useage) eq 0) then begin

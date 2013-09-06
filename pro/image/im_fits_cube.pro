@@ -55,17 +55,17 @@
 function im_fits_cube, flist, path=path, _extra=extra
 
     nflist = n_elements(flist)
-    if nflist eq 0L then begin
-       print, 'Syntax - cube = fits_cube(flist)'
-       return, -1L
+    if nflist eq 0 then begin
+       doc_library, 'im_fits_cube'
+       return, -1
     endif
 
-    if (size(flist[0],/type) ne 7L) or (strmatch(flist[0],'*.fits*') eq 0B) then begin
+    if (size(flist[0],/type) ne 7) or (strmatch(flist[0],'*.fits*') eq 0) then begin
        print, 'File list must be type string FITS files.'
-       return, -1L
+       return, -1
     endif
 
-    if n_elements(path) eq 0L then path = cwd()
+    if n_elements(path) eq 0 then path = get_pwd()
 
     pushd, path
     
@@ -95,13 +95,13 @@ function im_fits_cube, flist, path=path, _extra=extra
       header: strarr(1000)}
     cube = replicate(template,nflist)
 
-    nhead = n_elements(head)
+    hgood = where(strcompress(head,/remove) ne '',nhgood)
     cube[0].fname = flist[0]
     cube[0].image = image
-    cube[0].nhead = nhead
-    cube[0].header[0:nhead-1] = head
+    cube[0].nhead = nhgood
+    cube[0].header[0:nhgood-1] = head[hgood]
 
-    for i = 1L, nflist-1L do begin
+    for i = 1, nflist-1L do begin
 
        if file_test(flist[i],/regular) eq 0L then begin
           splog, 'FITS file '+flist[i]+' not found.'
@@ -130,11 +130,11 @@ function im_fits_cube, flist, path=path, _extra=extra
           endif
        endelse 
 
-       nhead = n_elements(head)
+       hgood = where(strcompress(head,/remove) ne '',nhgood)
        cube[i].fname = flist[i]
        cube[i].image = image
-       cube[i].header[0:nhead-1] = head
-       
+       cube[i].nhead = nhgood
+       cube[i].header[0:nhgood-1] = head[hgood]
     endfor
 
     popd
