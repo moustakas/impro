@@ -588,7 +588,7 @@ function build_modelgrid, montegrid, params=params, debug=debug, $
             odonnell=odonnell,smc=smc,/silent)
           klam = rebin(reform(klam,npix,1),npix,n_elements(sspfits[0].age)) ; [NPIX,NAGE]
 
-; convolve each model with the specified SFH
+; convolve each SSP with the specified SFH
           for jj = 0, nsspindx-1 do begin
              if ((jj mod 10) eq 0) then print, format='("Chunk=",I4.4,"/",I4.4,", '+$
                'Minichunk=",I4.4,"/",I4.4,", SSP(Z)=",I3.3,"/",I4.4,", '+$
@@ -829,12 +829,13 @@ pro isedfit_montegrids, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
        endelse
        
 ; "mu" is the Charlot & Fall (2000) factor for evolved stellar
-; populations; Gamma distribution is the default, unless FLATMU==1
+; populations; Gamma distribution is the default, unless FLATMU==1; do
+; not let MU exceed unity
        if (strtrim(params.redcurve,2) eq 'charlot') then begin
           if params.flatmu then begin
-             montegrid.mu = randomu(seed,params.nmodel)*(params.mu[1]-params.mu[0])+params.mu[0] 
+             montegrid.mu = (randomu(seed,params.nmodel)*(params.mu[1]-params.mu[0])+params.mu[0])<1.0
           endif else begin
-             montegrid.mu = params.mu[0]*randomu(seed,params.nmodel,gamma=params.mu[1])
+             montegrid.mu = (params.mu[0]*randomu(seed,params.nmodel,gamma=params.mu[1]))<1.0
 ;            montegrid.mu = ((10.0^(randomn(seed,params.nmodel)*params.mu[1]+alog10(params.mu[0])))<1.0)>0.0
           endelse
        endif

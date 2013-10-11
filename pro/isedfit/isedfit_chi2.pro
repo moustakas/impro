@@ -12,8 +12,8 @@
 
 function isedfit_chi2, maggies, ivarmaggies, modelchunk, maxage, $
   zindx, gchunk=gchunk, ngalchunk=ngalchunk, ichunk=ichunk, $
-  nchunk=nchunk, nminphot=nminphot, allages=allages, maxold=maxold, $
-  silent=silent
+  nchunk=nchunk, nminphot=nminphot, nzz=nzz, allages=allages, $
+  maxold=maxold, silent=silent
 
     ndim = size(maggies,/n_dim)
     dims = size(maggies,/dim)
@@ -58,8 +58,12 @@ function isedfit_chi2, maggies, ivarmaggies, modelchunk, maxage, $
        if (nthese ne 0L) then begin ; at least one model
 ; interpolate the model photometry at the galaxy redshift
 ;         plot, modelchunk[imodel].modelmaggies[5,these,*],zindx[igal])*1.0D
-          modelmaggies = interpolate(modelchunk[these].modelmaggies,$
-            findgen(nfilt),zindx[igal],findgen(nthese),/grid)
+          if nzz eq 1 then begin ; special case
+             modelmaggies = interpolate(modelchunk[these].modelmaggies,findgen(nthese))
+          endif else begin
+             modelmaggies = interpolate(modelchunk[these].modelmaggies,$
+               findgen(nfilt),zindx[igal],findgen(nthese),/grid)
+          endelse
 ; perform acrobatic dimensional juggling to get the maximum likelihood
 ; scale-factor (total mass) and corresponding chi2 as a function of
 ; age; VSCALE is the maximum likelihood value of TOTALMASS and

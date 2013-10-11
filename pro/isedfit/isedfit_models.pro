@@ -140,13 +140,15 @@ pro isedfit_models, isedfit_paramfile, params=params, isedfit_dir=isedfit_dir, $
        splog, 'REDSHIFT should be positive and non-zero'
        return
     endif
-    
+
 ; if REDSHIFT is not monotonic then FINDEX(), below, can't be
 ; used to interpolate the model grids properly; this only really
 ; matters if USE_REDSHIFT is passed    
-    if monotonic(redshift) eq 0 then begin
-       splog, 'REDSHIFT should be a monotonically increasing or decreasing array!'
-       return
+    if params.nzz gt 1 then begin
+       if monotonic(redshift) eq 0 then begin
+          splog, 'REDSHIFT should be a monotonically increasing or decreasing array!'
+          return
+       endif
     endif
     
     pc10 = 3.085678D19 ; fiducial distance [10 pc in cm]
@@ -183,10 +185,11 @@ pro isedfit_models, isedfit_paramfile, params=params, isedfit_dir=isedfit_dir, $
        nmodel = n_elements(chunk)
        npix = n_elements(chunk[0].flux)
        distfactor = rebin(reform((pc10/dlum)^2.0,nredshift,1),nredshift,nmodel)
-; initialize the output structure
+; initialize the output structure; the 'reform' bit is to guarantee
+; the right-sized array for NZZ==1
        isedfit_models = struct_trimtags(chunk,except=['WAVE','FLUX'])
        isedfit_models = struct_addtags(temporary(isedfit_models),$
-         replicate({modelmaggies: fltarr(nfilt,nredshift)},nmodel))
+         replicate({modelmaggies: reform(fltarr(nfilt,nredshift),nfilt,nredshift)},nmodel))
 ; build the IGM absorption vector
        if (params.igm eq 1) then begin
           igm = fltarr(npix,nredshift)

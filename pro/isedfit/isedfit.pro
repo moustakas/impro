@@ -335,10 +335,12 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, z, params=params, $
 
 ; if REDSHIFT is not monotonic then FINDEX(), below, can't be
 ; used to interpolate the model grids properly; this only really
-; matters if USE_REDSHIFT is passed    
-    if monotonic(redshift) eq 0 then begin
-       splog, 'REDSHIFT should be a monotonically increasing or decreasing array!'
-       return
+; matters if USE_REDSHIFT is passed
+    if params.nzz gt 1 then begin
+       if monotonic(redshift) eq 0 then begin
+          splog, 'REDSHIFT should be a monotonically increasing or decreasing array!'
+          return
+       endif
     endif
 
 ; initialize the output structure(s)
@@ -363,7 +365,8 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, z, params=params, $
 ; Z starting from a maximum formation redshift z=10 [Gyr]
        maxage = lf_z2t(z[gthese],omega0=params.omega0,$ ; [Gyr]
          omegal0=params.omegal)/params.h100
-       zindx = findex(redshift,z[gthese]) ; used for interpolation
+; if NZZ=1 we don't use ZINDX for the interpolation
+       if params.nzz gt 1 then zindx = findex(redshift,z[gthese]) 
 ; loop on each "chunk" of output from ISEDFIT_MODELS
        nchunk = params.nmodelchunk
        t0 = systime(1)
@@ -377,8 +380,8 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, z, params=params, $
 ; compute chi2
           galaxychunk = isedfit_chi2(maggies[*,gthese],ivarmaggies[*,gthese],$
             modelchunk,maxage,zindx,gchunk=gchunk,ngalchunk=ngalchunk,ichunk=ichunk,$
-            nchunk=nchunk,nminphot=params.nminphot,allages=allages,silent=silent,$
-            maxold=maxold)
+            nchunk=nchunk,nminphot=params.nminphot,nzz=params.nzz,allages=allages,$
+            silent=silent,maxold=maxold)
           if (ichunk eq 0) then begin
              galaxygrid = temporary(galaxychunk)
              modelgrid = temporary(modelchunk)

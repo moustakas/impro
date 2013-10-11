@@ -49,9 +49,14 @@ function read_isedfit_paramfile, isedfit_paramfile, thissfhgrid=thissfhgrid
     params = struct_addtags(params,replicate({redshift: $
       fltarr(params[0].nzz)},n_elements(params)))
     for ii = 0, n_elements(params)-1 do begin
-       if params[ii].user_redshift then params[ii].redshift = params[ii].use_redshift else $
-         params[ii].redshift = range(params[ii].zminmax[0],params[ii].zminmax[1],$
-         params[ii].nzz,log=params[ii].zlog)
+       if params[ii].user_redshift then params[ii].redshift = params[ii].use_redshift else begin
+          if params[ii].nzz gt 1 then begin
+             params[ii].redshift = range(params[ii].zminmax[0],params[ii].zminmax[1],$
+               params[ii].nzz,log=params[ii].zlog)
+          endif else begin
+             params[ii].redshift = params[ii].zminmax[0] ; assume ZMIN=ZMAX
+          endelse
+       endelse
     endfor
     
 ; add NMAXBURST and NMODELCHUNK (see ISEDFIT_MONTEGRIDS)
