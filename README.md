@@ -1,9 +1,8 @@
 ## impro
 
 This repository contains an assortment of routines written in IDL for
-reducing and analyzing multiwavelength imaging and spectroscopy.  My
-hope is that some of my code may prove useful to other astronomers,
-especially observers.
+reducing and analyzing multiwavelength imaging and spectroscopy of
+galaxies.  
 
 Some of the code highlights included with impro:
 
@@ -30,7 +29,11 @@ Some of the code highlights included with impro:
   emission-line spectra of galaxies, and to measure a variety of
   spectral indices (e.g., Lick indices, D4000, etc.).
 
-# Installation
+As usual, the code is provided as-is, with no guarantee of accuracy or
+success.  However, if you are interested in contributing actively to
+impro send me a note!
+
+### Installation
 
 Download the bleeding-edge version of the repository from Github using
 the following command:
@@ -54,10 +57,4 @@ Using the example above, you would add:
     setenv IDL_PATH $IDL_PATH{:}+${IMPRO_DIR}/pro
 
 to either your .tcshrc or .idlenv startup file.  
-
-As usual, the code is provided as-is, with no guarantee of accuracy or
-success.  However, if you are interested in contributing actively to
-impro send me a note!
-
-
 
