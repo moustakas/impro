@@ -1,12 +1,13 @@
-## impro ##
+## impro
 
 This repository contains an assortment of routines written in IDL for
-reducing and analyzing multiwavelength imaging and spectroscopy which
-may prove useful to other astronomers, especially observers.
+reducing and analyzing multiwavelength imaging and spectroscopy.  My
+hope is that some of my code may prove useful to other astronomers,
+especially observers.
 
 Some of the code highlights included with impro:
 
-* iSEDfit, fully developed, documented, and publicly released software
+* iSEDfit - fully developed, documented, and publicly released software
   which uses Bayesian inference to extract the physical properties of
   galaxies from their observed broadband photometric spectral energy
   distributions.  Please see
@@ -29,28 +30,28 @@ Some of the code highlights included with impro:
   emission-line spectra of galaxies, and to measure a variety of
   spectral indices (e.g., Lick indices, D4000, etc.).
 
-# Installation # 
+# Installation
 
 Download the bleeding-edge version of the repository from Github using
 the following command:
 
-  git clone http://github.com/moustakas/impro.git
+    git clone http://github.com/moustakas/impro.git
 
 Alternatively, you can download a tarball or zip file snapshot of the
 code base by navigating directly to github.com:
 
-  https://github.com/moustakas/impro
+    https://github.com/moustakas/impro
 
 Next, add an ${IMPRO_DIR} environment variable to your appropriate
 startup file. For example, if you use tcsh, add the following line to
 your .tcshrc file: 
 
-  setenv IMPRO_DIR /path/to/impro
+    setenv IMPRO_DIR /path/to/impro
 
 Finally, add the 'pro' subdirectory of ${IMPRO_DIR} to your IDL path.
 Using the example above, you would add:
 
-  setenv IDL_PATH $IDL_PATH{:}+${IMPRO_DIR}/pro
+    setenv IDL_PATH $IDL_PATH{:}+${IMPRO_DIR}/pro
 
 to either your .tcshrc or .idlenv startup file.  
 
