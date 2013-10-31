@@ -29,8 +29,9 @@
 ;   colorcolor_pdffile - overwrite the default name of the output
 ;     color-color PDF file (not typically necessary since the file
 ;     name matches the ISEDFIT output files); must end with a '.PDF'
-;     suffix 
-;   zcolor_pdffile - same as above but for the redshift-color PDF file
+;     suffix; if COLORCOLOR_PDFFILE='' then don't make this plot
+;   zcolor_pdffile - same as above but for the redshift-color PDF
+;     file; if ZCOLOR_PDFFILE='' then don't make this plot
 ;
 ; KEYWORD PARAMETERS:
 ;   clobber - overwrite existing files of the same name (the default
@@ -156,10 +157,21 @@ pro isedfit_qaplot_models, isedfit_paramfile, maggies1, ivarmaggies1, z, $
 ; allow the user to overwrite PDFFILE
     fp = isedfit_filepaths(params,outprefix=outprefix,isedfit_dir=isedfit_dir,$
       colorcolor_pdffile=colorcolor_pdffile,zcolor_pdffile=zcolor_pdffile)
-    if file_test(fp.isedfit_dir+fp.qaplot_zcolor_pdffile) and $
-      keyword_set(clobber) eq 0 then begin
-       splog, 'Output file '+fp.qaplot_zcolor_pdffile+' exists; use /CLOBBER'
-       return
+
+    if fp.qaplot_zcolor_pdffile ne '' then begin
+       if file_test(fp.isedfit_dir+fp.qaplot_zcolor_pdffile) and $
+         keyword_set(clobber) eq 0 then begin
+          splog, 'Output file '+fp.qaplot_zcolor_pdffile+' exists; use /CLOBBER'
+          return
+       endif
+    endif
+    
+    if fp.qaplot_colorcolor_pdffile ne '' then begin
+       if file_test(fp.isedfit_dir+fp.qaplot_colorcolor_pdffile) and $
+         keyword_set(clobber) eq 0 then begin
+          splog, 'Output file '+fp.qaplot_colorcolor_pdffile+' exists; use /CLOBBER'
+          return
+       endif
     endif
     
 ; get the (desired) filters and the redshift grid
@@ -193,7 +205,8 @@ pro isedfit_qaplot_models, isedfit_paramfile, maggies1, ivarmaggies1, z, $
     
     redshift = params.redshift
     nredshift = n_elements(redshift)
-    zindx = findex(params.redshift,redshift)
+    if params.nzz eq 1 then zindx = 0 else $
+      zindx = findex(params.redshift,redshift) 
 ;   zindx = findex(redshift,z) ; test code
 
 ; restore all the model photometry
@@ -214,7 +227,8 @@ pro isedfit_qaplot_models, isedfit_paramfile, maggies1, ivarmaggies1, z, $
     nmodel = n_elements(models)
     if nmodel ne params.nmodel then message, 'Mismatched number of models!'
 
-    modelmaggies = interpolate(transpose(models.modelmaggies[filtmatch,*],[0,2,1]),zindx)
+    if params.nzz eq 1 then modelmaggies = models.modelmaggies[filtmatch,*] else $
+      modelmaggies = interpolate(transpose(models.modelmaggies[filtmatch,*],[0,2,1]),zindx)
     bigredshift = rebin(reform(redshift,1,nredshift),nmodel,nredshift)
 
 ; compute all the possible combinations of model and galaxy magnitudes 
@@ -280,133 +294,138 @@ pro isedfit_qaplot_models, isedfit_paramfile, maggies1, ivarmaggies1, z, $
 ; make the redshift-color plots
     npage = ceil(ncombos/float(nperpage))
 
-    psfile = fp.isedfit_dir+fp.qaplot_zcolor_psfile
-    im_plotconfig, 5, pos, psfile=psfile, xspace=1.0, $
-      yspace=0.8, xmargin=[1.0,0.6], width=3.05*[1,1], $
-      height=2.6*[1,1], charsize=1.4, ymargin=[2.0,1.1]
-
-    xrange = minmax(redshift)
-    quant = fltarr(nredshift,6) ; quantiles
-
-    count = 0
-    for pp = 0, npage-1 do begin
-       for ii = 0, nperpage-1 do begin
-          if count le ncombos-1 then begin
-             ymodel = reform(modelmag[count,*,*])
-             for jj = 0, nredshift-1 do quant[jj,*] = weighted_quantile($
-               ymodel[*,jj],quant=[0.25,0.75,0.05,0.95,0.0,1.0])
-             
-             good = where(galaxymag[count,*] gt -1.0,ngood)
-             if ngood ne 0L then begin
-                ygal = reform(galaxymag[count,good])
-                yrange = [min(ymodel)<weighted_quantile(ygal,quant=0.01),$
-                  max(ymodel)>weighted_quantile(ygal,quant=0.99)]
-             endif else begin
-                yrange = minmax(ymodel)
-             endelse
-             yrange += (yrange[1]-yrange[0])*0.05*[-1,1]
-             
-             plot, [0], [0], /nodata, position=pos[*,ii], xsty=3, ysty=1, $
-               xrange=xrange, yrange=yrange, xtitle='Redshift', $
-               ytitle=colortitle[count], noerase=ii gt 0, xticks=3
-             if ngood gt 500 then begin
-                im_hogg_scatterplot, z[good], ygal, /overplot, $
-                  /outlier, outpsym=symcat(6,thick=1), outsymsize=0.3, /nogrey, $
-                  outcolor=im_color('dodger blue',100), contour_color=im_color('navy',101), $
-                  xrange=xrange, yrange=yrange, position=pos[*,ii], xsty=7, ysty=5, $
-                  levels=mylevels, /internal, c_annotation=mycann
-             endif else begin
-                djs_oplot, z[good], ygal, psym=symcat(6,thick=3), symsize=0.5, $
-                  color=im_color('dodger blue',100)
-             endelse
-             oplot, redshift, quant[*,0], line=0, color=im_color('red'), $
-               thick=4, psym=-symcat(16), symsize=0.7
-             oplot, redshift, quant[*,1], line=0, color=im_color('red'), $
-               thick=4, psym=-symcat(16), symsize=0.7
-             oplot, redshift, quant[*,2], line=5, color=im_color('forest green'), $
-               thick=4, psym=-symcat(15), symsize=0.7
-             oplot, redshift, quant[*,3], line=5, color=im_color('forest green'), $
-               thick=4, psym=-symcat(15), symsize=0.7
-             oplot, redshift, quant[*,4], line=3, color=im_color('grey40'), $
-               thick=4, psym=-symcat(14), symsize=0.7
-             oplot, redshift, quant[*,5], line=3, color=im_color('grey40'), $
-               thick=4, psym=-symcat(14), symsize=0.7
-;            oplot, bigredshift, ymodel, psym=3, color=im_color('red')
-             count++
-          endif
+    if fp.qaplot_zcolor_pdffile ne '' then begin
+       psfile = fp.isedfit_dir+fp.qaplot_zcolor_psfile
+       im_plotconfig, 5, pos, psfile=psfile, xspace=1.0, $
+         yspace=0.8, xmargin=[1.0,0.6], width=3.05*[1,1], $
+         height=2.6*[1,1], charsize=1.4, ymargin=[2.0,1.1]
+       
+       xrange = minmax(redshift)
+       quant = fltarr(nredshift,6) ; quantiles
+       
+       count = 0
+       for pp = 0, npage-1 do begin
+          for ii = 0, nperpage-1 do begin
+             if count le ncombos-1 then begin
+                ymodel = reform(modelmag[count,*,*])
+                for jj = 0, nredshift-1 do quant[jj,*] = weighted_quantile($
+                  ymodel[*,jj],quant=[0.25,0.75,0.05,0.95,0.0,1.0])
+                
+                good = where(galaxymag[count,*] gt -1.0,ngood)
+                if ngood ne 0L then begin
+                   ygal = reform(galaxymag[count,good])
+                   yrange = [min(ymodel)<weighted_quantile(ygal,quant=0.01),$
+                     max(ymodel)>weighted_quantile(ygal,quant=0.99)]
+                endif else begin
+                   yrange = minmax(ymodel)
+                endelse
+                yrange += (yrange[1]-yrange[0])*0.05*[-1,1]
+                
+                plot, [0], [0], /nodata, position=pos[*,ii], xsty=3, ysty=1, $
+                  xrange=xrange, yrange=yrange, xtitle='Redshift', $
+                  ytitle=colortitle[count], noerase=ii gt 0, xticks=3
+                if ngood gt 500 then begin
+                   im_hogg_scatterplot, z[good], ygal, /overplot, $
+                     /outlier, outpsym=symcat(6,thick=1), outsymsize=0.3, /nogrey, $
+                     outcolor=im_color('dodger blue',100), contour_color=im_color('navy',101), $
+                     xrange=xrange, yrange=yrange, position=pos[*,ii], xsty=7, ysty=5, $
+                     levels=mylevels, /internal, c_annotation=mycann
+                endif else begin
+                   djs_oplot, z[good], ygal, psym=symcat(6,thick=3), symsize=0.5, $
+                     color=im_color('dodger blue',100)
+                endelse
+                oplot, redshift, quant[*,0], line=0, color=im_color('red'), $
+                  thick=4, psym=-symcat(16), symsize=0.7
+                oplot, redshift, quant[*,1], line=0, color=im_color('red'), $
+                  thick=4, psym=-symcat(16), symsize=0.7
+                oplot, redshift, quant[*,2], line=5, color=im_color('forest green'), $
+                  thick=4, psym=-symcat(15), symsize=0.7
+                oplot, redshift, quant[*,3], line=5, color=im_color('forest green'), $
+                  thick=4, psym=-symcat(15), symsize=0.7
+                oplot, redshift, quant[*,4], line=3, color=im_color('grey40'), $
+                  thick=4, psym=-symcat(14), symsize=0.7
+                oplot, redshift, quant[*,5], line=3, color=im_color('grey40'), $
+                  thick=4, psym=-symcat(14), symsize=0.7
+;               oplot, bigredshift, ymodel, psym=3, color=im_color('red')
+                count++
+             endif
+          endfor 
+          xyouts, pos[0,0], pos[3,0]+0.14, 'Model Photometry:', align=0.0, $
+            /normal, charsize=1.3
+          im_legend, ['25%, 75% Quantile',' 5%, 95% Quantile',' 0%,100% Quantile'], $
+            box=1, /left, /top, line=[0,5,3], psym=-[16,15,14], pspacing=1.9, $
+            position=[pos[0,0],pos[3,0]+0.12], /norm, charsize=1.3, $
+            color=['red','forest green','grey40'], thick=6, symsize=[1.2,1.2,1.4]
+          
+          im_legend, 'Galaxy Photometry', box=1, /left, /top, $
+            line=0, pspacing=1.9, position=[pos[0,1],pos[3,1]+0.08], /norm, $
+            charsize=1.3, color='navy', thick=6
+          plots, pos[0,1]+0.055, pos[3,1]+0.062, psym=-symcat(6,thick=6), $
+            symsize=1.5, color=im_color('dodger blue'), /norm
        endfor 
-       xyouts, pos[0,0], pos[3,0]+0.14, 'Model Photometry:', align=0.0, $
-         /normal, charsize=1.3
-       im_legend, ['25%, 75% Quantile',' 5%, 95% Quantile',' 0%,100% Quantile'], $
-         box=1, /left, /top, line=[0,5,3], psym=-[16,15,14], pspacing=1.9, $
-         position=[pos[0,0],pos[3,0]+0.12], /norm, charsize=1.3, $
-         color=['red','forest green','grey40'], thick=6, symsize=[1.2,1.2,1.4]
 
-       im_legend, 'Galaxy Photometry', box=1, /left, /top, $
-         line=0, pspacing=1.9, position=[pos[0,1],pos[3,1]+0.08], /norm, $
-         charsize=1.3, color='navy', thick=6
-       plots, pos[0,1]+0.055, pos[3,1]+0.062, psym=-symcat(6,thick=6), $
-         symsize=1.5, color=im_color('dodger blue'), /norm
-    endfor 
-
-    im_plotconfig, psfile=psfile, /psclose, /pdf
+       im_plotconfig, psfile=psfile, /psclose, /pdf
+    endif
 
 ; make all the color-color plot combinations (ignore redshift for now) 
     npage = ceil(n_elements(ccinfo)/float(nperpage))
 
-    psfile = fp.isedfit_dir+fp.qaplot_colorcolor_psfile
-    im_plotconfig, 5, pos, psfile=psfile, xspace=1.0, $
-      yspace=0.8, xmargin=[1.0,0.6], width=3.05*[1,1], $
-      height=2.6*[1,1], charsize=1.4, ymargin=[2.0,1.1]
-
-    count = 0
-    for pp = 0, npage-1 do begin
-       for ii = 0, nperpage-1 do begin
-          if count lt n_elements(ccinfo) then begin
-             good = where(ccinfo[count].xgal gt -1.0 and ccinfo[count].ygal gt -1.0,ngood)
-             xgal = reform(ccinfo[count].xgal[good])
-             ygal = reform(ccinfo[count].ygal[good])
-             xmodel = reform(ccinfo[count].xmodel)
-             ymodel = reform(ccinfo[count].ymodel)
-
-             yrange = [min(ymodel)<weighted_quantile(ygal,quant=0.01),$
-               max(ymodel)>weighted_quantile(ygal,quant=0.99)]
-             xrange = [min(xmodel)<weighted_quantile(xgal,quant=0.01),$
-               max(xmodel)>weighted_quantile(xgal,quant=0.99)]
-             
-             contour_color = [im_color('red',252),im_color('forest green',253),im_color('grey40',254)]
-             im_hogg_scatterplot, xmodel, ymodel, position=pos[*,ii], xsty=1, ysty=1, $
-               xrange=xrange, yrange=yrange, xtitle=ccinfo[count].xtitle, levels=mylevels, $
-               ytitle=ccinfo[count].ytitle, noerase=ii gt 0, outlier=0, /nogrey, $
-               contour_color=[252,253,254], cthick=6, $
-               xnpix=npix, ynpix=npix, /internal, c_annotation=mycann
-             if ngood gt 500 then begin
-                im_hogg_scatterplot, xgal, ygal, /overplot, $
-                  /outlier, outpsym=symcat(6,thick=1), outsymsize=0.3, /nogrey, $
-                  outcolor=im_color('dodger blue',100), contour_color=im_color('navy',101), $
-                  levels=mylevels, xrange=xrange, yrange=yrange, position=pos[*,ii], $
+    if fp.qaplot_colorcolor_pdffile ne '' then begin
+       psfile = fp.isedfit_dir+fp.qaplot_colorcolor_psfile
+       im_plotconfig, 5, pos, psfile=psfile, xspace=1.0, $
+         yspace=0.8, xmargin=[1.0,0.6], width=3.05*[1,1], $
+         height=2.6*[1,1], charsize=1.4, ymargin=[2.0,1.1]
+       
+       count = 0
+       for pp = 0, npage-1 do begin
+          for ii = 0, nperpage-1 do begin
+             if count lt n_elements(ccinfo) then begin
+                good = where(ccinfo[count].xgal gt -1.0 and ccinfo[count].ygal gt -1.0,ngood)
+                xgal = reform(ccinfo[count].xgal[good])
+                ygal = reform(ccinfo[count].ygal[good])
+                xmodel = reform(ccinfo[count].xmodel)
+                ymodel = reform(ccinfo[count].ymodel)
+                
+                yrange = [min(ymodel)<weighted_quantile(ygal,quant=0.01),$
+                  max(ymodel)>weighted_quantile(ygal,quant=0.99)]
+                xrange = [min(xmodel)<weighted_quantile(xgal,quant=0.01),$
+                  max(xmodel)>weighted_quantile(xgal,quant=0.99)]
+                
+                contour_color = [im_color('red',252),im_color('forest green',253),$
+                  im_color('grey40',254)]
+                im_hogg_scatterplot, xmodel, ymodel, position=pos[*,ii], xsty=1, ysty=1, $
+                  xrange=xrange, yrange=yrange, xtitle=ccinfo[count].xtitle, levels=mylevels, $
+                  ytitle=ccinfo[count].ytitle, noerase=ii gt 0, outlier=0, /nogrey, $
+                  contour_color=[252,253,254], cthick=6, $
                   xnpix=npix, ynpix=npix, /internal, c_annotation=mycann
-             endif else begin
-                djs_oplot, xgal, ygal, psym=symcat(6,thick=3), symsize=0.5, $
-                  color=im_color('dodger blue',100)
-             endelse
-             count++
-          endif
-       endfor
-       xyouts, pos[0,0], pos[3,0]+0.14, 'Model Photometry:', align=0.0, $
-         /normal, charsize=1.3
-       im_legend, ['50 Percentile','75 Percentile','98 Percentile'], $
-         box=1, /left, /top, line=[0,5,3], pspacing=1.9, $ ; psym=-[16,15,14], 
-         position=[pos[0,0],pos[3,0]+0.12], /norm, charsize=1.3, $
-         color=['red','forest green','grey40'], thick=6;, symsize=[1.2,1.2,1.4]
-
-       im_legend, 'Galaxy Photometry', box=1, /left, /top, $
-         line=0, pspacing=1.9, position=[pos[0,1],pos[3,1]+0.08], /norm, $
-         charsize=1.3, color='navy', thick=6
-       plots, pos[0,1]+0.055, pos[3,1]+0.062, psym=-symcat(6,thick=6), $
-         symsize=1.5, color=im_color('dodger blue'), /norm
-    endfor 
-    im_plotconfig, psfile=psfile, /psclose, /pdf
+                if ngood gt 500 then begin
+                   im_hogg_scatterplot, xgal, ygal, /overplot, $
+                     /outlier, outpsym=symcat(6,thick=1), outsymsize=0.3, /nogrey, $
+                     outcolor=im_color('dodger blue',100), contour_color=im_color('navy',101), $
+                     levels=mylevels, xrange=xrange, yrange=yrange, position=pos[*,ii], $
+                     xnpix=npix, ynpix=npix, /internal, c_annotation=mycann
+                endif else begin
+                   djs_oplot, xgal, ygal, psym=symcat(6,thick=3), symsize=0.5, $
+                     color=im_color('dodger blue',100)
+                endelse
+                count++
+             endif
+          endfor
+          xyouts, pos[0,0], pos[3,0]+0.14, 'Model Photometry:', align=0.0, $
+            /normal, charsize=1.3
+          im_legend, ['50 Percentile','75 Percentile','98 Percentile'], $
+            box=1, /left, /top, line=[0,5,3], pspacing=1.9, $ ; psym=-[16,15,14], 
+            position=[pos[0,0],pos[3,0]+0.12], /norm, charsize=1.3, $
+            color=['red','forest green','grey40'], thick=6 ;, symsize=[1.2,1.2,1.4]
+          
+          im_legend, 'Galaxy Photometry', box=1, /left, /top, $
+            line=0, pspacing=1.9, position=[pos[0,1],pos[3,1]+0.08], /norm, $
+            charsize=1.3, color='navy', thick=6
+          plots, pos[0,1]+0.055, pos[3,1]+0.062, psym=-symcat(6,thick=6), $
+            symsize=1.5, color=im_color('dodger blue'), /norm
+       endfor 
+       im_plotconfig, psfile=psfile, /psclose, /pdf
+    endif
 
 return
 end

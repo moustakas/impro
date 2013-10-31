@@ -63,8 +63,13 @@ function im_getposition, nx=nx, ny=ny, xpage=xpage, ypage=ypage, $
   xspace=xspace, yspace=yspace, landscape=landscape
 
 ; specify default values
-    dflt_xpage =  8.5D           ; xpage default (inches)
-    dflt_ypage = 11.0D           ; ypage default (inches)
+    if keyword_set(landscape) then begin
+       dflt_xpage = 11.0D      ; xpage default (inches)
+       dflt_ypage = 8.5D       ; ypage default (inches)
+    endif else begin
+       dflt_xpage =  8.5D       ; xpage default (inches)
+       dflt_ypage = 11.0D       ; ypage default (inches)
+    endelse
     dflt_xmargin = 1.0D          ; xmargin default (inches)
     dflt_ymargin = 1.0D          ; ymargin default (inches)
     dflt_nx      = 1D            ; nx default
