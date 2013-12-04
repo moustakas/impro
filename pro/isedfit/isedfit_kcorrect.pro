@@ -48,7 +48,8 @@
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
-;   This routine is a glorified wrapper on IM_SIMPLE_KCORRECT. 
+;   This routine is a glorified wrapper on IM_SIMPLE_KCORRECT that
+;   uses the right cosmological parameters from params.
 ;
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2011 Aug 30, UCSD
@@ -165,6 +166,7 @@ pro isedfit_kcorrect, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid,
             isedfit[sortindx[gthese[good]]].maggies,isedfit[sortindx[gthese[good]]].ivarmaggies,$
             filterlist,absmag_filterlist,restwave,restflux,band_shift=band_shift,$
             absmag=chunk_absmag,ivarabsmag=chunk_ivarabsmag,synth_absmag=chunk_synth_absmag,$
+            h100=params.h100, omega0=params.omega0, omegal=params.omegal, $
             chi2=chi2,vega=vega,/silent)
 
           kcorrect_results[sortindx[gthese[good]]].kcorrect = chunk_kcorr
