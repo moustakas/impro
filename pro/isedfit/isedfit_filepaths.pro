@@ -11,6 +11,16 @@
 ;   jm13aug09siena - updated to the latest data model 
 ;-
 
+
+FUNCTION add_prefix, filename, prefix, suffix
+  IF n_elements(suffix) EQ 0 THEN suffix = ''
+  outfile = file_dirname(filename) + $                ; Directory
+            prefix + file_basename(filename) + suffix ; Filename
+  return, outfile
+END
+
+
+
 function isedfit_filepaths, params, isedfit_dir=isedfit_dir, $
   montegrids_dir=montegrids_dir, outprefix=outprefix1, $
   sed_pdffile=sed_pdffile1, zcolor_pdffile=zcolor_pdffile1, $
@@ -60,7 +70,7 @@ function isedfit_filepaths, params, isedfit_dir=isedfit_dir, $
     
 ; QAplot file names    
     if n_elements(sed_pdffile1) eq 0 then begin
-       sed_psfile = 'qaplot_sed_'+outfile+'.ps'
+       sed_psfile = add_prefix(outfile, 'qaplot_sed_', '.ps')
        sed_pdffile = repstr(sed_psfile,'.ps','.pdf')
     endif else begin
        sed_pdffile = file_basename(sed_pdffile1)
@@ -68,7 +78,7 @@ function isedfit_filepaths, params, isedfit_dir=isedfit_dir, $
     endelse
 
     if n_elements(zcolor_pdffile1) eq 0 then begin
-       zcolor_psfile = 'qaplot_zcolor_'+outfile+'.ps'
+       zcolor_psfile = add_prefix(outfile, 'qaplot_zcolor_', '.ps')
        zcolor_pdffile = repstr(zcolor_psfile,'.ps','.pdf')
     endif else begin
        zcolor_pdffile = file_basename(zcolor_pdffile1)
@@ -76,7 +86,7 @@ function isedfit_filepaths, params, isedfit_dir=isedfit_dir, $
     endelse
 
     if n_elements(colorcolor_pdffile1) eq 0 then begin
-       colorcolor_psfile = 'qaplot_colorcolor_'+outfile+'.ps'
+       colorcolor_psfile = add_prefix(outfile, 'qaplot_colorcolor_', '.ps')
        colorcolor_pdffile = repstr(colorcolor_psfile,'.ps','.pdf')
     endif else begin
        colorcolor_pdffile = file_basename(colorcolor_pdffile1)
@@ -84,7 +94,7 @@ function isedfit_filepaths, params, isedfit_dir=isedfit_dir, $
     endelse
 
     if n_elements(priors_pdffile1) eq 0 then begin
-       priors_psfile = 'qaplot_priors_'+outfile+'.ps'
+       priors_psfile = add_prefix(outfile, 'qaplot_priors_', '.ps')
        priors_pdffile = repstr(priors_psfile,'.ps','.pdf')
     endif else begin
        priors_pdffile = file_basename(priors_pdffile1)

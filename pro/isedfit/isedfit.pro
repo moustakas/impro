@@ -375,7 +375,7 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, z, params=params, $
           print, format='("ISEDFIT: Chunk ",I0,"/",I0, A10,$)', ichunk+1, nchunk, string(13b)
           chunkfile = fp.models_chunkfiles[ichunk]
 ;         if (keyword_set(silent) eq 0) then splog, 'Reading '+chunkfile
-          modelchunk = gz_mrdfits(chunkfile,1,/silent)
+          modelchunk = im_mrdfits(chunkfile,1,/silent)
           nmodel = n_elements(modelchunk)
 ; compute chi2
           galaxychunk = isedfit_chi2(maggies[*,gthese],ivarmaggies[*,gthese],$

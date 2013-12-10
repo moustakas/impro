@@ -976,6 +976,5 @@ pro isedfit_montegrids, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
 
     qafile = fp.isedfit_dir+fp.qaplot_priors_psfile
     montegrids_qaplot, newmontegrid, params=params, qafile=qafile
-
 return
 end

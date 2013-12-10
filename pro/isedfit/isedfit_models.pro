@@ -181,7 +181,7 @@ pro isedfit_models, isedfit_paramfile, params=params, isedfit_dir=isedfit_dir, $
        print, format='("ISEDFIT_MODELS: Chunk ",I0,"/",I0, A10,$)', $
          ichunk+1, nchunk, string(13b)
 ;      splog, 'Reading '+fp.montegrids_chunkfiles[ichunk]
-       chunk = gz_mrdfits(fp.montegrids_chunkfiles[ichunk],1,/silent)
+       chunk = im_mrdfits(fp.montegrids_chunkfiles[ichunk],1,/silent)
        nmodel = n_elements(chunk)
        npix = n_elements(chunk[0].flux)
        distfactor = rebin(reform((pc10/dlum)^2.0,nredshift,1),nredshift,nmodel)
