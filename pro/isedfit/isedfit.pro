@@ -84,21 +84,31 @@
 ;-
 
 function init_isedfit, ngal, nfilt, params=params, ra=ra, dec=dec, $
-  isedfit_post=isedfit_post
+  isedfit_post=isedfit_post, photoz=photoz
 ; ISEDFIT support routine - initialize the output structure 
 
     ndraw = params.ndraw ; number of random draws
     if (params.nmaxburst eq 0) then burstarray1 = -1.0 else $
       burstarray1 = fltarr(params.nmaxburst)-1.0
 
-    isedfit1 = {$
-      isedfit_id:            -1L,$ ; unique ID number
-      ra:                    -1D,$ ; RA [decimal degrees]
-      dec:                   -1D,$ ; Dec [decimal degrees]
-      z:                    -1.0,$ ; redshift
-      maggies:     fltarr(nfilt),$ ; observed maggies
-      ivarmaggies: fltarr(nfilt),$ ; corresponding inverse variance
-      bestmaggies: fltarr(nfilt)}  ; best-fitting model photometry
+    if keyword_set(photoz) then begin
+       isedfit1 = {$
+         isedfit_id:            -1L,$ ; unique ID number
+         ra:                    -1D,$ ; RA [decimal degrees]
+         dec:                   -1D,$ ; Dec [decimal degrees]
+         maggies:     fltarr(nfilt),$ ; observed maggies
+         ivarmaggies: fltarr(nfilt),$ ; corresponding inverse variance
+         bestmaggies: fltarr(nfilt)}  ; best-fitting model photometry
+    endif else begin
+       isedfit1 = {$
+         isedfit_id:            -1L,$ ; unique ID number
+         ra:                    -1D,$ ; RA [decimal degrees]
+         dec:                   -1D,$ ; Dec [decimal degrees]
+         z:                    -1.0,$ ; redshift
+         maggies:     fltarr(nfilt),$ ; observed maggies
+         ivarmaggies: fltarr(nfilt),$ ; corresponding inverse variance
+         bestmaggies: fltarr(nfilt)}  ; best-fitting model photometry
+    endelse
 
 ; best-fit values (at the chi2 minimum); see ISEDFIT_MONTEGRIDS
     best = {$
@@ -182,30 +192,158 @@ function init_isedfit, ngal, nfilt, params=params, ra=ra, dec=dec, $
       ewoiiihb_err: -1.0,$
       ewniiha_err:  -1.0}
 
-    isedfit = struct_addtags(temporary(isedfit1),struct_addtags(best,qmed))
+; add the photometric redshift info    
+    if keyword_set(photoz) then begin
+       pofz = {$
+         photoz:      fltarr(5),$ ; three best redshifts
+         photoz_err:  fltarr(5),$ ; three best redshifts
+         photoz_chi2: fltarr(5),$ ; corresponding chi2 values
+         z:              -1.0,$ ; maximum likelihood redshift
+         z_err:          -1.0}
+       isedfit = struct_addtags(struct_addtags(temporary(isedfit1),$
+         struct_addtags(best,qmed)),pofz)
+    endif else begin
+       isedfit = struct_addtags(temporary(isedfit1),$
+         struct_addtags(best,qmed))
+    endelse
     isedfit = replicate(temporary(isedfit),ngal)
 
     if n_elements(ra) ne 0L and n_elements(dec) ne 0L then begin
        isedfit.ra = ra
        isedfit.dec = dec
     endif
-    
+
 ; initialize the posterior distribution structure
     isedfit_post = {$
       draws:         lonarr(ndraw)-1,$
       chi2:          fltarr(ndraw)-1,$
       totalmass:     fltarr(ndraw)-1,$
       totalmass_err: fltarr(ndraw)-1}
+    if keyword_set(photoz) then isedfit_post = $
+      struct_addtags(isedfit_post, {pofz:  fltarr(params.nzz)})
     isedfit_post = replicate(temporary(isedfit_post),ngal)
     
 return, isedfit
+end
+
+function zmin_parabola, xx, yy
+; fit a parabolla; support routine for ISEDFIT_FIND_ZMIN
+    ss = sort(xx)
+    xx = xx[ss]
+    yy = yy[ss]
+
+    a = xx[0]
+    b = xx[1]
+    c = xx[2]
+
+    fa = yy[0]
+    fb = yy[1]
+    fc = yy[2]
+
+    xmin = b - 0.5 * ( (b-a)^2*(fb-fc)-(b-c)^2*(fb-fa) ) / $
+      ( (b-a)*(fb-fc) - (b-c) *(fb-fa))
+return, xmin
+end
+
+function isedfit_find_zmin, z, ochi2, nmin=nmin
+; find the first N minima in a plot of redshift vs chi2; based on code
+; written by Richard Cool for the PRIMUS survey
+
+    if n_elements(nmin) eq 0 then nmin = 5
+    
+    minmask = intarr(n_elements(ochi2))
+    npix = n_elements(z)
+    dchi2 = deriv(findgen(npix),ochi2)
+    
+    delvarx, minval
+    delvarx, minima
+    
+    while total(minmask) lt npix and n_elements(minval) lt nmin do begin
+       chi2 = ochi2 + 1D64*minmask
+       junk = min(chi2,jmin)
+       lgrow = 0
+       stoplgrow = 0
+       while stoplgrow eq 0 do begin
+          lgrow++
+          if jmin-lgrow lt 0 then stoplgrow =1 else begin
+             if dchi2[jmin-lgrow] ge 0 then stoplgrow = 1
+          endelse
+       endwhile
+       minmask[jmin-(lgrow-1):jmin] = 1
+       
+       rgrow = 0
+       stoprgrow = 0
+       while stoprgrow eq 0 do begin
+          rgrow++
+          if jmin+rgrow gt npix-1 then stoprgrow = 1 else begin
+             if dchi2[jmin+rgrow] lt 0 then stoprgrow = 1
+          endelse
+       endwhile
+       minmask[jmin:jmin+(rgrow-1)] = 1
+       
+       range = [jmin-1,jmin+1]
+       if range[0] lt 0 then range = [0,2]
+       if range[1] gt npix-1 then range = [npix-3,npix-1]
+       
+       range1 = [jmin-2,jmin+2]
+       if range1[0] lt 0 then range1 = [0,4]
+       if range1[1] gt npix-1 then range1 = npix-[5,1]
+       zmin = zmin_parabola(z[range[0]:range[1]], $
+         ochi2[range[0]:range[1]])
+       mval = interpol(ochi2[range[0]:range[1]], $
+         z[range[0]:range[1]],zmin)
+       err = interpol(abs(z[range1[0]:range1[1]]-zmin), $
+         ochi2[range1[0]:range1[1]],mval+1.0)
+       
+       if jmin lt 2 or jmin gt n_elements(z)-2 then begin
+          zmin = z[jmin]
+          err = -1
+          mval = ochi2[jmin]
+       endif
+       
+       if n_elements(minima) eq 0 then begin
+          minima = zmin
+          minval = mval
+          minerr = err
+          rminima = z[jmin]
+          rminval = ochi2[jmin]
+       endif else begin
+          minima = [minima,zmin]
+          minval = [minval,mval]
+          minerr = [minerr,err]
+          rminima = [rminima,z[jmin]]
+          rminval = [rminval,ochi2[jmin]]
+       endelse
+    endwhile
+        
+    if n_elements(minval) gt 0 then begin
+       ss = sort(minval)
+       minval = minval[ss]
+       minima = minima[ss]
+       minerr = minerr[ss]
+       
+       output = {minval:0.0, $
+         minima : 0.0, $
+         minerr : 0.0, $
+         edges : 0}
+       output = replicate(output, n_elements(ss))
+       output.minval = minval
+       output.minima = minima
+       output.minerr = minerr
+
+; temporary hack; drop redshift minima that are on or near the edge
+; (the right way to do this is with an edge bit flag)
+       keep = where(output.minerr gt 0.0)
+       output = output[keep]
+       return, output 
+    endif else return, -1
 end
 
 pro isedfit, isedfit_paramfile, maggies, ivarmaggies, z, params=params, $
   thissfhgrid=thissfhgrid, isedfit_dir=isedfit_dir, outprefix=outprefix, $
   index=index, ra=ra, dec=dec, isedfit_results=isedfit_results, $
   isedfit_post=isedfit_post, isedfit_outfile=isedfit_outfile, allages=allages, $
-  maxold=maxold, silent=silent, nowrite=nowrite, clobber=clobber
+  maxold=maxold, silent=silent, nowrite=nowrite, photoz=photoz, clobber=clobber
 
     if n_elements(isedfit_paramfile) eq 0 and n_elements(params) eq 0 then begin
        doc_library, 'isedfit'
@@ -226,7 +364,12 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, z, params=params, $
 
     nmaggies = n_elements(maggies)
     nivarmaggies = n_elements(ivarmaggies)
-    nz = n_elements(z)
+
+; allow for photoz mode    
+    if keyword_set(photoz) then begin
+       nz = ngal
+       z = replicate(0.0,nz)
+    endif else nz = n_elements(z)
     
     if (nmaggies eq 0L) or (nivarmaggies eq 0L) or $
       (nz eq 0L) then begin
@@ -253,9 +396,11 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, z, params=params, $
        splog, 'MAGGIES and IVARMAGGIES cannot have infinite values!'
        return
     endif
-    if (total(z le 0.0) ne 0.0) then begin
-       splog, 'Z should all be positive'
-       return
+    if keyword_set(photoz) eq 0 then begin
+       if (total(z le 0.0) ne 0.0) then begin
+          splog, 'Z should all be positive'
+          return
+       endif
     endif
 
 ; check for RA,DEC    
@@ -283,7 +428,7 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, z, params=params, $
             isedfit_dir=isedfit_dir, outprefix=outprefix, index=index, $
             ra=ra, dec=dec, isedfit_results=isedfit_results, isedfit_post=isedfit_post, $
             isedfit_outfile=isedfit_outfile, allages=allages, maxold=maxold, $
-            silent=silent, nowrite=nowrite, clobber=clobber
+            silent=silent, nowrite=nowrite, clobber=clobber, photoz=photoz
        endfor 
        return
     endif
@@ -303,9 +448,9 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, z, params=params, $
          z[index], params=params, isedfit_dir=isedfit_dir, outprefix=outprefix, $
          ra=ra[index], dec=dec[index], isedfit_results=isedfit_results1, $
          isedfit_post=isedfit_post1, isedfit_outfile=isedfit_outfile, allages=allages, $
-         maxold=maxold, silent=silent, /nowrite, clobber=clobber
+         maxold=maxold, silent=silent, /nowrite, clobber=clobber, photoz=photoz
        isedfit_results = init_isedfit(ngal,nfilt,params=params,$
-         ra=ra,dec=dec,isedfit_post=isedfit_post)
+         ra=ra,dec=dec,isedfit_post=isedfit_post,photoz=photoz)
        isedfit_results[index] = isedfit_results1
        isedfit_post[index] = isedfit_post1
        if (keyword_set(nowrite) eq 0) then begin
@@ -327,11 +472,18 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, z, params=params, $
     nfilt = n_elements(filterlist)
 
     redshift = params.redshift
-    if (min(z)-min(redshift) lt -1E-3) or $
-      (max(z)-max(redshift) gt 1E-3) then begin
-       splog, 'Need to rebuild model grids using a wider redshift grid!'
-       return
+    nredshift = params.nzz
+    if keyword_set(photoz) eq 0 then begin
+       if (min(z)-min(redshift) lt -1E-3) or $
+         (max(z)-max(redshift) gt 1E-3) then begin
+          splog, 'Need to rebuild model grids using a wider redshift grid!'
+          return
+       endif
     endif
+
+;   redshift1 = reform(rebin(reform(redshift,1,nredshift),$
+;     params.nmodel,nredshift),params.nmodel*nredshift)
+;   redshift1 = rebin(reform(redshift,1,nredshift),params.nmodel,nredshift)
 
 ; if REDSHIFT is not monotonic then FINDEX(), below, can't be
 ; used to interpolate the model grids properly; this only really
@@ -345,60 +497,146 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, z, params=params, $
 
 ; initialize the output structure(s)
     isedfit_results = init_isedfit(ngal,nfilt,params=params,$
-      ra=ra,dec=dec,isedfit_post=isedfit_post)
+      ra=ra,dec=dec,isedfit_post=isedfit_post,photoz=photoz)
     isedfit_results.isedfit_id = lindgen(ngal)
     isedfit_results.maggies = maggies
     isedfit_results.ivarmaggies = ivarmaggies
-    isedfit_results.z = z
+    if keyword_set(photoz) eq 0 then isedfit_results.z = z
 
-; loop on each galaxy chunk
+; read all the model photometry and modelgrid parameters into memory;
+; even for a significant number of models (~100,000) this should be
+; manageable on a modern machine
     ngalchunk = ceil(ngal/float(params.galchunksize))    
-    
+    nchunk = params.nmodelchunk
+
+    splog, 'Reading all the model parameters into memory.'
+    for ichunk = 0, nchunk-1 do begin
+       print, format='("ISEDFIT: Chunk ",I0,"/",I0, A10,$)', ichunk+1, nchunk, string(13b)
+       chunkfile = fp.models_chunkfiles[ichunk]
+;      if (keyword_set(silent) eq 0) then splog, 'Reading '+chunkfile
+       modelgrid1 = gz_mrdfits(chunkfile,1,/silent)
+       modelmaggies1 = modelgrid1.modelmaggies
+       modelgrid1 = struct_trimtags(temporary(modelgrid1),except='modelmaggies')
+       if ichunk eq 0 then begin
+          modelmaggies = temporary(modelmaggies1)
+          modelgrid = temporary(modelgrid1)
+       endif else begin
+          modelmaggies = [[[temporary(modelmaggies)]],[[temporary(modelmaggies1)]]]
+          modelgrid = [temporary(modelgrid),temporary(modelgrid1)]
+       endelse
+    endfor
+
+; in photoz mode we need to loop on each galaxy because the
+; bookkeeping is a little more manageable; in the standard mode we
+; loop on each galaxy chunk
     t1 = systime(1)
     mem1 = memory(/current)
-    for gchunk = 0L, ngalchunk-1 do begin
-       g1 = gchunk*params.galchunksize
-       g2 = ((gchunk*params.galchunksize+params.galchunksize)<ngal)-1
-       gnthese = g2-g1+1
-       gthese = lindgen(gnthese)+g1
-; do not allow the galaxy to be older than the age of the universe at
-; Z starting from a maximum formation redshift z=10 [Gyr]
-       maxage = lf_z2t(z[gthese],omega0=params.omega0,$ ; [Gyr]
+    if keyword_set(photoz) then begin
+       zindx = lindgen(nredshift)
+       maxage = lf_z2t(redshift,omega0=params.omega0,$ ; [Gyr]
          omegal0=params.omegal)/params.h100
+
+; we need an NMODELxNREDSHIFT copy of all the model parameters       
+       modelgrid = reform(cmreplicate(temporary(modelgrid),nredshift),$
+         params.nmodel*nredshift)
+
+       for igal = 0L, ngal-1 do begin
+          if ((igal mod 5) eq 0) then print, format='("ISEDFIT: '+$
+            'Galaxy ",I0,"/",I0, A10,$)', igal, ngal, string(13b)
+          maggies1 = rebin(maggies[*,igal],nfilt,nredshift) ; copy the photometry 
+          ivarmaggies1 = rebin(ivarmaggies[*,igal],nfilt,nredshift)
+
+; compute chi2 over all models and redshifts
+          galaxygrid = isedfit_chi2(maggies1,ivarmaggies1,modelmaggies,$
+            modelage=modelgrid[0:params.nmodel-1].age,maxage=maxage,$
+            zindx=zindx,nzz=nredshift,nminphot=params.nminphot,/silent)
+
+; marginalize over all the models and then compute the first three
+; redshift minima; the factor in the numerator is to account for
+; models/templates that violated the maxage prior
+          pofz = total(exp(-0.5*(galaxygrid.chi2-min(galaxygrid.chi2)))/rebin(reform($
+            total(galaxygrid.chi2 lt 1E6,1),1,nredshift),params.nmodel,nredshift),1)
+          if total(pofz,/double) eq 0.0 then message, 'Deal with zero total probability.'
+          pofz = pofz/total(pofz,/double)
+          isedfit_post[igal].pofz = pofz
+
+          zmin = isedfit_find_zmin(redshift,-2.0*alog(pofz>1D-20),nmin=nmin)
+          isedfit_results[igal].photoz = zmin.minima
+          isedfit_results[igal].photoz_err = zmin.minerr
+          isedfit_results[igal].photoz_chi2 = zmin.minval
+          isedfit_results[igal].z = isedfit_results[igal].photoz[0]
+          isedfit_results[igal].z_err = isedfit_results[igal].photoz_err[0]
+
+;         djs_plot, redshift, pofz, xsty=3, ysty=3, psym=-8
+;         for bb = 0, n_elements(zmin)-1 do djs_oplot, zmin[bb].minima*[1,1], !y.crange, color='red'
+;         struct_print, zmin
+;         cc = get_kbrd(1)
+          
+; get the posterior probabilities on all the parameters
+          galaxygrid = reform(temporary(galaxygrid),params.nmodel*nredshift)
+
+          temp_isedfit_post = isedfit_post[igal]
+          isedfit_results[igal] = isedfit_posterior(isedfit_results[igal],$
+            modelgrid=modelgrid,galaxygrid=galaxygrid,params=params,$
+            isedfit_post=temp_isedfit_post,/silent)
+          isedfit_post[igal] = temporary(temp_isedfit_post) ; pass-by-value
+
+; now recompute and then minimize chi2 to get the model parameters at
+; the best redshift 
+          galaxygrid = isedfit_chi2(maggies[*,igal],ivarmaggies[*,igal],$
+            modelmaggies,modelage=modelgrid[0:params.nmodel-1].age,$
+            maxage=lf_z2t(isedfit_results[igal].z,omega0=params.omega0,$ ; [Gyr]
+            omegal0=params.omegal)/params.h100,nminphot=params.nminphot,$
+            nzz=nredshift,zindx=findex(redshift,isedfit_results[igal].z),$
+            /silent)
+          isedfit_results[igal] = isedfit_posterior(isedfit_results[igal],$
+            modelgrid=modelgrid[0:params.nmodel-1],galaxygrid=galaxygrid,$
+            params=params,/silent,/bestfitonly)
+       endfor                   ; close galaxy loop
+    endif else begin
 ; if NZZ=1 we don't use ZINDX for the interpolation
-       if params.nzz gt 1 then zindx = findex(redshift,z[gthese]) 
+       if params.nzz gt 1 then zindx = findex(redshift,z)
+; do not allow the galaxy to be older than the age of the universe at
+; redshift Z
+       maxage = lf_z2t(z,omega0=params.omega0,$ ; [Gyr]
+         omegal0=params.omegal)/params.h100
+       for gchunk = 0L, ngalchunk-1 do begin
+          g1 = gchunk*params.galchunksize
+          g2 = ((gchunk*params.galchunksize+params.galchunksize)<ngal)-1
+          gnthese = g2-g1+1
+          gthese = lindgen(gnthese)+g1
 ; loop on each "chunk" of output from ISEDFIT_MODELS
-       nchunk = params.nmodelchunk
-       t0 = systime(1)
-       mem0 = memory(/current)
-       for ichunk = 0, nchunk-1 do begin
-          print, format='("ISEDFIT: Chunk ",I0,"/",I0, A10,$)', ichunk+1, nchunk, string(13b)
-          chunkfile = fp.models_chunkfiles[ichunk]
-;         if (keyword_set(silent) eq 0) then splog, 'Reading '+chunkfile
-          modelchunk = gz_mrdfits(chunkfile,1,/silent)
-          nmodel = n_elements(modelchunk)
+          t0 = systime(1)
+          mem0 = memory(/current)
 ; compute chi2
-          galaxychunk = isedfit_chi2(maggies[*,gthese],ivarmaggies[*,gthese],$
-            modelchunk,maxage,zindx,gchunk=gchunk,ngalchunk=ngalchunk,ichunk=ichunk,$
-            nchunk=nchunk,nminphot=params.nminphot,nzz=params.nzz,allages=allages,$
+          galaxygrid = isedfit_chi2(maggies[*,gthese],ivarmaggies[*,gthese],$
+            modelmaggies,modelage=modelgrid.age,maxage=maxage[gthese],$
+            zindx=zindx[gthese],gchunk=gchunk,ngalchunk=ngalchunk,ichunk=1,$
+            nchunk=1,nminphot=params.nminphot,nzz=params.nzz,allages=allages,$
             silent=silent,maxold=maxold)
-          if (ichunk eq 0) then begin
-             galaxygrid = temporary(galaxychunk)
-             modelgrid = temporary(modelchunk)
-          endif else begin
-             galaxygrid = [temporary(galaxygrid),temporary(galaxychunk)]
-             modelgrid = [temporary(modelgrid),temporary(modelchunk)]
-          endelse
-       endfor ; close ModelChunk
 ; minimize chi2
-;      if (keyword_set(silent) eq 0) then splog, 'Building the posterior distributions...'
-       temp_isedfit_post = isedfit_post[gthese]
-       isedfit_results[gthese] = isedfit_posterior(isedfit_results[gthese],$
-         modelgrid=modelgrid,galaxygrid=galaxygrid,params=params,$
-         isedfit_post=temp_isedfit_post)
-       isedfit_post[gthese] = temporary(temp_isedfit_post) ; pass-by-value
-       if keyword_set(silent) eq 0 and gchunk eq 0 then begin
-          dt0 = systime(1)-t0
+;         if (keyword_set(silent) eq 0) then splog, 'Building the posterior distributions...'
+          temp_isedfit_post = isedfit_post[gthese]
+          isedfit_results[gthese] = isedfit_posterior(isedfit_results[gthese],$
+            modelgrid=modelgrid,galaxygrid=galaxygrid,params=params,$
+            isedfit_post=temp_isedfit_post)
+          isedfit_post[gthese] = temporary(temp_isedfit_post) ; pass-by-value
+          if keyword_set(silent) eq 0 and gchunk eq 0 then begin
+             dt0 = systime(1)-t0
+             if dt0 lt 60.0 then begin
+                tfactor = 1.0
+                suff = 'sec'
+             endif else begin
+                tfactor = 60.0
+                suff = 'min'
+             endelse
+             splog, 'First GalaxyChunk = '+string(dt0/tfactor,format='(G0)')+$
+               ' '+suff+', '+strtrim(string((memory(/high)-mem0)/$
+               1.07374D9,format='(F12.3)'),2)+' GB'
+          endif 
+       endfor                   ; close GalaxyChunk
+       if keyword_set(silent) eq 0 then begin
+          dt1 = systime(1)-t1
           if dt0 lt 60.0 then begin
              tfactor = 1.0
              suff = 'sec'
@@ -406,24 +644,34 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, z, params=params, $
              tfactor = 60.0
              suff = 'min'
           endelse
-          splog, 'First GalaxyChunk = '+string(dt0/tfactor,format='(G0)')+$
-            ' '+suff+', '+strtrim(string((memory(/high)-mem0)/$
+          splog, 'All GalaxyChunks = '+string(dt1/tfactor,format='(G0)')+$
+            ' '+suff+', '+strtrim(string((memory(/high)-mem1)/$
             1.07374D9,format='(F12.3)'),2)+' GB'
-       endif 
-    endfor ; close GalaxyChunk
-    if keyword_set(silent) eq 0 then begin
-       dt1 = systime(1)-t1
-          if dt0 lt 60.0 then begin
-             tfactor = 1.0
-             suff = 'sec'
-          endif else begin
-             tfactor = 60.0
-             suff = 'min'
-          endelse
-       splog, 'All GalaxyChunks = '+string(dt1/tfactor,format='(G0)')+$
-         ' '+suff+', '+strtrim(string((memory(/high)-mem1)/$
-         1.07374D9,format='(F12.3)'),2)+' GB'
-    endif
+       endif
+    endelse
+
+;; some legacy code
+;; loop on each "chunk" of output from ISEDFIT_MODELS
+;          t0 = systime(1)
+;          mem0 = memory(/current)
+;          for ichunk = 0, nchunk-1 do begin
+;             print, format='("ISEDFIT: Chunk ",I0,"/",I0, A10,$)', ichunk+1, nchunk, string(13b)
+;             chunkfile = fp.models_chunkfiles[ichunk]
+;;            if (keyword_set(silent) eq 0) then splog, 'Reading '+chunkfile
+;             modelchunk = gz_mrdfits(chunkfile,1,/silent)
+;; compute chi2
+;             galaxychunk = isedfit_chi2(maggies[*,gthese],ivarmaggies[*,gthese],$
+;               modelchunk,maxage,zindx,gchunk=gchunk,ngalchunk=ngalchunk,ichunk=ichunk,$
+;               nchunk=nchunk,nminphot=params.nminphot,nzz=params.nzz,allages=allages,$
+;               silent=silent,maxold=maxold)
+;             if (ichunk eq 0) then begin
+;                galaxygrid = temporary(galaxychunk)
+;                modelgrid = temporary(modelchunk)
+;             endif else begin
+;                galaxygrid = [temporary(galaxygrid),temporary(galaxychunk)]
+;                modelgrid = [temporary(modelgrid),temporary(modelchunk)]
+;             endelse
+;          endfor                ; close ModelChunk
     
 ; write out the final structure and the full posterior distributions
     if keyword_set(nowrite) eq 0 then begin

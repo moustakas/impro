@@ -178,8 +178,9 @@ pro isedfit_models, isedfit_paramfile, params=params, isedfit_dir=isedfit_dir, $
     for ichunk = 0, nchunk-1 do begin
        t0 = systime(1)
        mem0 = memory(/current)
-       print, format='("ISEDFIT_MODELS: Chunk ",I0,"/",I0, A10,$)', $
-         ichunk+1, nchunk, string(13b)
+       splog, 'Working on Chunk '+strtrim(ichunk+1,2)+'/'+strtrim(nchunk,2)+strarr(30)
+;      print, format='("ISEDFIT_MODELS: Chunk ",I0,"/",I0, A10,$)', $
+;        ichunk+1, nchunk, string(13b)
 ;      splog, 'Reading '+fp.montegrids_chunkfiles[ichunk]
        chunk = gz_mrdfits(fp.montegrids_chunkfiles[ichunk],1,/silent)
        nmodel = n_elements(chunk)
@@ -216,13 +217,23 @@ pro isedfit_models, isedfit_paramfile, params=params, isedfit_dir=isedfit_dir, $
           isedfit_models.modelmaggies = reform(transpose(rmatrix,[2,0,1]),nfilt,nredshift,nmodel)
        endif else begin
 ; reasonably fast code that includes IGM absorption; we have to loop
-; unfortunately because the IGM array changes with redshift 
+; unfortunately because the IGM array changes with redshift
           for iz = 0, nredshift-1 do begin
+             if (iz eq 0) then t2 = systime(1)
+             print, format='("ISEDFIT_MODELS: Computing model photometry at '+$
+               'redshift ",I0,"/",I0, A10,$)', iz+1, nredshift, string(13b)
              bigigm = rebin(igm[*,iz],npix,nmodel)
              k_projection_table, rmatrix1, flux*bigigm, wave_edges, $
                redshift[iz], filterlist, /silent
              isedfit_models.modelmaggies[*,iz] = $
                reform(transpose(rmatrix1*distfactor[iz,0],[2,0,1]))
+             if ichunk eq 0 and iz eq 0 then begin
+                t3 = (systime(1)-t2)*nredshift/60.0
+                splog, 'Estimated time for photometry on this chunk: '+$
+                  strtrim(string(t3,format='(F12.1)'),2)+' min'
+                splog, 'Estimated time for photometry on all chunks: '+$
+                  strtrim(string(t3*nchunk,format='(F12.1)'),2)+' min'
+             endif
 ;; test that I'm doing the distance ratio right
 ;             mindx = 27
 ;             ff = flux[*,mindx]/(1.0+redshift[iz])*distfactor[iz,0]

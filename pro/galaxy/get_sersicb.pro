@@ -22,6 +22,9 @@ end
 
 function get_sersicb, sersicn
     common sersicb, nn
-    nn = sersicn
-return, zbrent(0D,20D,func_name='sersicb_func',max_iterations=50)
+    nn = (sersicn>0D)<20D
+    if nn le 0D or nn ge 20D then stop
+    bn = zbrent(0.0,20.0,func_name='sersicb_func',$
+      max_iterations=50,tolerance=1E-2)
+return, bn
 end

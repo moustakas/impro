@@ -591,7 +591,7 @@ function build_modelgrid, montegrid, params=params, debug=debug, $
 ; convolve each SSP with the specified SFH
           for jj = 0, nsspindx-1 do begin
              if ((jj mod 10) eq 0) then print, format='("Chunk=",I4.4,"/",I4.4,", '+$
-               'Minichunk=",I4.4,"/",I4.4,", SSP(Z)=",I3.3,"/",I4.4,", '+$
+               'Minichunk=",I4.4,"/",I4.4,", SSP(Z)=",I3.3,"/",I3.3,", '+$
                'Model=",I4.4,"/",I4.4,"   ",A5,$)', ichunk+1, nchunk, $
                imini+1, nmini, issp+1, nssp, jj, nsspindx, string(13b)
 ; attenuation

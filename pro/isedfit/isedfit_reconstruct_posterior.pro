@@ -170,6 +170,12 @@ function isedfit_reconstruct_posterior, isedfit_paramfile, params=params, $
        result[good].ewoiiihb = modelgrid[post[good].draws].ewoiiihb   ; [Angstrom, rest]
        result[good].ewniiha = modelgrid[post[good].draws].ewniiha     ; [Angstrom, rest]
     endif
-        
+
+; restore the photometric redshifts
+    if tag_exist(post,'pofz') then begin
+       result = struct_addtags(temporary(result),$
+         struct_trimtags(post,select='pofz'))
+    endif
+    
 return, result
 end

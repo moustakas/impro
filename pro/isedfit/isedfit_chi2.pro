@@ -10,17 +10,21 @@
 ;   jm13aug09siena - updated to the latest data model 
 ;-
 
-function isedfit_chi2, maggies, ivarmaggies, modelchunk, maxage, $
-  zindx, gchunk=gchunk, ngalchunk=ngalchunk, ichunk=ichunk, $
-  nchunk=nchunk, nminphot=nminphot, nzz=nzz, allages=allages, $
-  maxold=maxold, silent=silent
+function isedfit_chi2, maggies, ivarmaggies, modelmaggies, $
+  modelage=modelage, maxage=maxage, zindx=zindx, gchunk=gchunk, $
+  ngalchunk=ngalchunk, ichunk=ichunk, nchunk=nchunk, $
+  nminphot=nminphot, nzz=nzz, allages=allages, maxold=maxold, $
+  silent=silent
 
     ndim = size(maggies,/n_dim)
     dims = size(maggies,/dim)
     nfilt = dims[0] ; number of filters
     if (ndim eq 1) then ngal = 1 else ngal = dims[1] ; number of galaxies
+
+    nmodeldim = size(modelmaggies,/n_dim)
+    modeldims = size(modelmaggies,/dim)
+    if nmodeldim eq 3 then nmodel = modeldims[2] else nmodel = modeldims[1]
     
-    nmodel = n_elements(modelchunk)
     gridchunk = {totalmass: -1.0, totalmass_err: -1.0, $
       chi2: 1E6, bestmaggies: fltarr(nfilt)}
     gridchunk = replicate(gridchunk,nmodel,ngal)
@@ -29,8 +33,11 @@ function isedfit_chi2, maggies, ivarmaggies, modelchunk, maxage, $
     for igal = 0L, ngal-1 do begin
        if (keyword_set(silent) eq 0) then begin
           if ((igal mod 50) eq 0) then print, format='("GalaxyChunk ",I0,"/",I0,", '+$
-            'ModelChunk ",I0,"/",I0,", Galaxy ",I0,"/",I0,A10,$)', gchunk+1, ngalchunk, $
+            'Modelgrid ",I0,"/",I0,", Galaxy ",I0,"/",I0,A10,$)', gchunk+1, ngalchunk, $
             ichunk+1, nchunk, igal, ngal, string(13b)
+;         if ((igal mod 50) eq 0) then print, format='("GalaxyChunk ",I0,"/",I0,", '+$
+;           'Modelgrid ",I0,"/",I0,", Galaxy ",I0,"/",I0,A10,$)', gchunk+1, ngalchunk, $
+;           ichunk+1, nchunk, igal, ngal, string(13b)
        endif
 ; require detections or upper limits (i.e., non-zero ivar) in at least
 ; NMINPHOT bandpasses, and a non-zero flux and ivar in at least one
@@ -44,7 +51,7 @@ function isedfit_chi2, maggies, ivarmaggies, modelchunk, maxage, $
 ;      t1 = systime(1)
 
        if keyword_set(maxold) then begin
-          agediff = min(abs(modelchunk.age-maxage[igal]),these)
+          agediff = min(abs(modelage-maxage[igal]),these)
           nthese = 1
        endif else begin
 ; constrain the models to be younger than the universe
@@ -52,16 +59,16 @@ function isedfit_chi2, maggies, ivarmaggies, modelchunk, maxage, $
              nthese = nmodel
              these = lindgen(nthese)
           endif else begin
-             these = where((modelchunk.age le maxage[igal]),nthese)
+             these = where((modelage le maxage[igal]),nthese)
           endelse
        endelse 
        if (nthese ne 0L) then begin ; at least one model
 ; interpolate the model photometry at the galaxy redshift
-;         plot, modelchunk[imodel].modelmaggies[5,these,*],zindx[igal])*1.0D
+;         plot, modelgrid[imodel].modelmaggies[5,these,*],zindx[igal])*1.0D
           if nzz eq 1 then begin ; special case
-             modelmaggies = interpolate(modelchunk[these].modelmaggies,findgen(nthese))
+             modelmaggies1 = interpolate(modelmaggies[*,these],findgen(nthese))
           endif else begin
-             modelmaggies = interpolate(modelchunk[these].modelmaggies,$
+             modelmaggies1 = interpolate(modelmaggies[*,*,these],$
                findgen(nfilt),zindx[igal],findgen(nthese),/grid)
           endelse
 ; perform acrobatic dimensional juggling to get the maximum likelihood
@@ -69,7 +76,7 @@ function isedfit_chi2, maggies, ivarmaggies, modelchunk, maxage, $
 ; age; VSCALE is the maximum likelihood value of TOTALMASS and
 ; VSCALE_ERR is the 1-sigma error (see pg 84 of
 ; http://www.hep.phy.cam.ac.uk/~thomson/lectures/statistics/FittingHandout.pdf)
-          vmodelmaggies = reform(1D*modelmaggies,nfilt,nthese)
+          vmodelmaggies = reform(1D*modelmaggies1,nfilt,nthese)
           vmaggies = rebin(reform(nmaggies,nfilt,1),nfilt,nthese)
           vivarmaggies = rebin(reform(nivarmaggies,nfilt,1),nfilt,nthese)
           vscale = total(reform((nivarmaggies*nmaggies),1,nfilt)#vmodelmaggies,1,/double)/$

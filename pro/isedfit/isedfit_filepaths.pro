@@ -15,7 +15,7 @@ function isedfit_filepaths, params, isedfit_dir=isedfit_dir, $
   montegrids_dir=montegrids_dir, outprefix=outprefix1, $
   sed_pdffile=sed_pdffile1, zcolor_pdffile=zcolor_pdffile1, $
   colorcolor_pdffile=colorcolor_pdffile1, priors_pdffile=priors_pdffile, $
-  band_shift=band_shift
+  photoz_pdffile=photoz_pdffile1, band_shift=band_shift
 
     if (n_elements(params) eq 0) then $
       message, 'PARAMS input required'
@@ -54,6 +54,9 @@ function isedfit_filepaths, params, isedfit_dir=isedfit_dir, $
     outfile = thisprefix+'_'+spsmodels+'_'+imf+'_'+redcurve+'_'+sfhgridstring+suffix
     postfile = outfile+'_post'
 
+    outfile_photoz = thisprefix+'_photoz_'+spsmodels+'_'+imf+'_'+redcurve+'_'+sfhgridstring+suffix
+    postfile_photoz = outfile_photoz+'_post'
+
     if n_elements(band_shift) eq 0 then band_shift = 0.0
     zbandshift = 'z'+string(band_shift,format='(F3.1)')
     kcorrfile = outfile+'_kcorr.'+zbandshift
@@ -91,13 +94,23 @@ function isedfit_filepaths, params, isedfit_dir=isedfit_dir, $
        priors_psfile = repstr(priors_pdffile,'.pdf','.ps')
     endelse
 
+    if n_elements(photoz_pdffile1) eq 0 then begin
+       photoz_psfile = 'qaplot_photoz_'+outfile+'.ps'
+       photoz_pdffile = repstr(photoz_psfile,'.ps','.pdf')
+    endif else begin
+       photoz_pdffile = file_basename(photoz_pdffile1)
+       photoz_psfile = repstr(photoz_pdffile,'.pdf','.ps')
+    endelse
+
 ; file paths and filenames
     filepaths = {$
       isedfit_dir:               isedfit_dir,        $
       models_fullpath:           models_fullpath,         $
       models_chunkfiles:         models_chunkfiles,  $
       isedfit_outfile:           outfile+'.fits',  $
+      isedfit_photoz_outfile:    outfile_photoz+'.fits',  $
       post_outfile:              postfile+'.fits',  $
+      post_photoz_outfile:       postfile_photoz+'.fits',  $
       kcorr_outfile:             kcorrfile+'.fits',  $
       qaplot_sed_psfile:         sed_psfile,$
       qaplot_sed_pdffile:        sed_pdffile,$
@@ -107,6 +120,8 @@ function isedfit_filepaths, params, isedfit_dir=isedfit_dir, $
       qaplot_colorcolor_pdffile: colorcolor_pdffile,$
       qaplot_priors_psfile:      priors_psfile,$
       qaplot_priors_pdffile:     priors_pdffile,$
+      qaplot_photoz_psfile:      photoz_psfile,$
+      qaplot_photoz_pdffile:     photoz_pdffile,$
       montegrids_fullpath:       montegrids_fullpath,$
       montegrids_montefile:      montegrids_montefile,$
       montegrids_chunkfiles:     montegrids_chunkfiles}
