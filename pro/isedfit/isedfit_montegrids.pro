@@ -594,14 +594,22 @@ function build_modelgrid, montegrid, params=params, debug=debug, $
                'Minichunk=",I4.4,"/",I4.4,", SSP(Z)=",I3.3,"/",I3.3,", '+$
                'Model=",I4.4,"/",I4.4,"   ",A5,$)', ichunk+1, nchunk, $
                imini+1, nmini, issp+1, nssp, jj, nsspindx, string(13b)
-; attenuation
-             alam = klam*(modelgrid1[sspindx[jj]].av/rv)
-             if keyword_set(charlot) then begin
-                old = where(sspfits[jj].age gt tbc,nold)
-                if (nold ne 0) then alam[*,old] = modelgrid1[sspindx[jj]].mu*alam[*,old]
-             endif
+; attenuation; for the Charlot & Fall attenuation curve adopt the
+; time-dependent dust model of Pacifici et al. 2012
+             if keyword_set(charlot) then begin ; special case
+                alam_bc = (1.0-modelgrid1[sspindx[jj]].mu)*modelgrid1[sspindx[jj]].av*$
+                  (wave/5500D)^(-1.3)
+                alam_ism = modelgrid1[sspindx[jj]].mu*modelgrid1[sspindx[jj]].av*$
+                  (wave/5500D)^(-0.7)
+                young = where(sspfits[jj].age le tbc,nyoung,comp=old,ncomp=nold)
+                alam = klam*0.0
+                if (nyoung ne 0) then alam[*,young] = rebin(reform(alam_bc + $
+                  alam_ism,npix,1),npix,nyoung)
+                if (nold ne 0) then alam[*,old] = rebin(reform(alam_ism,$
+                  npix,1),npix,nold)
+             endif else alam = klam*(modelgrid1[sspindx[jj]].av/rv)
              sspflux[*,*,jj] = sspflux[*,*,jj]*10.0^(-0.4*alam)
-
+             
 ; do the convolution; tau=0 and no bursts is a special case
              outage = modelgrid1[sspindx[jj]].age
              if (modelgrid1[sspindx[jj]].tau eq 0.0) and $

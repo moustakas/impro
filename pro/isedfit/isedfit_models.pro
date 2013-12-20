@@ -178,7 +178,8 @@ pro isedfit_models, isedfit_paramfile, params=params, isedfit_dir=isedfit_dir, $
     for ichunk = 0, nchunk-1 do begin
        t0 = systime(1)
        mem0 = memory(/current)
-       splog, 'Working on Chunk '+strtrim(ichunk+1,2)+'/'+strtrim(nchunk,2)+strarr(30)
+       splog, 'Working on Chunk '+strtrim(ichunk+1,2)+'/'+$
+         strtrim(nchunk,2)+strjoin(strarr(30))
 ;      print, format='("ISEDFIT_MODELS: Chunk ",I0,"/",I0, A10,$)', $
 ;        ichunk+1, nchunk, string(13b)
 ;      splog, 'Reading '+fp.montegrids_chunkfiles[ichunk]

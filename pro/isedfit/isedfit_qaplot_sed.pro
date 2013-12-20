@@ -349,21 +349,36 @@ pro isedfit_qaplot_sed, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
                errcolor=im_color('firebrick'), errthick=!p.thick
           endif
 
-          im_legend, /left, /top, box=0, spacing=1.7, charsize=1.1, margin=0, $
-            textoidl([$
-            'log (M_{*}/M'+sunsymbol()+') = '+strtrim(string(isedfit_results[igal].mstar,format='(F12.2)'),2),$
-            'Age = '+strtrim(string(isedfit_results[igal].age,format='(F12.2)'),2)+' Gyr',$
-            '\tau = '+strtrim(string(isedfit_results[igal].tau,format='(F12.1)'),2)+' Gyr',$
-            'Z/Z'+sunsymbol()+' = '+strtrim(string(isedfit_results[igal].Zmetal/0.019,format='(F12.2)'),2),$
-            'A_{V} = '+strtrim(string(isedfit_results[igal].av*isedfit_results[igal].mu,format='(F12.2)'),2)+' mag',$
-            'log SFR = '+strtrim(string(isedfit_results[igal].sfr,format='(F12.2)'),2)+' M'+sunsymbol()+' yr^{-1}',$
-            'log SFR_{100} = '+strtrim(string(isedfit_results[igal].sfr100,format='(F12.2)'),2)+' M'+sunsymbol()+' yr^{-1}',$
-            'log b_{100} = '+strtrim(string(isedfit_results[igal].b100,format='(F12.2)'),2)])
-;           'log b_{1000} = '+strtrim(string(isedfit_results[igal].b1000,format='(F12.2)'),2)])
+          if strtrim(params.redcurve,2) eq 'charlot' then begin
+             label = [$
+               'log (M_{*}/M'+sunsymbol()+') = '+strtrim(string(isedfit_results[igal].mstar,format='(F12.2)'),2),$
+               'Age = '+strtrim(string(isedfit_results[igal].age,format='(F12.2)'),2)+' Gyr',$
+               '\tau = '+strtrim(string(isedfit_results[igal].tau,format='(F12.1)'),2)+' Gyr',$
+               'Z/Z'+sunsymbol()+' = '+strtrim(string(isedfit_results[igal].Zmetal/0.019,format='(F12.2)'),2),$
+               'A_{V,ISM} = '+strtrim(string(isedfit_results[igal].mu*isedfit_results[igal].av,format='(F12.2)'),2)+' mag',$
+               'A_{V,BC} = '+strtrim(string((1-isedfit_results[igal].mu)*isedfit_results[igal].av,format='(F12.2)'),2)+' mag',$
+               'log SFR = '+strtrim(string(isedfit_results[igal].sfr,format='(F12.2)'),2)+' M'+sunsymbol()+' yr^{-1}',$
+               'log SFR_{100} = '+strtrim(string(isedfit_results[igal].sfr100,format='(F12.2)'),2)+' M'+sunsymbol()+' yr^{-1}',$
+               'log b_{100} = '+strtrim(string(isedfit_results[igal].b100,format='(F12.2)'),2)]
+;              'log b_{1000} = '+strtrim(string(isedfit_results[igal].b1000,format='(F12.2)'),2)])
+          endif else begin
+             label = [$
+               'log (M_{*}/M'+sunsymbol()+') = '+strtrim(string(isedfit_results[igal].mstar,format='(F12.2)'),2),$
+               'Age = '+strtrim(string(isedfit_results[igal].age,format='(F12.2)'),2)+' Gyr',$
+               '\tau = '+strtrim(string(isedfit_results[igal].tau,format='(F12.1)'),2)+' Gyr',$
+               'Z/Z'+sunsymbol()+' = '+strtrim(string(isedfit_results[igal].Zmetal/0.019,format='(F12.2)'),2),$
+               'A_{V} = '+strtrim(string(isedfit_results[igal].av*isedfit_results[igal].mu,format='(F12.2)'),2)+' mag',$
+               'log SFR = '+strtrim(string(isedfit_results[igal].sfr,format='(F12.2)'),2)+' M'+sunsymbol()+' yr^{-1}',$
+               'log SFR_{100} = '+strtrim(string(isedfit_results[igal].sfr100,format='(F12.2)'),2)+' M'+sunsymbol()+' yr^{-1}',$
+               'log b_{100} = '+strtrim(string(isedfit_results[igal].b100,format='(F12.2)'),2)]
+;              'log b_{1000} = '+strtrim(string(isedfit_results[igal].b1000,format='(F12.2)'),2)])
+          endelse
+          
+          im_legend, label, /left, /top, box=0, spacing=1.7, charsize=1.1, margin=0
           im_legend, /right, /bottom, box=0, spacing=1.5, charsize=1.2, margin=0, $
-            textoidl([strtrim(repstr(galaxy[igal],'_',' '),2),$
+            [strtrim(repstr(galaxy[igal],'_',' '),2),$
             'z = '+strtrim(string(z,format='(F12.4)'),2),'\chi_{\nu}^{2} = '+$
-            strtrim(string(isedfit_results[igal].chi2,format='(F12.2)'),2)])
+            strtrim(string(isedfit_results[igal].chi2,format='(F12.2)'),2)]
        endelse
 
 ; lower panels: posterior distributions
@@ -418,8 +433,18 @@ pro isedfit_qaplot_sed, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
        endif else begin
           if params.flatAV then xrange = params.AV else $
             xrange = [0.0,max(post[igal].AV)*1.1]
-          oplot_posteriors, post[igal].AV, pos2[*,5], /noerase, $
-            xrange=xrange, xtitle='A_{V} (mag)'
+          if strtrim(params.redcurve,2) eq 'charlot' then begin
+             oplot_posteriors, post[igal].mu*post[igal].AV, pos2[*,5], /noerase, $
+               xrange=xrange, xtitle='A_{V} (mag)'
+             oplot_posteriors, (1-post[igal].mu)*post[igal].AV, pos2[*,5], /overplot
+             xyouts, pos2[0,5]+0.01, pos2[3,5]-0.02, textoidl('A_{V,ISM}'), align=0.0, $
+               charsize=1.0, color=im_color('powder blue'), /norm
+             xyouts, pos2[0,5]+0.06, pos2[3,5]-0.02, textoidl('A_{V,BC}'), $
+               align=0.0, charsize=1.0, color=im_color('tan'), /norm
+          endif else begin
+             oplot_posteriors, post[igal].AV, pos2[*,5], /noerase, $
+               xrange=xrange, xtitle='A_{V} (mag)'
+          endelse
        endelse
 
 ; b100 and b1000
