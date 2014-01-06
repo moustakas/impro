@@ -128,7 +128,7 @@ function read_isedfit, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid
           splog, 'iSEDfit output file '+isedfile+' not found!'
           return, -1
        endif
-       splog, 'Reading '+isedfile
+       if keyword_set(silent) eq 0 then splog, 'Reading '+isedfile
        isedfit1 = mrdfits(isedfile,1,/silent)
 ; only restore a subset of the objects    
        if (n_elements(index) eq 0L) then begin

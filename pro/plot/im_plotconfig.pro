@@ -413,7 +413,7 @@ pro im_plotconfig, plotnum, position, psfile=psfile, psclose=psclose, $
 ;        /helvetica ; sans-serif fonts
     endif
 
-    if (!d.name eq 'X') then !p.color = djs_icolor('white')
+;   if (!d.name eq 'X') then !p.color = djs_icolor('white')
     
 return
 end

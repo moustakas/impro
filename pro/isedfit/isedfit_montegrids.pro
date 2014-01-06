@@ -449,14 +449,22 @@ pro montegrids_qaplot, montegrid, params=params, qafile=qafile
 ; page 4: derived parameters
 
 ; t/tau
-    good = where(montegrid.tau gt 0.0)
-    xrange = minmax(montegrid[good].age/montegrid[good].tau)
-    oplot_priors, montegrid[good].age/montegrid[good].tau, pos[*,0], $
-      xrange=xrange, xtitle='Age/\tau', /logbins
+    good = where(montegrid.tau gt 0.0,ngood)
+    if ngood gt 0L then begin
+       xrange = minmax(montegrid[good].age/montegrid[good].tau)
+       oplot_priors, montegrid[good].age/montegrid[good].tau, pos[*,0], $
+         xrange=xrange, xtitle='Age/\tau', /logbins
+    endif else begin
+       djs_plot, [0], [0], /nodata, position=pos[*,0], $
+         xtitle='Age/\tau', $
+         charsize=csize, xtickname=replicate(' ',10), $
+         ytickname=replicate(' ',10)
+       im_legend, 'tau=0', /left, /top, margin=0, box=0, charsize=lsize
+    endelse
 
     xyouts, pos[0,0], pos[3,0]+0.04, 'Derived (Secondary) Priors', $
       align=0.0, /normal, charsize=1.5
-
+    
 ; SFR-weighted age    
     xrange = minmax(montegrid.sfrage)
     oplot_priors, montegrid.sfrage, pos[*,1], /noerase, $

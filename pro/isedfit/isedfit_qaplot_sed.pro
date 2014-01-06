@@ -273,11 +273,11 @@ pro isedfit_qaplot_sed, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
        if (isedfit_results[igal].chi2 ge 1E6) then begin
           djs_plot, [0], [0], /nodata, xsty=1, ysty=1, yrange=yrange, $
             xtitle='', ytitle='', ytickname=replicate(' ',10), $
-            position=pos
-          im_legend, ['No mass estimate available'], /left, /top, $
+            position=pos, xtickname=replicate(' ',10)
+          im_legend, ['SED-fitting not possible (see NMINPHOT)'], /left, /top, $
             box=0, spacing=1.5, charsize=1.6
           label = [strtrim(galaxy[igal],2),'z = '+strtrim(string(z,format='(F12.4)'),2)]
-          im_legend, label, /right, /bottom, box=0, spacing=1.5, charsize=1.6
+          im_legend, label, /right, /bottom, box=0, spacing=1.5, charsize=1.2
        endif else begin
           if (n_elements(in_xrange) eq 2) then xrange1 = in_xrange else begin
              xrange1 = [0.7*min(weff),1.2*max(weff)]
@@ -338,7 +338,7 @@ pro isedfit_qaplot_sed, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
           endif
 
           if (nupper ne 0) then begin
-             djs_oplot, weff[upper]/wscale, mabupper[upper], $
+             djs_oplot, [weff[upper]/wscale], [mabupper[upper]], $
                psym=symcat(11,thick=6), symsize=3.0, color=im_color('forest green')
           endif
 
@@ -374,7 +374,7 @@ pro isedfit_qaplot_sed, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
 ;              'log b_{1000} = '+strtrim(string(isedfit_results[igal].b1000,format='(F12.2)'),2)])
           endelse
           
-          im_legend, label, /left, /top, box=0, spacing=1.7, charsize=1.1, margin=0
+          im_legend, label, /left, /top, box=0, spacing=1.7, charsize=1.2, margin=0
           im_legend, /right, /bottom, box=0, spacing=1.5, charsize=1.2, margin=0, $
             [strtrim(repstr(galaxy[igal],'_',' '),2),$
             'z = '+strtrim(string(z,format='(F12.4)'),2),'\chi_{\nu}^{2} = '+$
@@ -382,109 +382,110 @@ pro isedfit_qaplot_sed, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
        endelse
 
 ; lower panels: posterior distributions
+       if (isedfit_results[igal].chi2 lt 1E6) then begin
 
 ; mass       
-       xrange = minmax(post[igal].mstar)*[0.95,1.05]
-       oplot_posteriors, post[igal].mstar, pos2[*,0], /noerase, xrange=xrange, $
-         xtitle='log (M_{*}/M'+sunsymbol()+')', xtickinterval=0.5
+          xrange = minmax(post[igal].mstar)*[0.95,1.05]
+          oplot_posteriors, post[igal].mstar, pos2[*,0], /noerase, xrange=xrange, $
+            xtitle='log (M_{*}/M'+sunsymbol()+')', xtickinterval=0.5
 
 ; age       
-       xrange = params.age
-;      xrange = [min(post[igal].sfrage)<min(post[igal].age),$
-;        max(post[igal].sfrage)>max(post[igal].age)]
-       oplot_posteriors, post[igal].age, pos2[*,1], /noerase, $
-         xtitle='AGE (Gyr)', xtickinterval=1, xrange=xrange
-       oplot_posteriors, post[igal].sfrage, pos2[*,1], /overplot
-       xyouts, pos2[0,1]+0.01, pos2[3,1]-0.02, 'Age', align=0.0, $
-         charsize=1.0, color=im_color('powder blue'), /norm
-       xyouts, pos2[0,1]+0.05, pos2[3,1]-0.02, textoidl('<Age>_{SFR}'), $
-         align=0.0, charsize=1.0, color=im_color('tan'), /norm
+          xrange = params.age
+;         xrange = [min(post[igal].sfrage)<min(post[igal].age),$
+;           max(post[igal].sfrage)>max(post[igal].age)]
+          oplot_posteriors, post[igal].age, pos2[*,1], /noerase, $
+            xtitle='AGE (Gyr)', xtickinterval=1, xrange=xrange
+          oplot_posteriors, post[igal].sfrage, pos2[*,1], /overplot
+          xyouts, pos2[0,1]+0.01, pos2[3,1]-0.02, 'Age', align=0.0, $
+            charsize=1.0, color=im_color('powder blue'), /norm
+          xyouts, pos2[0,1]+0.05, pos2[3,1]-0.02, textoidl('<Age>_{SFR}'), $
+            align=0.0, charsize=1.0, color=im_color('tan'), /norm
 
 ; SFR       
-       xrange = [min(post[igal].sfr100)<min(post[igal].sfr),$
-         max(post[igal].sfr100)>max(post[igal].sfr)]
-;      xrange = [0,(1.1*weighted_quantile(post[igal].sfr100,quant=0.95))>$
-;        (1.1*weighted_quantile(post[igal].sfr100,quant=0.95))]
-       oplot_posteriors, post[igal].sfr, pos2[*,2], /noerase, xrange=xrange, $
-         xtitle='log SFR (M'+sunsymbol()+' yr^{-1})'
-       oplot_posteriors, post[igal].sfr100, pos2[*,2], /overplot
-       xyouts, pos2[0,2]+0.01, pos2[3,2]-0.02, 'SFR', align=0.0, $
-         charsize=1.0, color=im_color('powder blue'), /norm
-       xyouts, pos2[0,2]+0.05, pos2[3,2]-0.02, textoidl('<SFR>_{100 Myr}'), $
-         align=0.0, charsize=1.0, color=im_color('tan'), /norm
+          xrange = [min(post[igal].sfr100)<min(post[igal].sfr),$
+            max(post[igal].sfr100)>max(post[igal].sfr)]
+;         xrange = [0,(1.1*weighted_quantile(post[igal].sfr100,quant=0.95))>$
+;           (1.1*weighted_quantile(post[igal].sfr100,quant=0.95))]
+          oplot_posteriors, post[igal].sfr, pos2[*,2], /noerase, xrange=xrange, $
+            xtitle='log SFR (M'+sunsymbol()+' yr^{-1})'
+          oplot_posteriors, post[igal].sfr100, pos2[*,2], /overplot
+          xyouts, pos2[0,2]+0.01, pos2[3,2]-0.02, 'SFR', align=0.0, $
+            charsize=1.0, color=im_color('powder blue'), /norm
+          xyouts, pos2[0,2]+0.05, pos2[3,2]-0.02, textoidl('<SFR>_{100 Myr}'), $
+            align=0.0, charsize=1.0, color=im_color('tan'), /norm
 
 ; tau       
-       if params.oneovertau then xrange = reverse(1.0/params.tau) else $
-         xrange = params.tau
-       oplot_posteriors, post[igal].tau, pos2[*,3], /noerase, $
-         xrange=xrange, xtitle='\tau (Gyr)', logbins=params.oneovertau
+          if params.oneovertau then xrange = reverse(1.0/params.tau) else $
+            xrange = params.tau
+          oplot_posteriors, post[igal].tau, pos2[*,3], /noerase, $
+            xrange=xrange, xtitle='\tau (Gyr)', logbins=params.oneovertau
 
 ; metallicity       
-       oplot_posteriors, post[igal].Zmetal/0.019, pos2[*,4], /noerase, $
-         xrange=params.Zmetal/0.019, xtitle='Z/Z'+sunsymbol(), $
-         xtickinterval=0.5
+          oplot_posteriors, post[igal].Zmetal/0.019, pos2[*,4], /noerase, $
+            xrange=params.Zmetal/0.019, xtitle='Z/Z'+sunsymbol(), $
+            xtickinterval=0.5
 
 ; A(V)       
-       if strtrim(params.redcurve,2) eq 'none' or max(params.AV) eq 0.0 then begin
-          djs_plot, [0], [0], /nodata, /noerase, position=pos2[*,5], $
-            xtitle='A_{V} (mag)', charsize=1.0, xtickname=replicate(' ',10), $
-            ytickname=replicate(' ',10)
-          im_legend, 'Redcurve=none', /left, /top, margin=0, box=0, charsize=1.0
-       endif else begin
-          if params.flatAV then xrange = params.AV else $
-            xrange = [0.0,max(post[igal].AV)*1.1]
-          if strtrim(params.redcurve,2) eq 'charlot' then begin
-             oplot_posteriors, post[igal].mu*post[igal].AV, pos2[*,5], /noerase, $
-               xrange=xrange, xtitle='A_{V} (mag)'
-             oplot_posteriors, (1-post[igal].mu)*post[igal].AV, pos2[*,5], /overplot
-             xyouts, pos2[0,5]+0.01, pos2[3,5]-0.02, textoidl('A_{V,ISM}'), align=0.0, $
-               charsize=1.0, color=im_color('powder blue'), /norm
-             xyouts, pos2[0,5]+0.06, pos2[3,5]-0.02, textoidl('A_{V,BC}'), $
-               align=0.0, charsize=1.0, color=im_color('tan'), /norm
+          if strtrim(params.redcurve,2) eq 'none' or max(params.AV) eq 0.0 then begin
+             djs_plot, [0], [0], /nodata, /noerase, position=pos2[*,5], $
+               xtitle='A_{V} (mag)', charsize=1.0, xtickname=replicate(' ',10), $
+               ytickname=replicate(' ',10)
+             im_legend, 'Redcurve=none', /left, /top, margin=0, box=0, charsize=1.0
           endif else begin
-             oplot_posteriors, post[igal].AV, pos2[*,5], /noerase, $
-               xrange=xrange, xtitle='A_{V} (mag)'
+             if params.flatAV then xrange = params.AV else $
+               xrange = [0.0,max(post[igal].AV)*1.1]
+             if strtrim(params.redcurve,2) eq 'charlot' then begin
+                oplot_posteriors, post[igal].mu*post[igal].AV, pos2[*,5], /noerase, $
+                  xrange=xrange, xtitle='A_{V} (mag)'
+                oplot_posteriors, (1-post[igal].mu)*post[igal].AV, pos2[*,5], /overplot
+                xyouts, pos2[0,5]+0.01, pos2[3,5]-0.02, textoidl('A_{V,ISM}'), align=0.0, $
+                  charsize=1.0, color=im_color('powder blue'), /norm
+                xyouts, pos2[0,5]+0.06, pos2[3,5]-0.02, textoidl('A_{V,BC}'), $
+                  align=0.0, charsize=1.0, color=im_color('tan'), /norm
+             endif else begin
+                oplot_posteriors, post[igal].AV, pos2[*,5], /noerase, $
+                  xrange=xrange, xtitle='A_{V} (mag)'
+             endelse
           endelse
-       endelse
 
 ; b100 and b1000
-       xrange = [min(post[igal].b100)<min(post[igal].b1000),$
-         max(post[igal].b100)>max(post[igal].b1000)]
-;      xrange = minmax(post[igal].b100)
-       oplot_posteriors, post[igal].b100, pos2[*,6], /noerase, xrange=xrange, $
-         xtitle='log b'
-       oplot_posteriors, post[igal].b1000, pos2[*,6], /overplot
-       xyouts, pos2[0,6]+0.01, pos2[3,6]-0.02, textoidl('b_{100}'), align=0.0, $
-         charsize=1.0, color=im_color('powder blue'), /norm
-       xyouts, pos2[0,6]+0.05, pos2[3,6]-0.02, textoidl('b_{1000}'), $
-         align=0.0, charsize=1.0, color=im_color('tan'), /norm
-
-; emission lines       
-       if params.nebular then begin
-          xrange = [0,(1.1*weighted_quantile(post[igal].ewoii,quant=0.95))>$
-            (1.1*weighted_quantile(post[igal].ewoiiihb,quant=0.95))>$
-            (1.1*weighted_quantile(post[igal].ewniiha,quant=0.95))]
-          oplot_posteriors, post[igal].ewoii, pos2[*,7], /noerase, $
-            xrange=xrange, xtitle='EW (\AA, rest)'
-          oplot_posteriors, post[igal].ewoiiihb, pos2[*,7], /overplot
-          oplot_posteriors, post[igal].ewniiha, pos2[*,7], /overplot, color_fill='orange'
-          xyouts, pos2[0,7]+0.01, pos2[3,7]-0.02, '[OII]', align=0.0, $
+          xrange = [min(post[igal].b100)<min(post[igal].b1000),$
+            max(post[igal].b100)>max(post[igal].b1000)]
+;         xrange = minmax(post[igal].b100)
+          oplot_posteriors, post[igal].b100, pos2[*,6], /noerase, xrange=xrange, $
+            xtitle='log b'
+          oplot_posteriors, post[igal].b1000, pos2[*,6], /overplot
+          xyouts, pos2[0,6]+0.01, pos2[3,6]-0.02, textoidl('b_{100}'), align=0.0, $
             charsize=1.0, color=im_color('powder blue'), /norm
-          xyouts, pos2[0,7]+0.06, pos2[3,7]-0.02, textoidl('[OIII]+H\beta'), $
+          xyouts, pos2[0,6]+0.05, pos2[3,6]-0.02, textoidl('b_{1000}'), $
             align=0.0, charsize=1.0, color=im_color('tan'), /norm
-          xyouts, pos2[0,7]+0.01, pos2[3,7]-0.04, textoidl('[NII]+H\alpha'), $
-            align=0.0, charsize=1.0, color=im_color('orange'), /norm
-       endif else begin
-          djs_plot, [0], [0], /nodata, /noerase, position=pos2[*,7], $
-            xtitle='EW (\AA, rest)', charsize=1.0, xtickname=replicate(' ',10), $
-            ytickname=replicate(' ',10)
-          im_legend, 'Nebular=0', /left, /top, margin=0, box=0, charsize=1.0
-       endelse
+          
+; emission lines       
+          if params.nebular then begin
+             xrange = [0,(1.1*weighted_quantile(post[igal].ewoii,quant=0.95))>$
+               (1.1*weighted_quantile(post[igal].ewoiiihb,quant=0.95))>$
+               (1.1*weighted_quantile(post[igal].ewniiha,quant=0.95))]
+             oplot_posteriors, post[igal].ewoii, pos2[*,7], /noerase, $
+               xrange=xrange, xtitle='EW (\AA, rest)'
+             oplot_posteriors, post[igal].ewoiiihb, pos2[*,7], /overplot
+             oplot_posteriors, post[igal].ewniiha, pos2[*,7], /overplot, color_fill='orange'
+             xyouts, pos2[0,7]+0.01, pos2[3,7]-0.02, '[OII]', align=0.0, $
+               charsize=1.0, color=im_color('powder blue'), /norm
+             xyouts, pos2[0,7]+0.06, pos2[3,7]-0.02, textoidl('[OIII]+H\beta'), $
+               align=0.0, charsize=1.0, color=im_color('tan'), /norm
+             xyouts, pos2[0,7]+0.01, pos2[3,7]-0.04, textoidl('[NII]+H\alpha'), $
+               align=0.0, charsize=1.0, color=im_color('orange'), /norm
+          endif else begin
+             djs_plot, [0], [0], /nodata, /noerase, position=pos2[*,7], $
+               xtitle='EW (\AA, rest)', charsize=1.0, xtickname=replicate(' ',10), $
+               ytickname=replicate(' ',10)
+             im_legend, 'Nebular=0', /left, /top, margin=0, box=0, charsize=1.0
+          endelse
 
 ; y-title       
-       xyouts, pos2[0,0]-0.05, (pos2[1,0]-pos2[3,4])/2+pos2[3,4], align=0.5, $
-         orientation=90, 'Posterior Probability', charsize=1.6, /norm
-       
+          xyouts, pos2[0,0]-0.05, (pos2[1,0]-pos2[3,4])/2+pos2[3,4], align=0.5, $
+            orientation=90, 'Posterior Probability', charsize=1.6, /norm
+       endif
     endfor 
     print
     im_plotconfig, psfile=fp.isedfit_dir+fp.qaplot_sed_psfile, /psclose, /pdf
