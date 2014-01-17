@@ -22,4 +22,4 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$KCORRECT_DIR/lib
 # IMPRO / ISEDFIT
 export IMPRO_DIR=$HOME/idl/impro
 export IDL_PATH=$IDL_PATH:+$IMPRO_DIR
-
+export ISEDFIT_SSP_DIR=$HOME/raid/isedfit2/isedfit_ssp
