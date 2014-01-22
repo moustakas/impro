@@ -114,7 +114,6 @@ pro write_temden_lookup_table, table, max_temp=max_temp, min_temp=min_temp, $
           'n_ii' : table.nii_ratio  = (level.emissivity[3,1]+level.emissivity[3,2])/level.emissivity[4,3]  ; (6548+6584)/5755
           's_iii': table.siii_ratio = (level.emissivity[3,1]+level.emissivity[3,2])/level.emissivity[4,3]  ; (9069+9532)/6312
           'o_iii': table.oiii_ratio = (level.emissivity[3,1]+level.emissivity[3,2])/level.emissivity[4,3]  ; (4959+5007)/4363
-          's_iii': table.siii_ratio = (level.emissivity[3,2]+level.emissivity[3,1])/level.emissivity[4,3]  ; (9069+9532)/6312
           else: splog, 'No entry for ion '+ionlist[ii]
        endcase
 ;      plot, table.grid_temp, table.oiii_ratio[*,2], charsize=2                                 
