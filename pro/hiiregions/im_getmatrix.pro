@@ -89,14 +89,15 @@ function im_getmatrix, ionstr, tt, cloudy94=cloudy94
 ;
        'C_I'  : BEGIN
 ;
-;  Set ion type, energy levels and Einstein A-values.  Energy levels,
-;  A-values, and collision strengths from Mendoza 1982 except P?-P?
+;  Set ion type, energy levels and Einstein A-values.  
+;  Energy levels: NIST -- Moore 1993 (KvC, Jan 2014) 
+;  A-values and collision strengths from Mendoza 1982 except P?-P?
 ;  A-values, from Tielens and Hollenbach 1985.
 ;
           iontype = 'p2'
-          ee = invcm*[0, 16.4, 43.4, 10192.6, 21648.0, 33735.2]
-;                       ^    ^     ^     ^        ^        ^
-;                      3P0  3P1   3P2   1D2      1S0      5S2
+          ee = invcm*[0, 16.40, 43.40, 10192.63, 21648.01, 33735.20]
+;                     ^     ^     ^      ^          ^        ^
+;                    3P0   3P1   3P2    1D2        1S0      5S2
 ;
           einas = dblarr(6,6)
           einas[1,0] = 7.93d-8
@@ -126,14 +127,14 @@ function im_getmatrix, ionstr, tt, cloudy94=cloudy94
 ;
 ;  Set ion type, energy levels and Einstein A-values.
 ;
-;  Energy levels from Edlen 1981 as cited in Lennon et al. 1985, Table 4.
+;  Energy levels: NIST -- Moore 1993 (KvC, Jan 2014) 
 ;
           iontype = 'p1'
-          ee = invcm*[0,   63.4,  43003.3,  43025.3, 43053.6, $
-;                       ^     ^       ^         ^        ^
-;                      2P1/2 2P3/2   4P1/2     4P3/2    4P5/2
+          ee = invcm*[0.00,   63.42,  43003.3,  43025.3, 43053.6, $
+;                      ^        ^       ^         ^        ^
+;                    2P1/2    2P3/2   4P1/2     4P3/2    4P5/2
 ;
-            74930.1,   74932.6]
+                             74930.10,   74932.62]
 ;                               ^          ^
 ;                              2D5/2      2D3/2
 ;
@@ -204,7 +205,6 @@ function im_getmatrix, ionstr, tt, cloudy94=cloudy94
 ;
 ;  Set ion type, energy levels and Einstein A-values.
 ;
-;
 ;  Energies and Einstein A's from Fleming et al., MNRAS, 279, 1289
 ;  except 3P1-1S0, from Kwong et al., ApJ 411, 341.
 ;
@@ -249,10 +249,16 @@ function im_getmatrix, ionstr, tt, cloudy94=cloudy94
 ;     Pradhan and Peng 1992.
 ;
           iontype = 'p3c'
-          ee = ryd*[0, 0.175189, 0.175273, 0.262810, 0.262183]
+;          ee = ryd*[0, 0.175189, 0.175273, 0.262810, 0.262183]
 ;                     ^     ^         ^         ^         ^
 ;                    4S3/2 2D5/2     2D3/2     2P1/2     2P3/2
 ;
+
+;  Energy levels: NIST -- Moore 1993 (KvC, Jan 2014) 
+          ee = invcm*[0.00, 19224.464, 19233.177,  28838.920, 28839.306]
+;                       ^       ^         ^           ^          ^
+;                     4S3/2   2D5/2     2D3/2       2P1/2      2P3/2
+
           einas = dblarr(5,5)
           einas[1,0] = 6.124d-6
           einas[2,0:1] = [2.278d-5, 1.239d-8]
@@ -283,62 +289,61 @@ function im_getmatrix, ionstr, tt, cloudy94=cloudy94
 ; tabulated in Stasinska 2007 (astro-ph/0704.0348); A-values for 3071,
 ; 3177, and 76 micron do not appear in the Chianti database, and have
 ; been set to 1d-20; additional info here:
-; http://wwwsolar.nrl.navy.mil/database/n/n_2_table.html
+; http://www.solar.nrl.navy.mil/database/n/n_2_table.html
+; NOTE -- Stasinska 2007 does not agree with NIST of Chianti (KvC Jan 2014)
 
-          iontype = 'p2'
-          ee = invcm*[0.0, 48.67, 130.80, 15316.19, 32688.64, 46784.56]
+;          iontype = 'p2'
+;          ee = invcm*[0.0, 48.67, 130.80, 15316.19, 32688.64, 46784.56]
 ;                      ^     ^       ^         ^         ^         ^
 ;                     3P0   3P1     3P2       1D2       1S0       5S2
-
-          einas = dblarr(6,6)
-          einas[1,0]   = [2.080d3-6]                  ; [205 mu]
-          einas[2,0:1] = [1d-20,7.460d-6]             ; [76 mu,121 mu]
-          einas[3,0:2] = [1.928d-6,9.819d-4,3.015d-3] ; [6529,6549,6585]
-          einas[4,1:3] = [4.588d-6,1d-20,9.234d-1]    ; [3063,3071,5756]
-          einas[5,1:3] = [7.17d1,1.77d2,1d-20]        ; [2139,2143,3177]
+;
+;          einas = dblarr(6,6)
+;          einas[1,0]   = [2.080d-6]                   ; [205 mu]
+;          einas[2,0:1] = [1d-20,7.460d-6]             ; [76 mu,121 mu]
+;          einas[3,0:2] = [1.928d-6,9.819d-4,3.015d-3] ; [6529,6549,6585]
+;          einas[4,1:3] = [4.588d-6,1d-20,9.234d-1]    ; [3063,3071,5756]
+;          einas[5,1:3] = [7.17d1,1.77d2,1d-20]        ; [2139,2143,3177]
 
 ;;;  Set ion type, energy levels and Einstein A-values.  jm07dec05nyu
 ;;;  update: Energy levels and Einstein A values from Froese Fischer et
 ;;;  al. 2004 [Table 3, C-like, Z=7]
-;;
-;;          iontype = 'p2'
-;;          ee = invcm*[0.0, 48.74, 130.69, 15316.61, 32688.35, 46784.03]
-;;;                      ^     ^       ^         ^         ^         ^
-;;;                     3P0   3P1     3P2       1D2       1S0       5S2
-;;
-;;          einas = dblarr(6,6)
-;;          einas[1,0]   = 2.08d3-6                       ; [205 mu]
-;;          einas[2,0:1] = [1.116d-12, 7.420d-6]          ; [76 mu,122 mu]
-;;          einas[3,0:2] = [5.253d-7, 9.842d-4, 2.905d-3] ; [6528,6549,6585]
-;;          einas[4,1:3] = [3.185d-2, 1.547d-4, 1.136d0]  ; [3063,3071,5756]
-;;          einas[5,1:3] = [5.155d1, 1.266d2, 8.949d-4]   ; [2139,2143,3177]
+; NOTE -- uncommented over the above (KvC Jan 2014)
 
-;;;  A-values from Nussbaumer and Rusca 1979, except A(5S2-3P{2,1}) from
-;;;  Brage et al. 1997
-;;;
-;;            iontype = 'p2'
-;;            ee = invcm*[0, 48.7, 130.8, 15316.3, 32688.9, 46857.7]
-;;;                       ^    ^     ^      ^        ^        ^
-;;;                      3P0  3P1   3P2    1D2      1S0      5S2
-;;
-;;            einas = dblarr(6,6)
-;;            einas[1,0] = 2.08d-6
-;;            einas[2,0:1] = [1.16d-12, 7.46d-6]
-;;            einas[3,0:2] = [5.35d-7, 9.24d-4, 2.73d-3]
-;;            einas[4,1:3] = [3.16d-2, 1.51d-4, 1.17d0]
-;;            einas[5,1:3] = [5.36d1, 1.306d2, 4.92d-4]
+          iontype = 'p2'
+          ee = invcm*[0.0, 48.74, 130.69, 15316.61, 32688.35, 46784.03]
+;                      ^     ^       ^         ^         ^         ^
+;                     3P0   3P1     3P2       1D2       1S0       5S2
 
-;  Collision strengths, interpolated for temperature 'logt'.  CS from
-;  Stafford et al. 1994.
-;
+          einas = dblarr(6,6)
+          einas[1,0]   = 2.08d-6                        ; [205 mu]
+          einas[2,0:1] = [1.116d-12, 7.420d-6]          ; [76 mu,122 mu]
+          einas[3,0:2] = [5.253d-7, 9.842d-4, 2.905d-3] ; [6528,6549,6585]
+          einas[4,1:3] = [3.185d-2, 1.547d-4, 1.136d0]  ; [3063,3071,5756]
+          einas[5,1:3] = [5.155d1, 1.266d2, 8.949d-4]   ; [2139,2143,3177]
+
+;;  Collision strengths, interpolated for temperature 'logt'.  CS from
+;;  Stafford et al. 1994.
+;;
           tgrid = alog10(5.0d3 + 5.0d3*findgen(4))
-          p1p0 = spline(tgrid, [4.097, 4.232, 4.371, 4.491], logt)*1d-1
-          p2p0 = spline(tgrid, [2.439, 2.657, 2.859, 3.019], logt)*1d-1
-          p2p1 = spline(tgrid, [1.061, 1.127, 1.190, 1.241], logt)*1d0
-          s2px = spline(tgrid, [1.155, 1.146, 1.152, 1.157], logt)*1d0/9.
-          d2px = spline(tgrid, [3.047, 3.007, 2.995, 2.990], logt)*1d0/9.
-          s0px = spline(tgrid, [3.812, 3.694, 3.656, 3.642], logt)*1d-1/9.
-          s0d2 = spline(tgrid, [5.027, 5.014, 5.071, 5.140], logt)*1d-1
+;;          p1p0 = spline(tgrid, [4.097, 4.232, 4.371, 4.491], logt)*1d-1
+;;          p2p0 = spline(tgrid, [2.439, 2.657, 2.859, 3.019], logt)*1d-1
+;;          p2p1 = spline(tgrid, [1.061, 1.127, 1.190, 1.241], logt)*1d0
+;;          s2px = spline(tgrid, [1.155, 1.146, 1.152, 1.157], logt)*1d0/9.
+;;          d2px = spline(tgrid, [3.047, 3.007, 2.995, 2.990], logt)*1d0/9.
+;;          s0px = spline(tgrid, [3.812, 3.694, 3.656, 3.642], logt)*1d-1/9.
+;;          s0d2 = spline(tgrid, [5.027, 5.014, 5.071, 5.140], logt)*1d-1
+
+;  Collision strengths Hudson & bell 2005, fit by Draine 2011.
+;  s2px Stafford et al. 1994 as not present in Draine 2011 
+; (KvC Jan 2014)
+          t4 = (10^logt)/1.0e4
+          p1p0 = 0.431 * t4^(0.099 + 0.014 * alog(t4))
+          p2p0 = 0.273 * t4^(0.166 + 0.030 * alog(t4)) 
+          p2p1 = 1.150 * t4^(0.137 + 0.024 * alog(t4))
+          s2px =  spline(tgrid, [1.155, 1.146, 1.152, 1.157], logt)*1d0/9.
+          d2px = 0.303 * t4^(0.053 + 0.009 * alog(t4))
+          s0px = 0.0352* t4^(0.066 + 0.018 * alog(t4))
+          s0d2 = 0.806 * t4^(-0.175- 0.014 * alog(t4))
 ;
        END
 ;
@@ -509,7 +514,7 @@ function im_getmatrix, ionstr, tt, cloudy94=cloudy94
           tgrid = alog10([5.0d3, 1.0d4, 1.6d4, 2.0d4])
           dxs3 = spline(tgrid, [1.361, 1.375, 1.391, 1.401], logt)*1d0/10.
           pxs3 = spline(tgrid, [4.052, 4.147, 4.243, 4.304], logt)*1d-1/6.
-;
+
           tgrid = alog10(5.0d3 + 5.0d3*findgen(4))
           d3d5 = spline(tgrid, [1.22, 1.17, 1.14, 1.11], logt)*1d0
           p1p3 = spline(tgrid, [2.80, 2.87, 2.93, 3.00], logt)*1d-1
@@ -517,7 +522,7 @@ function im_getmatrix, ionstr, tt, cloudy94=cloudy94
           p1d5 = spline(tgrid, 1.207*[2.90, 2.95, 3.00, 3.05], logt)*1d-1
           p3d3 = spline(tgrid, 1.207*[4.01, 4.08, 4.14, 4.22], logt)*1d-1
           p1d3 = spline(tgrid, 1.207*[2.70, 2.75, 2.81, 2.84], logt)*1d-1
-;
+
        END
 ;
 ;
@@ -534,7 +539,7 @@ function im_getmatrix, ionstr, tt, cloudy94=cloudy94
 ; http://wwwsolar.nrl.navy.mil/database/o/o_3_table.html
 
           iontype = 'p2'
-          ee = invcm*[0.0, 113.18, 306.17, 20273.27, 43185.74, 60324.79]
+          ee = invcm*[0.0, 113.178, 306.174, 20273.27, 43185.74, 60324.79]
 ;                      ^      ^       ^         ^         ^         ^
 ;                     3P0    3P1     3P2       1D2       1S0       5S2
 
@@ -588,18 +593,29 @@ function im_getmatrix, ionstr, tt, cloudy94=cloudy94
           s2px = spline(tgrid, [9.760, 9.673, 9.712, 10.224, 11.196, $
             12.074, 12.574, 12.720, 12.451, 11.704, 10.600], logt)*1d-1/9.
           
-          d2px = spline(tgrid, [2.2233, 2.1888, 2.1416, 2.1117, 2.1578, $
-            2.2892, 2.4497, 2.5851, 2.6730, 2.7019, 2.6594], logt)*1d0/9.
-          s0px = spline(tgrid, [2.754, 2.738, 2.713, 2.693, 2.747, 2.925, $
-            3.174, 3.405, 3.563, 3.621, 3.571], logt)*1d-1/9.
+;          d2px = spline(tgrid, [2.2233, 2.1888, 2.1416, 2.1117, 2.1578, $
+;            2.2892, 2.4497, 2.5851, 2.6730, 2.7019, 2.6594], logt)*1d0/9.
+;          s0px = spline(tgrid, [2.754, 2.738, 2.713, 2.693, 2.747, 2.925, $
+;            3.174, 3.405, 3.563, 3.621, 3.571], logt)*1d-1/9.
           
-          tgrid = alog10([6000., 10000., 15000., 20000.])
-          s0d2 = spline(tgrid, [6.17, 6.77, 6.80, 6.64], logt)*1d-1
+;          tgrid = alog10([6000., 10000., 15000., 20000.])
+;          s0d2 = spline(tgrid, [6.17, 6.77, 6.80, 6.64], logt)*1d-1
 ;
-          d2px = (3.0211144d0 - 101.57536d0/sqrt(tt) + 817.57670d0*logt/tt)/9.
-          s0px = (0.0784d0*tt^0.143 < 0.36d0)/9.
-          s0d2 = 0.32412181d0 + 79.051672d0/sqrt(tt) - 4374.7816d0/tt
+;          d2px = (3.0211144d0 - 101.57536d0/sqrt(tt) + 817.57670d0*logt/tt)/9.
+;          s0px = (0.0784d0*tt^0.143 < 0.36d0)/9.
+;          s0d2 = 0.32412181d0 + 79.051672d0/sqrt(tt) - 4374.7816d0/tt
 
+;  Collision strengths Aggarwal & Keenan 1999, fit by Draine 2011.
+;  s2px not present in Draine 2011 
+; (KvC Jan 2014)
+          t4 = (tt)/1.0e4
+          p1p0 = 0.522 * t4^(0.033 - 0.009 * alog(t4))
+          p2p0 = 0.257 * t4^(0.081 + 0.017 * alog(t4))
+          p2p1 = 1.230 * t4^(0.053 + 0.007 * alog(t4))
+ ;         s2px = 
+          d2px = 0.243 * t4^(0.120 + 0.031 * alog(t4))
+          s0px = 0.0321* t4^(0.118 + 0.057 * alog(t4))
+          s0d2 = 0.523 * t4^(0.210 - 0.099 * alog(t4))
        END
 ;
 ;
@@ -1693,17 +1709,17 @@ function im_getmatrix, ionstr, tt, cloudy94=cloudy94
           endif else begin
 
 ;  Set ion type, energy levels and Einstein A-values.  Experimental
-;  energy levels from Mendoza 1982.
+;  energy levels from NIST/Saloman 2010 (KvC, Jan 2014)
              
              iontype = 'p4'
-             ee = invcm*[0, 458.1, 1570.2, 14010.0, 33265.7]
+             ee = invcm*[0, 1112.17, 1570.23, 14010.0, 33265.7]
 ;                        ^    ^      ^       ^        ^
 ;                       3P2  3P1    3P0     1D2      1S0
              
 ;  A-values from Mendoza 1982.  
              
              einas = dblarr(5,5)
-             einas[1,0] = 3.06d-2
+             einas[1,0]   = 3.06d-2
              einas[2,0:1] = [2.37d-6, 5.31d-3]
              einas[3,0:2] = [3.14d-1, 8.23d-2, 2.21d-5]
              einas[4,0:3] = [4.17d-2, 3.952d0, 0.00d0, 2.59d0]
