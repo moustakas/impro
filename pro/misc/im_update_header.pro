@@ -1,5 +1,5 @@
 ;+
-;  UpdateHeader() -- updates the header with units, and comments.
+;  im_update_header() -- updates the header with units, and comments.
 ;  Input:
 ;     filename -- path to fits file
 ;     units -- array of "tag,unit,comment" strings -- see example
@@ -47,8 +47,10 @@ FUNCTION im_update_header, filename, units, nheader, write=write
           modified = 1
         ENDIF
       ENDIF
-    ENDFOR
-    IF modified EQ 0 THEN nheader = [nheader, header[j]]
+    ENDFOR 
+    IF modified EQ 0 AND strmatch(header[j], 'TTYPE*') THEN BEGIN
+      nheader = [nheader, header[j]]
+    ENDIF
   ENDFOR
 
   header = [nheader, "END"]
@@ -88,7 +90,7 @@ PRO update_header_example
               ;; "WRITTENBY = '"+(reverse(scope_traceback()))[0]+"'", $
               "URL       = 'http://primus.ucsd.edu/'   / For more info about the PRIMUS dataset"]
 
-  header =  updateheader(filename, units, nheader,  /write)
+  header =  im_update_header(filename, units, nheader,  /write)
   
   x = mrdfits(filename, 1, hdr)
   forprint, hdr
