@@ -453,6 +453,10 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, z, params=params, $
          ra=ra,dec=dec,isedfit_post=isedfit_post,photoz=photoz)
        isedfit_results[index] = isedfit_results1
        isedfit_post[index] = isedfit_post1
+       isedfit_results.isedfit_id = lindgen(ngal)
+       isedfit_results.maggies = maggies
+       isedfit_results.ivarmaggies = ivarmaggies
+       if keyword_set(photoz) eq 0 then isedfit_results.z = z
        if (keyword_set(nowrite) eq 0) then begin
           im_mwrfits, isedfit_results, isedfit_outfile, /clobber, silent=silent
           im_mwrfits, isedfit_post, fp.isedfit_dir+fp.post_outfile, /clobber, silent=silent

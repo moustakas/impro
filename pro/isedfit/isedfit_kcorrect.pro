@@ -120,15 +120,18 @@ pro isedfit_kcorrect, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid,
 ; restore the ISEDFIT results without the best-fitting models to get
 ; the number of galaxies and other goodies
     isedfit = read_isedfit(params=params,isedfit_dir=isedfit_dir,$
-      montegrids_dir=montegrids_dir,index=index,outprefix=outprefix,$
+      montegrids_dir=montegrids_dir,outprefix=outprefix,$ ; we deal with INDEX below
       silent=silent)
     ngal = n_elements(isedfit)
 
+    if n_elements(index) eq 0L then index = lindgen(ngal)
+    
 ; initialize the output data structure    
     kcorrect_results = struct_trimtags(isedfit,select=['isedfit_id',$
       'z','maggies','ivarmaggies','chi2'])
     kcorrect_results = struct_addtags(temporary(kcorrect_results),replicate({$
-      kcorrect:          fltarr(nfilt), $
+      cflux_3727:                  0.0,$
+      kcorrect:          fltarr(nfilt),$
       absmag:            fltarr(nfilt),$
       ivarabsmag:        fltarr(nfilt),$
       synth_absmag:      fltarr(nfilt),$
@@ -137,7 +140,7 @@ pro isedfit_kcorrect, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid,
 ; compute K-corrections; split the problem into chunks because the
 ; arrays can be memory intensive for large samples
     ngalchunk = ceil(ngal/float(params.galchunksize))
-    sortindx = sort(isedfit.chunkindx) ; sort for speed
+    sortindx = sort(isedfit[index].chunkindx) ; sort for speed
 
     t0 = systime(1)
     for gchunk = 0L, ngalchunk-1 do begin
@@ -150,27 +153,30 @@ pro isedfit_kcorrect, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid,
        gnthese = g2-g1+1L 
        gthese = lindgen(gnthese)+g1
 
-       good = where((isedfit[sortindx[gthese]].chi2 gt 0.0) and $
-         (isedfit[sortindx[gthese]].chi2 lt 0.9E6),ngood)
+       good = where((isedfit[index[sortindx[gthese]]].chi2 gt 0.0) and $
+         (isedfit[index[sortindx[gthese]]].chi2 lt 0.9E6),ngood)
        if (ngood ne 0L) then begin
           isedfit1 = read_isedfit(params=params,isedfit_dir=isedfit_dir,$
             montegrids_dir=montegrids_dir,index=index[sortindx[gthese[good]]],$
             outprefix=outprefix,/flambda,/silent,/getmodels)
-          oneplusz = rebin(reform(1.0+isedfit[sortindx[gthese[good]]].z,1,ngood),$
+
+          oneplusz = rebin(reform(1.0+isedfit[index[sortindx[gthese[good]]]].z,1,ngood),$
             n_elements(isedfit1[0].wave),ngood)
           restwave = isedfit1.wave/oneplusz
           restflux = isedfit1.flux*oneplusz
 
-          chunk_kcorr = im_simple_kcorrect(isedfit[sortindx[gthese[good]]].z,$
-            isedfit[sortindx[gthese[good]]].maggies,isedfit[sortindx[gthese[good]]].ivarmaggies,$
+          chunk_kcorr = im_simple_kcorrect(isedfit[index[sortindx[gthese[good]]]].z,$
+            isedfit[index[sortindx[gthese[good]]]].maggies,isedfit[index[sortindx[gthese[good]]]].ivarmaggies,$
             filterlist,absmag_filterlist,restwave,restflux,band_shift=band_shift,$
             absmag=chunk_absmag,ivarabsmag=chunk_ivarabsmag,synth_absmag=chunk_synth_absmag,$
-            chi2=chi2,vega=vega,/silent)
+            h100=params.h100, omega0=params.omega0, omegal=params.omegal, $
+            chi2=chi2,vega=vega,/silent,clineflux=cflux)
 
-          kcorrect_results[sortindx[gthese[good]]].kcorrect = chunk_kcorr
-          kcorrect_results[sortindx[gthese[good]]].absmag = chunk_absmag
-          kcorrect_results[sortindx[gthese[good]]].ivarabsmag = chunk_ivarabsmag
-          kcorrect_results[sortindx[gthese[good]]].synth_absmag = chunk_synth_absmag
+          kcorrect_results[index[sortindx[gthese[good]]]].cflux_3727 = reform(cflux[0,*])
+          kcorrect_results[index[sortindx[gthese[good]]]].kcorrect = chunk_kcorr
+          kcorrect_results[index[sortindx[gthese[good]]]].absmag = chunk_absmag
+          kcorrect_results[index[sortindx[gthese[good]]]].ivarabsmag = chunk_ivarabsmag
+          kcorrect_results[index[sortindx[gthese[good]]]].synth_absmag = chunk_synth_absmag
        endif 
        if (gchunk eq 0) then splog, format='("Time for first '+$
          'Chunk = ",G0," minutes          ")', (systime(1)-t1)/60.0

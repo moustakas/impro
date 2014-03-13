@@ -285,7 +285,7 @@ function im_kcorrect, redshift, maggies, ivarmaggies, in_filterlist, $
        lineindx = findex(k_lambda_to_centers(lambda),linewave)
        clineflux = fltarr(n_elements(linewave),nredshift)
        for ii = 0L, nredshift-1L do clineflux[*,ii] = $ ; [erg/s/cm2/A]
-         interpolate(smooth(reform(vmatrix#coeffs[*,ii]),10),lineindx) 
+         interpolate(medsmooth(reform(vmatrix#coeffs[*,ii]),30),lineindx) 
     endif
        
 ; if requested, compute the continuum flux at 1500 and 2800 A

@@ -235,8 +235,8 @@ function im_simple_kcorrect, redshift, maggies, ivarmaggies, in_filterlist, $
     if arg_present(clineflux) then begin
        linewave = [3727.420,4861.325,4958.911,5006.843,6562.800]
        clineflux = fltarr(n_elements(linewave),nredshift)
-       for ii = 0L, nredshift-1L do clineflux[*,ii] = $ ; [erg/s/cm2/A]
-         interpol(scale[ii]*sedflux[*,ii],sedwave[*,ii],linewave)
+       for ii = 0L, nredshift-1L do clineflux[*,ii] = $   ; [erg/s/cm2/A]
+         interpol(medsmooth(scale[ii]*sedflux[*,ii],30),sedwave[*,ii],linewave)
     endif
        
 ; if requested, compute the continuum flux at 1500 and 2800 A
