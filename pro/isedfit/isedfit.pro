@@ -446,8 +446,8 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, z, params=params, $
     if (n_elements(index) ne 0L) then begin
        isedfit, isedfit_paramfile1, maggies[*,index], ivarmaggies[*,index], $
          z[index], params=params, isedfit_dir=isedfit_dir, outprefix=outprefix, $
-         ra=ra[index], dec=dec[index], isedfit_results=isedfit_results1, $
-         isedfit_post=isedfit_post1, isedfit_outfile=isedfit_outfile, allages=allages, $
+         isedfit_results=isedfit_results1, isedfit_post=isedfit_post1, $
+         isedfit_outfile=isedfit_outfile, allages=allages, $
          maxold=maxold, silent=silent, /nowrite, clobber=clobber, photoz=photoz
        isedfit_results = init_isedfit(ngal,nfilt,params=params,$
          ra=ra,dec=dec,isedfit_post=isedfit_post,photoz=photoz)

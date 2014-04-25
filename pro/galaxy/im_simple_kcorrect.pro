@@ -7,57 +7,55 @@
 ;   but using a given SED for each object (see also IM_KCORRECT).
 ;
 ; INPUTS: 
-;   redshift      - redshifts [NGAL]
-;   maggies       - maggies, Galactic-reddening corrected
-;                   [IN_NBAND,NGAL] 
-;   ivarmaggies   - inverse variances corresponding to MAGGIES
-;                   [IN_NBAND,NGAL]  
+;   redshift - redshifts [NGAL]
+;   maggies - maggies, Galactic-reddening corrected [IN_NBAND,NGAL]  
+;   ivarmaggies - inverse variances corresponding to MAGGIES
+;     [IN_NBAND,NGAL]   
 ;   in_filterlist - list of filter functions corresponding to MAGGIES
-;                   [IN_NBAND] 
-;   sedwave       - rest-frame wavelength vector
-;   sedflux       - rest-frame spectral energy distribution
+;     [IN_NBAND]  
+;   sedwave - *rest-frame* wavelength vector [A]
+;   sedflux - *rest-frame* spectral energy distribution [erg/s/cm2/A]  
 ;
 ; OPTIONAL INPUTS: 
 ;   band_shift - blueshift of output bandpasses (to get ^{z}b type
-;                bands) (default 0.0) 
-;   vname      - name of fit to use (defaults to 'default.nolines') 
-;   omega0     - Omega_matter (default 0.3)
-;   omegal0    - Omega_Lambda (default 0.7)
-;   h100       - Hubble constant divided by 100; the stellar mass
-;                estimates and absolute magnitudes are scaled to this
-;                value (default 0.7)
+;     bands) (default 0.0) 
+;   vname - name of fit to use (defaults to 'default.nolines') 
+;   omega0 - Omega_matter (default 0.3)
+;   omegal0 - Omega_Lambda (default 0.7)
+;   h100 - Hubble constant divided by 100; the stellar mass estimates
+;     and absolute magnitudes are scaled to this value (default 0.7) 
 ;
 ; KEYWORD PARAMETERS: 
-;   sdss   - see OUT_FILTERLIST
-;   vega   - convert the output magnitudes to Vega (default is AB)  
+;   sdss - see OUT_FILTERLIST
+;   vega - convert the output magnitudes to Vega (default is AB)  
 ;   silent - do not print messages to STDOUT
 ;
 ; OUTPUTS: 
-;   kcorrect   - K-corrections satisfying based on the best fit sum of
-;                templates: m_R = M_Q + DM(z) + K_QR(z) (all in AB)
-;                [OUT_NBAND,NGAL] 
+;   kcorrect - K-corrections satisfying based on the best fit sum of
+;     templates: m_R = M_Q + DM(z) + K_QR(z) (all in AB)
+;     [OUT_NBAND,NGAL]   
 ;
 ; OPTIONAL OUTPUTS:
 ;   out_filterlist - list of output filters; default UBVRI (Bessell),
-;                    unless /SDSS, in which case the 'ugriz' filters
-;                    are used [OUT_NBAND]
-;   chi2       - chi^2 of fit
-;   rmaggies   - reconstructed maggies from the fit [IN_NBAND,NGAL] 
-;   obands     - which input bands the K-corrections refer to
-;                [IN_NBAND,NGAL] 
-;   scale      - derived normalization factor used to scale the input
-;                SED to the observed photometry; note that if the
-;                input SED is normalized per unit mass, then SCALE is
-;                trivially related to the stellar mass 
-;   absmag     - absolute magnitude (for missing data, substitutes 
-;                model fit) in each output band [OUT_NBAND,NGAL] 
-;   ivarabsmag - inverse variance of absolute magnitude (for
-;                missing data = 0) in each output band
-;                [OUT_NBAND,NGAL]  
+;     unless /SDSS, in which case the 'ugriz' filters are used
+;     [OUT_NBAND] 
+;   chi2 - chi^2 of fit
+;   rmaggies - reconstructed maggies from the fit [IN_NBAND,NGAL] 
+;   obands - which input bands the K-corrections refer to
+;     [IN_NBAND,NGAL]  
+;   scale - derived normalization factor used to scale the input SED
+;     to the observed photometry; note that if the input SED is
+;     normalized per unit mass, then SCALE is trivially related to the
+;     stellar mass  
+;   absmag - absolute magnitude (for missing data, substitutes model
+;     fit) in each output band [OUT_NBAND,NGAL]  
+;   ivarabsmag - inverse variance of absolute magnitude (for missing
+;     data = 0) in each output band [OUT_NBAND,NGAL]  
 ;   synth_absmag - absolute magnitudes synthesized from the
 ;     best-fitting model [OUT_NBAND,NGAL]   
-;   clineflux  - continuum flux at the wavelengths of strong emission 
-;                lines: [OII], H-beta, [OIII], and H-alpha [erg/s/cm2/A] 
+;   clineflux  - *rest-frame* continuum flux at the wavelengths of
+;     strong emission lines: [OII], H-beta, [OIII], and H-alpha
+;     [erg/s/cm2/A]  
 ;   uvflux - continuum flux at 1500 and 2800 A from the best-fitting
 ;     model, useful for computing SFRs [erg/s/cm^2/A]
 ;

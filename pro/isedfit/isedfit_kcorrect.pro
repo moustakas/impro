@@ -99,7 +99,7 @@ pro isedfit_kcorrect, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid,
        endfor 
        return
     endif 
-       
+
     fp = isedfit_filepaths(params,outprefix=outprefix,isedfit_dir=isedfit_dir,$
       montegrids_dir=montegrids_dir,band_shift=band_shift)
     kcorrfile = fp.isedfit_dir+fp.kcorr_outfile
@@ -120,11 +120,12 @@ pro isedfit_kcorrect, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid,
 ; restore the ISEDFIT results without the best-fitting models to get
 ; the number of galaxies and other goodies
     isedfit = read_isedfit(params=params,isedfit_dir=isedfit_dir,$
-      montegrids_dir=montegrids_dir,outprefix=outprefix,$ ; we deal with INDEX below
+      montegrids_dir=montegrids_dir,outprefix=outprefix,$ ; index=index,$
       silent=silent)
     ngal = n_elements(isedfit)
 
     if n_elements(index) eq 0L then index = lindgen(ngal)
+    nindex = n_elements(index)
     
 ; initialize the output data structure    
     kcorrect_results = struct_trimtags(isedfit,select=['isedfit_id',$
@@ -139,8 +140,8 @@ pro isedfit_kcorrect, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid,
     
 ; compute K-corrections; split the problem into chunks because the
 ; arrays can be memory intensive for large samples
-    ngalchunk = ceil(ngal/float(params.galchunksize))
-    sortindx = sort(isedfit[index].chunkindx) ; sort for speed
+    ngalchunk = ceil(nindex/float(params.galchunksize))>1
+    sortindx = sort(isedfit.chunkindx) ; sort for speed
 
     t0 = systime(1)
     for gchunk = 0L, ngalchunk-1 do begin
@@ -149,13 +150,14 @@ pro isedfit_kcorrect, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid,
          gchunk+1, ngalchunk
 
        g1 = gchunk*params.galchunksize
-       g2 = ((gchunk*params.galchunksize+params.galchunksize)<ngal)-1L
+       g2 = (((gchunk*params.galchunksize+params.galchunksize)<nindex)-1L)>0L
        gnthese = g2-g1+1L 
        gthese = lindgen(gnthese)+g1
 
        good = where((isedfit[index[sortindx[gthese]]].chi2 gt 0.0) and $
          (isedfit[index[sortindx[gthese]]].chi2 lt 0.9E6),ngood)
        if (ngood ne 0L) then begin
+
           isedfit1 = read_isedfit(params=params,isedfit_dir=isedfit_dir,$
             montegrids_dir=montegrids_dir,index=index[sortindx[gthese[good]]],$
             outprefix=outprefix,/flambda,/silent,/getmodels)
@@ -169,7 +171,7 @@ pro isedfit_kcorrect, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid,
             isedfit[index[sortindx[gthese[good]]]].maggies,isedfit[index[sortindx[gthese[good]]]].ivarmaggies,$
             filterlist,absmag_filterlist,restwave,restflux,band_shift=band_shift,$
             absmag=chunk_absmag,ivarabsmag=chunk_ivarabsmag,synth_absmag=chunk_synth_absmag,$
-            h100=params.h100, omega0=params.omega0, omegal=params.omegal, $
+            h100=params.h100,omega0=params.omega0,omegal=params.omegal,$
             chi2=chi2,vega=vega,/silent,clineflux=cflux)
 
           kcorrect_results[index[sortindx[gthese[good]]]].cflux_3727 = reform(cflux[0,*])

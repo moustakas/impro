@@ -63,7 +63,7 @@
 
 function im_log_rebin, wave, flux, vsc=vsc, var=var, outwave=outwave, $
   outvar=outvar, minwave=minwave, maxwave=maxwave, conserve_flux=conserve_flux, $
-  wavestrict=wavestrict
+  wavestrict=wavestrict, log10=log10
 
     compile_opt idl2
 ;   on_error, 2
@@ -100,22 +100,40 @@ function im_log_rebin, wave, flux, vsc=vsc, var=var, outwave=outwave, $
           if nw[1] eq -1 then nw[1] = 0 ; this is bad
        endif else nw = [0d, npix[0]-1]
        wr = wave[nw]
-       vsc =  alog(wr[1]/wr[0]) / npix[0] * c 
+       if keyword_set(log10) then $
+         vsc = alog10(wr[1]/wr[0]) / npix[0] * c * alog(10) else $
+           vsc =  alog(wr[1]/wr[0]) / npix[0] * c 
     endif 
 
-    logScale = vsc/c            ; Scaling in the output spectrum
+    if keyword_set(log10) then $
+      logScale = vsc/c/alog(10) else $ ; Scaling in the output spectrum
+        logScale = vsc/c               ; Scaling in the output spectrum
 
 ; Determine the start wavelength, logStart, and number of pix, nout, in output
-    logRange = alog([wave[0],wave[npix-1]])
+    if keyword_set(log10) then $
+      logRange = alog10([wave[0],wave[npix-1]]) else $
+        logRange = alog([wave[0],wave[npix-1]])
     logRange += [0.5d,-0.5d]*logScale
     if n_elements(waverange) gt 0 then begin
 ;  the 1D-7 is a tolerance for rounding errors
-       if keyword_set(wavestrict) then nshift = 0 else $
-         nshift = ceil(max([0d, (logRange[0] - alog(waverange[0])) / logScale - 1d-7]))
-       logRange[0] = alog(waverange[0]) + logScale * nshift ; center of 1st out pix
+       if keyword_set(wavestrict) then nshift = 0 else begin
+          if keyword_set(log10) then $
+            nshift = ceil(max([0d, (logRange[0] - alog10(waverange[0])) / logScale - 1d-7])) else $
+              nshift = ceil(max([0d, (logRange[0] - alog(waverange[0])) / logScale - 1d-7]))
+       endelse
+       if keyword_set(log10) then $
+         logRange[0] = alog10(waverange[0]) + logScale * nshift else $ ; center of 1st out pix
+           logRange[0] = alog(waverange[0]) + logScale * nshift        ; center of 1st out pix
        if n_elements(waverange) eq 2 then begin
-          if keyword_set(wavestrict) then logrange[1] = alog(waverange[1]) else $
-            logRange[1] = min([alog(waverange[1]), logRange[1]])
+          if keyword_set(wavestrict) then begin
+             if keyword_set(log10) then $
+               logrange[1] = alog10(waverange[1]) else $
+                 logrange[1] = alog(waverange[1])
+          endif else begin
+             if keyword_set(log10) then $
+               logRange[1] = min([alog10(waverange[1]), logRange[1]]) else $
+                 logRange[1] = min([alog(waverange[1]), logRange[1]])
+          endelse
        endif
 
        if logRange[1] lt logRange[0] then begin
@@ -135,7 +153,9 @@ function im_log_rebin, wave, flux, vsc=vsc, var=var, outwave=outwave, $
 
 ; define the new borders of the bins
     outwave = logstart + dindgen(nout)*logscale
-    newborders = exp(logStart + (dindgen(nout+1)-0.5d) * logScale)
+    if keyword_set(log10) then $
+      newborders = 10D^(logStart + (dindgen(nout+1)-0.5d) * logScale) else $
+        newborders = exp(logStart + (dindgen(nout+1)-0.5d) * logScale)
 
     outflux = xrebin(borders,flux,newborders,/cubic,missing=missing)
 ; determine the conversion factor/vector accounting for pixel size change
