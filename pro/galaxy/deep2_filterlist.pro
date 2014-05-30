@@ -9,5 +9,6 @@
 ;-
 
 function deep2_filterlist
-    return, [['deep_'+['B','R','I']]+'.par',sdss_filterlist()]
+    return, ['deep_'+['B','R','I'],'capak_cfht_megaprime_sagem_'+['u','g','r','i','z']]+'.par'
+;   return, [['deep_'+['B','R','I']]+'.par',sdss_filterlist()]
 end

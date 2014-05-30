@@ -377,8 +377,11 @@ pro isedfit_qaplot_sed, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
           im_legend, label, /left, /top, box=0, spacing=1.7, charsize=1.2, margin=0
           im_legend, /right, /bottom, box=0, spacing=1.5, charsize=1.2, margin=0, $
             [strtrim(repstr(galaxy[igal],'_',' '),2),$
-            'z = '+strtrim(string(z,format='(F12.4)'),2),'\chi_{\nu}^{2} = '+$
-            strtrim(string(isedfit_results[igal].chi2,format='(F12.2)'),2)]
+            'z = '+strtrim(string(z,format='(F12.4)'),2),$
+            '\chi_{\nu}^{2} = '+strtrim(string(isedfit_results[igal].chi2,format='(F12.2)'),2)]
+;         im_legend, /left, /top, box=0, charsize=1.6, $
+;           [strtrim(repstr(galaxy[igal],'_',' '),2),$
+;           'z = '+strtrim(string(z,format='(F12.4)'),2)]
        endelse
 
 ; lower panels: posterior distributions

@@ -141,7 +141,7 @@ pro isedfit_kcorrect, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid,
 ; compute K-corrections; split the problem into chunks because the
 ; arrays can be memory intensive for large samples
     ngalchunk = ceil(nindex/float(params.galchunksize))>1
-    sortindx = sort(isedfit.chunkindx) ; sort for speed
+    sortindx = sort(isedfit[index].chunkindx) ; sort for speed
 
     t0 = systime(1)
     for gchunk = 0L, ngalchunk-1 do begin
@@ -179,10 +179,10 @@ pro isedfit_kcorrect, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid,
           kcorrect_results[index[sortindx[gthese[good]]]].absmag = chunk_absmag
           kcorrect_results[index[sortindx[gthese[good]]]].ivarabsmag = chunk_ivarabsmag
           kcorrect_results[index[sortindx[gthese[good]]]].synth_absmag = chunk_synth_absmag
-       endif 
+       endif
        if (gchunk eq 0) then splog, format='("Time for first '+$
          'Chunk = ",G0," minutes          ")', (systime(1)-t1)/60.0
-    endfor
+    endfor 
     splog, format='("Time for all Chunks = ",G0," minutes          ")', $
       (systime(1)-t0)/60.0
 

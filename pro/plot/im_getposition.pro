@@ -153,7 +153,7 @@ function im_getposition, nx=nx, ny=ny, xpage=xpage, ypage=ypage, $
           position[*,jj+ii*nx] = [x0,y0,x2,y2]
        endfor
     endfor   
-          
+
 ; convert physical coordinates to normal coordinates
     position[[0,2],*] = position[[0,2],*] / xp
     position[[1,3],*] = position[[1,3],*] / yp
