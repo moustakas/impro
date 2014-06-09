@@ -295,12 +295,13 @@ Function isedfit_nebular, nlyc, wave=wave, inst_vsigma=inst_vsigma, $
        lineflux += amp*exp(-0.5*(log10wave-alog10(line[jj].wave))^2/log10sigma^2)
 ;      print, line[jj].wave, amp
     endfor
-    flam_line = interpolate(lineflux,findex(10.0^log10wave,wave),missing=0.0)
+    flam_line = interpolate(lineflux,findex(log10wave,alog10(wave)),missing=0.0)
 ;   djs_plot, 10^log10wave, lineflux, xrange=[4840,4870], ysty=3
 ;   djs_oplot, wave, flam_line, psym=8, color='red'
     
 ; now build the nebular continuum spectrum
-    flam_cont = nlyc[0]*interpolate(nebcont.flam_neb,findex(nebcont.wave_neb,wave)) ; [erg/s/A]
+    flam_cont = nlyc[0]*interpolate(nebcont.flam_neb,$
+      findex(alog10(nebcont.wave_neb),alog10(wave))) ; [erg/s/A]
 
 ; scale to a fiducial distance of 10 pc and then add the two
 ; components together
@@ -310,6 +311,6 @@ Function isedfit_nebular, nlyc, wave=wave, inst_vsigma=inst_vsigma, $
     flam_line = float(flam_line/factor) ; [erg/s/cm^2/A]
     flam_cont = float(flam_cont/factor) ; [erg/s/cm^2/A]
     flam_neb = flam_line + flam_cont
-    
+
 return, flam_neb
 end

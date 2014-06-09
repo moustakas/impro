@@ -668,30 +668,14 @@ function build_modelgrid, montegrid, params=params, debug=debug, $
                 flam_line = flam_line*10.0^(-0.4*alam)
                 flam_cont = flam_cont*10.0^(-0.4*alam)
 
-; get the EW of some emission lines; the wavelengths correspond to
-; [OII], Hb+[OIII], and Ha+[NII]; should probably push this to its own
-; function 
+; get the EWs of some emission lines; the wavelengths correspond to
+; [OII], Hb+[OIII], and Ha+[NII]
                 lmin = [3727.42,4861.325,6548.043]
                 lmax = [3727.42,5006.842,6730.815]
                 lwave = total([[lmin],[lmax]],2)/2.0
-                cflux = lwave*0.0
-                for cc = 0, n_elements(lwave)-1 do begin
-                   factor = sqrt(vsigma^2+sspinfo.inst_vsigma^2)/im_light(/kms)*lwave[cc]
-                   cpix = where((wave lt (lmin[cc]-4*factor) and wave gt (lmin[cc]-12*factor)) or $
-                     (wave gt (lmax[cc]+4*factor) and wave lt (lmax[cc]+12*factor)))
-                   cflux[cc] = djs_median(outflux[cpix]+flam_cont[cpix])
-                   if keyword_set(debug) then begin
-                      djs_plot, wave/1D4, outflux+nebflux, xsty=3, ysty=3, $
-                        xr=[lmin[cc]-30*factor,lmax[cc]+30*factor]/1D4
-;                     djs_oplot, wave/1D4, outflux+flam_cont, color='red'
-                      djs_oplot, wave[cpix]/1D4, outflux[cpix]+nebflux[cpix], color='green', psym=7
-                      djs_oplot, [lwave[cc]]/1D4, [cflux[cc]], psym=8, color='blue', symsize=2
-                      djs_oplot, !x.crange, cflux[cc]*[1,1], color='orange', line=5
-                      kk = get_kbrd(1)
-                   endif
-                endfor
-                if total(cflux le 0.0) ne 0 then message, 'This should never happen!'
-
+                cflux = isedfit_linecontinuum(wave,outflux+flam_cont,linewave=lwave,$
+                  vsigma=sqrt(vsigma^2+sspinfo.inst_vsigma^2),debug=debug)
+                
                 isoii = where(line.name eq '[OII]_3726' or line.name eq '[OII]_3729')
                 isoiiihb = where(line.name eq '[OIII]_4959' or $
                   line.name eq '[OIII]_5007' or line.name eq 'Hbeta')
