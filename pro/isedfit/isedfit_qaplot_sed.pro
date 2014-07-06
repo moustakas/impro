@@ -389,8 +389,9 @@ pro isedfit_qaplot_sed, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
 
 ; mass       
           xrange = minmax(post[igal].mstar)*[0.95,1.05]
+          if xrange[1]-xrange[0] lt 2.0 then xtick = 0.5 else xtick = 1.0
           oplot_posteriors, post[igal].mstar, pos2[*,0], /noerase, xrange=xrange, $
-            xtitle='log (M_{*}/M'+sunsymbol()+')', xtickinterval=0.5
+            xtitle='log (M_{*}/M'+sunsymbol()+')', xtickinterval=xtick
 
 ; age       
           xrange = params.age

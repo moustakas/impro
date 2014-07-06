@@ -80,9 +80,12 @@ pro im_plotconfig, plotnum, position, psfile=psfile, psclose=psclose, $
 ; fix the landscape business
                 if keyword_set(landscape1) then cgfixps, psfile, /quiet
                 if keyword_set(pdf) or keyword_set(keynote) then begin
-                   pdffile = repstr(repstr(psfile,'.eps','.pdf'),'.ps','.pdf')
+                   suffix = strmid(psfile,strpos(psfile,'.',/reverse_search))
+                   pdffile = repstr(psfile,suffix,'.pdf')
 ; dEPSCrop respects the bounding box
-                   spawn, 'ps2pdf -dEPSFitPage -dEPSCrop '+psfile+' '+pdffile, /sh
+                   if strmatch(suffix,'*eps*') then $
+                     spawn, 'epstopdf '+psfile, /sh else $
+                       spawn, 'ps2pdf -dEPSFitPage -dEPSCrop '+psfile+' '+pdffile, /sh
                 endif
                 if keyword_set(png) then begin
                    pngfile = repstr(repstr(psfile,'.eps','.png'),'.ps','.png')

@@ -658,7 +658,28 @@ function build_modelgrid, montegrid, params=params, debug=debug, $
                 nebflux = isedfit_nebular(10D^outnlyc,inst_vsigma=sspinfo.inst_vsigma,$
                   vsigma=vsigma,oiiihb=oiiihb,wave=wave,line=line,flam_line=flam_line,$
                   flam_cont=flam_cont)
-; attenuate
+
+; get the EWs of some emission lines; the wavelengths correspond to
+; [OII], Hb+[OIII], and Ha+[NII]; note that I'm ignoring the
+; small ammount of attenuation across these wavelengths when computing
+; EWs 
+                lmin = [3727.42,4861.325,6548.043]
+                lmax = [3727.42,5006.842,6730.815]
+                lwave = total([[lmin],[lmax]],2)/2.0
+                cflux = isedfit_linecontinuum(wave,outflux+flam_cont,linewave=lwave,$
+                  vsigma=sqrt(vsigma^2+sspinfo.inst_vsigma^2),debug=debug)
+
+                isoii = where(line.name eq '[OII]_3726' or line.name eq '[OII]_3729')
+                isoiiihb = where(line.name eq '[OIII]_4959' or $
+                  line.name eq '[OIII]_5007' or line.name eq 'Hbeta')
+                isniiha = where(line.name eq '[NII]_6548' or $
+                  line.name eq '[NII]_6584' or line.name eq 'Halpha')
+
+                modelgrid1[sspindx[jj]].ewoii = total(line[isoii].flux)/cflux[0]
+                modelgrid1[sspindx[jj]].ewoiiihb = total(line[isoiiihb].flux)/cflux[1]
+                modelgrid1[sspindx[jj]].ewniiha = total(line[isniiha].flux)/cflux[2]
+
+; finally attenuate
                 alam = klam[*,0]*(modelgrid1[sspindx[jj]].av/rv) ; never decrease by MU, if /CHARLOT
 ;               djs_plot, wave/1D4, outflux, xr=[0.1,1], xsty=3, ysty=3
 ;               djs_oplot, wave/1D4, outflux+nebflux, color='green'
@@ -667,33 +688,8 @@ function build_modelgrid, montegrid, params=params, debug=debug, $
                 nebflux = nebflux*10.0^(-0.4*alam)
                 flam_line = flam_line*10.0^(-0.4*alam)
                 flam_cont = flam_cont*10.0^(-0.4*alam)
-
-; get the EWs of some emission lines; the wavelengths correspond to
-; [OII], Hb+[OIII], and Ha+[NII]
-                lmin = [3727.42,4861.325,6548.043]
-                lmax = [3727.42,5006.842,6730.815]
-                lwave = total([[lmin],[lmax]],2)/2.0
-                cflux = isedfit_linecontinuum(wave,outflux+flam_cont,linewave=lwave,$
-                  vsigma=sqrt(vsigma^2+sspinfo.inst_vsigma^2),debug=debug)
                 
-                isoii = where(line.name eq '[OII]_3726' or line.name eq '[OII]_3729')
-                isoiiihb = where(line.name eq '[OIII]_4959' or $
-                  line.name eq '[OIII]_5007' or line.name eq 'Hbeta')
-                isniiha = where(line.name eq '[NII]_6548' or $
-                  line.name eq '[NII]_6584' or line.name eq 'Halpha')
-
-                lwave = djs_mean(line[isoii].wave)
-                ldust = 10.0^(-0.4*interpol(alam,wave,lwave))
-                modelgrid1[sspindx[jj]].ewoii = total(line[isoii].flux*lwave)*ldust/cflux[0]
-
-                lwave = djs_mean(line[isoiiihb].wave)
-                ldust = 10.0^(-0.4*interpol(alam,wave,lwave))
-                modelgrid1[sspindx[jj]].ewoiiihb = total(line[isoiiihb].flux*lwave)*ldust/cflux[1]
-
-                lwave = djs_mean(line[isniiha].wave)
-                ldust = 10.0^(-0.4*interpol(alam,wave,lwave))
-                modelgrid1[sspindx[jj]].ewniiha = total(line[isniiha].flux*lwave)*ldust/cflux[2]
-
+;               if modelgrid1[sspindx[jj]].ewoii gt 1E3 then stop
 ;               splog, modelgrid1[sspindx[jj]].age, modelgrid1[sspindx[jj]].ewoii, $
 ;                 modelgrid1[sspindx[jj]].ewoiiihb, modelgrid1[sspindx[jj]].ewniiha
              endif else nebflux = outflux*0.0

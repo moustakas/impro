@@ -26,6 +26,7 @@
 ;   nospectrum - do not return the spectrum (used by
 ;     ISEDFIT_BUILD_MONTEGRIDS to generate an emission-line friendly
 ;     wavelength array)
+;   vacuum - adopt vacuum wavelengths (default is 'air')
 ;
 ; OUTPUTS:
 ;   flam_neb - nebular continuum spectrum in units of erg/s/cm^2/A
@@ -48,8 +49,9 @@
 ;
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2013 Aug 01, Siena
+;   jm14jun09siena - added OIIDOUBLETRATIO option and /VACUUM keyword 
 ;
-; Copyright (C) 2013, John Moustakas
+; Copyright (C) 2013-2014, John Moustakas
 ; 
 ; This program is free software; you can redistribute it and/or modify 
 ; it under the terms of the GNU General Public License as published by 
@@ -63,8 +65,9 @@
 ;-
 
 Function isedfit_nebular, nlyc, wave=wave, inst_vsigma=inst_vsigma, $
-  vsigma=vsigma, oiiihb=oiiihb1, line=line, flam_line=flam_line, $
-  flam_cont=flam_cont, nospectrum=nospectrum
+  vsigma=vsigma, oiiihb=oiiihb1, oiidoubletratio=oiidoubletratio, $
+  line=line, flam_line=flam_line, flam_cont=flam_cont, $
+  vacuum=vacuum, nospectrum=nospectrum
 
     common isedfit_neb, branch, nebcont, hdata, fdata
     
@@ -78,6 +81,7 @@ Function isedfit_nebular, nlyc, wave=wave, inst_vsigma=inst_vsigma, $
     nHeI = 0.0897               ; assumed n(HeI)/n(HI) abundance ratio (see Kotulla+09)
     dist = 10.0*3.085678D18     ; fiducial distance [10 pc in cm]
     light = im_light(/kms)      ; [km/s]
+    distfactor = 4.0*!dpi*dist^2
 
 ; line-width parameters, including instrumental velocity width     
     if n_elements(vsigma) eq 0 then vsigma = 100.0          ; [km/s]
@@ -107,7 +111,8 @@ Function isedfit_nebular, nlyc, wave=wave, inst_vsigma=inst_vsigma, $
        for ii = 0L, nspec-1 do begin
           flam_neb1 = isedfit_nebular(nlyc[ii],wave=wave,line=line,$
             inst_vsigma=inst_vsigma,vsigma=vsigma,oiiihb=oiiihb[ii],$
-            nospectrum=nospectrum,flam_line=flam_line1,flam_cont=flam_cont1)
+            oiidoubletratio=oiidoubletratio,nospectrum=nospectrum,$
+            flam_line=flam_line1,flam_cont=flam_cont1)
           if ii eq 0 then begin
              flam_neb = flam_neb1 
              flam_line = flam_line1 
@@ -124,7 +129,7 @@ Function isedfit_nebular, nlyc, wave=wave, inst_vsigma=inst_vsigma, $
 ; read the branching ratios we'll need to build the doublets
 ; below; assume default density and temperature (100/cm^3 and 10^4 K) 
     if n_elements(branch) eq 0 then branch = im_branch_ratios()
-    
+
 ; read the nebular continuum file (see ISEDFIT_CALIBRATE_LINERATIOS)  
     if n_elements(nebcont) eq 0 then begin
        nebfile = getenv('IMPRO_DIR')+'/etc/isedfit_nebular_continuum.fits.gz'
@@ -164,7 +169,8 @@ Function isedfit_nebular, nlyc, wave=wave, inst_vsigma=inst_vsigma, $
 ; helium lines; calculate the luminosity of each line (in erg/s/A)
 ; given N(Lyc); adopted conversions are from Kennicutt 1998 (but see
 ; also Leitherer & Heckman 1995 and Hao+2011)
-    hlineinfo = replicate({id: 0, name: '', wave: 0D, flux: 0D, ratio: 0.0},nhline)
+    hlineinfo = replicate({id: 0, name: '', wave: 0D, flux: 0D, $
+      amp: 0D, ratio: 0.0},nhline)
     hlineinfo.name = hdata.name
     hlineinfo.wave = hdata.wave
     
@@ -177,15 +183,18 @@ Function isedfit_nebular, nlyc, wave=wave, inst_vsigma=inst_vsigma, $
     for ii = 0, nhline-1 do begin
        if strmatch(strtrim(hlineinfo[ii].name,2),'HeI_*') then $
          factor = nHeI else factor = 1.0
-       hlineinfo[ii].flux = factor*1.367D-12*nlyc[0]*$ ; [erg/s/A]
-         hdata[ii].emissivity/hdata[isha].emissivity/hdata[ii].wave
+       hlineinfo[ii].flux = factor*1.367D-12*nlyc[0]*$ ; [erg/s]
+         hdata[ii].emissivity/hdata[isha].emissivity
+;      hlineinfo[ii].flux = factor*1.367D-12*nlyc[0]*$ ; [erg/s/A]
+;        hdata[ii].emissivity/hdata[isha].emissivity/hdata[ii].wave
     endfor
 ;   struct_print, hlineinfo
 
 ; now the forbidden lines; see ISEDFIT_CALIBRATE_LINERATIOS for
 ; details, but basically *all* the forbidden lines are tied to the
 ; [OIII]/Hbeta ratio
-    flineinfo = replicate({id: 0, name: '', wave: 0D, flux: 0D, ratio: 0.0},nfline)
+    flineinfo = replicate({id: 0, name: '', wave: 0D, flux: 0D, $
+      amp: 0D, ratio: 0.0},nfline)
     flineinfo.name = strtrim(fdata.name,2)
     flineinfo.wave = fdata.wave
     
@@ -210,9 +219,9 @@ Function isedfit_nebular, nlyc, wave=wave, inst_vsigma=inst_vsigma, $
 
 ; split [OII] 3727 into the [OII] 3726,29 doublet
 ;   tt = mrdfits(getenv('IMPRO_DIR')+'/etc/temden_table.fits',1)
-;   plot, rebin(reform(tt.grid_dens,1,101),185,101), tt.oii_dens_ratio, $
-;     ysty=3, psym=8, xr=[1,1E3], /xlog, yr=[0,2]
-    doubletratio = 0.75+randomn(seed)*0.1 ; =3726/3729
+;   plot, tt.grid_dens, 1/tt.oii_dens_ratio[105,*], thick=4, /xlog
+    if n_elements(oiidoubletratio) ne 0 then doubletratio = oiidoubletratio else $
+      doubletratio = 0.75+randomn(seed)*0.1 ; =3726/3729
     factor = [doubletratio/(1.0+doubletratio),1.0/(1.0+doubletratio)]
     this = where(strtrim(flineinfo.name,2) eq '[OII]_3727',comp=therest)
     if this[0] eq -1 then message, 'Missing [OII] 3727!!'
@@ -264,12 +273,19 @@ Function isedfit_nebular, nlyc, wave=wave, inst_vsigma=inst_vsigma, $
     line.id = lindgen(nline)
 ;   struct_print, line
 
+; vacuum or air?
+    if keyword_set(vacuum) then begin
+       linewave = line.wave
+       airtovac, linewave
+       line.wave = linewave
+    endif
+    
 ; build the wavelength vector and the output spectra; ensure adequate 
 ; sampling around the lines (use +/-5-sigma)
     if n_elements(wave) eq 0 then begin
        for ii = 0, nline-1 do begin
-          width = 4.0*tot_vsigma/light*line[ii].wave
-          morewave = range(line[ii].wave-width,line[ii].wave+width,40)
+          width = 10.0*tot_vsigma/light*line[ii].wave
+          morewave = range(line[ii].wave-width,line[ii].wave+width,200)
           if ii eq 0 then wave = [line[ii].wave,morewave] else $
             wave = [wave,line[ii].wave,morewave]
        endfor
@@ -291,25 +307,33 @@ Function isedfit_nebular, nlyc, wave=wave, inst_vsigma=inst_vsigma, $
 
     lineflux = log10wave*0.0
     for jj = 0, nline-1 do begin
-       amp = line[jj].flux/alog(10)/(sqrt(2.0*!pi)*log10sigma)
-       lineflux += amp*exp(-0.5*(log10wave-alog10(line[jj].wave))^2/log10sigma^2)
+       amp = line[jj].flux/alog(10)/line[jj].wave    ; [erg/s/A]
+;      amp = line[jj].flux/alog(10)/(sqrt(2.0*!pi)*log10sigma)
+       line[jj].amp = amp/(sqrt(2.0*!pi)*log10sigma) ; [erg/s/A]
+       lineflux += amp*exp(-0.5*(log10wave-alog10(line[jj].wave))^2/log10sigma^2)/$
+         (sqrt(2.0*!pi)*log10sigma)
 ;      print, line[jj].wave, amp
     endfor
+
+;   flam_line = rebin_spectrum(lineflux,log10wave,alog10(wave))
     flam_line = interpolate(lineflux,findex(log10wave,alog10(wave)),missing=0.0)
 ;   djs_plot, 10^log10wave, lineflux, xrange=[4840,4870], ysty=3
 ;   djs_oplot, wave, flam_line, psym=8, color='red'
     
 ; now build the nebular continuum spectrum
+;   flam_cont = nlyc[0]*rebin_spectrum(nebcont.flam_neb,$
+;     alog10(nebcont.wave_neb),alog10(wave)) ; [erg/s/A]
     flam_cont = nlyc[0]*interpolate(nebcont.flam_neb,$
       findex(alog10(nebcont.wave_neb),alog10(wave))) ; [erg/s/A]
 
 ; scale to a fiducial distance of 10 pc and then add the two
 ; components together
-    factor = 4.0*!dpi*dist^2
-    line.flux = line.flux/factor
+    line.flux = line.flux/distfactor
+    line.amp = line.amp/distfactor
     
-    flam_line = float(flam_line/factor) ; [erg/s/cm^2/A]
-    flam_cont = float(flam_cont/factor) ; [erg/s/cm^2/A]
+    lineflux = lineflux/distfactor ; [erg/s/cm^2/A]
+    flam_line = float(flam_line/distfactor) ; [erg/s/cm^2/A]
+    flam_cont = float(flam_cont/distfactor) ; [erg/s/cm^2/A]
     flam_neb = flam_line + flam_cont
 
 return, flam_neb

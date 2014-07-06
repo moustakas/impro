@@ -66,10 +66,10 @@ pro im_plotfaves, xthick=xthick, ythick=ythick, thick=thick, $
 ;   if (n_elements(color) eq 0)     then !p.color = fsc_color('white') else !p.color = color
 
     if keyword_set(postscript) then begin
-       if (n_elements(xthick) eq 0)    then !x.thick = 6.0 else !x.thick = xthick
-       if (n_elements(ythick) eq 0)    then !y.thick = 6.0 else !y.thick = ythick
-       if (n_elements(thick) eq 0)     then !p.thick = 6.0 else !p.thick = thick
-       if (n_elements(charthick) eq 0) then !p.charthick = 5.0 else !p.charthick = charthick
+       if (n_elements(xthick) eq 0)    then !x.thick = 4.0 else !x.thick = xthick
+       if (n_elements(ythick) eq 0)    then !y.thick = 4.0 else !y.thick = ythick
+       if (n_elements(thick) eq 0)     then !p.thick = 4.0 else !p.thick = thick
+       if (n_elements(charthick) eq 0) then !p.charthick = 4.0 else !p.charthick = charthick
        if (n_elements(charsize) eq 0)  then !p.charsize = 1.8 else !p.charsize = charsize
 ;      if (n_elements(color) eq 0)     then !p.color = fsc_color('black') else !p.color = color
 ;       if (n_elements(xthick) eq 0)    then !x.thick = 4.0 else !x.thick = xthick
