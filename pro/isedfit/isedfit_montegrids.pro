@@ -272,7 +272,7 @@ pro montegrids_qaplot, montegrid, params=params, qafile=qafile
 ; age
     xrange = minmax(montegrid.age)
     oplot_priors, montegrid.age, pos[*,0], xrange=xrange, $
-      xtitle='Age (Gyr)'
+      xtitle='Age (Gyr)', xtickinterval=hogg_interval(xrange,ntick=3)
     im_legend, '['+strjoin(string(params.age,format='(G0.0)'),',')+'] Gyr', $
       /left, /top, box=0, charsize=lsize, margin=0
 
@@ -283,7 +283,7 @@ pro montegrids_qaplot, montegrid, params=params, qafile=qafile
     if params.oneovertau then begin
        xrange = reverse(1.0/params.tau)
        oplot_priors, montegrid.tau, pos[*,1], /noerase, xrange=xrange, $
-         xtitle='\tau (Gyr)', /logbins
+         xtitle='\tau (Gyr)', /logbins;, xtickinterval=hogg_interval(xrange,ntick=3)
 ;      oplot_priors, 1.0/montegrid.tau, pos[*,1], /noerase, xrange=xrange, $
 ;        xtitle='1/\tau (Gyr^{-1})';, /logbins
        im_legend, ['Oneovertau=1','['+strjoin(string(params.tau,format='(G0.0)'),',')+'] Gyr^{-1}'], $
@@ -291,14 +291,16 @@ pro montegrids_qaplot, montegrid, params=params, qafile=qafile
     endif else begin
        xrange = params.tau
        oplot_priors, montegrid.tau, pos[*,1], /noerase, xrange=xrange, $
-         xtitle='\tau (Gyr)'
+         xtitle='\tau (Gyr)', xtickinterval=hogg_interval(xrange,ntick=3)
        im_legend, '['+strjoin(string(params.tau,format='(G0.0)'),',')+'] Gyr', $
          /left, /top, box=0, charsize=lsize, margin=0
     endelse
 
-; metallicity       
+; metallicity
+    xrange = params.Zmetal
     oplot_priors, montegrid.Zmetal, pos[*,2], /noerase, $
-      xrange=params.Zmetal, xtitle='Z_{metal}' ; /Z'+sunsymbol()
+      xrange=xrange, xtitle='Z_{metal}', $
+      xtickinterval=hogg_interval(xrange,ntick=3)
     im_legend, '['+strjoin(string(params.Zmetal,format='(G0.0)'),',')+']', $
       /left, /top, box=0, charsize=lsize, margin=0
 ;   im_legend, 'Z'+sunsymbol()+'=0.019', /left, /top, box=0, charsize=csize, margin=0
@@ -311,9 +313,10 @@ pro montegrids_qaplot, montegrid, params=params, qafile=qafile
        im_legend, 'Redcurve=none', /left, /top, margin=0, box=0, charsize=lsize
     endif else begin
        if params.flatAV then xrange = params.AV else $
-         xrange = [0.0,max(montegrid.AV)*1.1]
+         xrange = [0.0,max(montegrid.AV)]
        oplot_priors, montegrid.AV, pos[*,3], /noerase, $
-         xrange=xrange, xtitle='A_{V} (mag)'
+         xrange=xrange, xtitle='A_{V} (mag)', $
+         xtickinterval=hogg_interval(xrange,ntick=3)
        if params.flatAV then begin
           im_legend, ['Redcurve='+strtrim(params.redcurve,2),$
             '['+strjoin(string(params.AV,format='(G0.0)'),',')+']'], $
@@ -331,7 +334,7 @@ pro montegrids_qaplot, montegrid, params=params, qafile=qafile
        if params.flatmu then xrange = params.mu else $
          xrange = [0.0,max(montegrid.mu)*1.1]
        oplot_priors, montegrid.mu, pos[*,4], /noerase, $
-         xrange=xrange, xtitle='\mu'
+         xrange=xrange, xtitle='\mu', xtickinterval=hogg_interval(xrange,ntick=3)
        if params.flatmu then begin
           im_legend, ['Redcurve='+strtrim(params.redcurve,2),$
             '['+strjoin(string(params.mu,format='(G0.0)'),',')+']'], $
@@ -352,8 +355,10 @@ pro montegrids_qaplot, montegrid, params=params, qafile=qafile
 
 ; [OIII]/H-beta
     if params.nebular then begin
+       xrange = params.oiiihb
        oplot_priors, montegrid.oiiihb, pos[*,5], /noerase, $
-         xrange=params.oiiihb, xtitle='log_{10}([OIII \lambda5007]/H\beta)'
+         xrange=xrange, xtitle='log_{10}([OIII \lambda5007]/H\beta)', $
+         xtickinterval=hogg_interval(xrange,ntick=3)
        im_legend, '['+strjoin(string(params.oiiihb,format='(G0.0)'),',')+'] dex', $
          /left, /top, box=0, charsize=lsize, margin=0
     endif else begin
@@ -388,7 +393,7 @@ pro montegrids_qaplot, montegrid, params=params, qafile=qafile
        yes = where(montegrid.tburst gt 0.0)
        xrange = minmax((montegrid.tburst)[yes])
        oplot_priors, (montegrid.tburst)[yes], pos[*,1], /noerase, xrange=xrange, $
-         xtitle='t_{burst} (Gyr)'
+         xtitle='t_{burst} (Gyr)', xtickinterval=hogg_interval(xrange,ntick=3)
        im_legend, '['+strjoin(string(params.tburst,format='(G0.0)'),',')+'] Gyr', $
          /left, /top, box=0, charsize=lsize, margin=0
     endif else begin
@@ -403,7 +408,8 @@ pro montegrids_qaplot, montegrid, params=params, qafile=qafile
        yes = where(montegrid.fburst gt 0.0)
        xrange = minmax((montegrid.fburst)[yes])
        oplot_priors, (montegrid.fburst)[yes], pos[*,2], /noerase, xrange=xrange, $
-         xtitle='f_{burst}';, logbins=params.flatfburst eq 0
+         xtitle='f_{burst}', xtickinterval=hogg_interval(xrange,ntick=3);, 
+;        logbins=params.flatfburst eq 0
        im_legend, ['Flatfburst='+strtrim(params.flatfburst,2),$
          '['+strjoin(string(params.fburst,format='(G0.0)'),',')+']'], $
          /left, /top, box=0, charsize=lsize, margin=0
@@ -419,7 +425,8 @@ pro montegrids_qaplot, montegrid, params=params, qafile=qafile
        yes = where(montegrid.dtburst gt 0.0)
        xrange = minmax((montegrid.dtburst)[yes])
        oplot_priors, (montegrid.dtburst)[yes], pos[*,3], /noerase, xrange=xrange, $
-         xtitle='\Delta'+'t_{burst} (Gyr)';, logbins=params.flatdtburst eq 0
+         xtitle='\Delta'+'t_{burst} (Gyr)', $ ;, logbins=params.flatdtburst eq 0
+         xtickinterval=hogg_interval(xrange,ntick=3) 
        im_legend, ['Flatdtburst='+strtrim(params.flatdtburst,2),$
          '['+strjoin(string(params.dtburst,format='(G0.0)'),',')+'] Gyr'], $
          /left, /top, box=0, charsize=lsize, margin=0
@@ -435,7 +442,7 @@ pro montegrids_qaplot, montegrid, params=params, qafile=qafile
        yes = where(montegrid.trunctau gt 0.0)
        xrange = minmax(montegrid[yes].trunctau)
        oplot_priors, montegrid[yes].trunctau, pos[*,4], /noerase, xrange=xrange, $
-         xtitle='\tau_{trunc} (Gyr)'
+         xtitle='\tau_{trunc} (Gyr)', xtickinterval=hogg_interval(xrange,ntick=3)
        im_legend, ['Fractrunc='+string(params.fractrunc,format='(G0.0)'),$
          '['+strjoin(string(params.trunctau,format='(G0.0)'),',')+'] Gyr'], $
          /left, /top, box=0, charsize=lsize, margin=0
@@ -468,17 +475,18 @@ pro montegrids_qaplot, montegrid, params=params, qafile=qafile
 ; SFR-weighted age    
     xrange = minmax(montegrid.sfrage)
     oplot_priors, montegrid.sfrage, pos[*,1], /noerase, $
-      xrange=xrange, xtitle='Age (SFR-weighted, Gyr)'
+      xrange=xrange, xtitle='Age (SFR-weighted, Gyr)', $
+      xtickinterval=hogg_interval(xrange,ntick=3) 
 
 ; b100
     xrange = minmax(montegrid.b100)
     oplot_priors, montegrid.b100, pos[*,2], /noerase, xrange=xrange, $
-      xtitle='log b_{100}'
+      xtitle='log b_{100}', xtickinterval=hogg_interval(xrange,ntick=3) 
 
 ; b1000
     xrange = minmax(montegrid.b1000)
     oplot_priors, montegrid.b1000, pos[*,3], /noerase, xrange=xrange, $
-      xtitle='log b_{1000}'
+      xtitle='log b_{1000}', xtickinterval=hogg_interval(xrange,ntick=3) 
 
 ; EW([OIII]+Hbeta)
     if params.nebular then begin
@@ -486,7 +494,7 @@ pro montegrids_qaplot, montegrid, params=params, qafile=qafile
          (1.1*weighted_quantile(montegrid.ewoiiihb,quant=0.95))>$
          (1.1*weighted_quantile(montegrid.ewniiha,quant=0.95))]
        oplot_priors, montegrid.ewoiiihb, pos[*,4], /noerase, $
-         xtitle='EW (\AA, rest)', logbins=0, $
+         xtitle='EW (\AA, rest)', logbins=0, xtickinterval=hogg_interval(xrange,ntick=3), $
          /nofill, line=0, xrange=xrange, thick=8
        oplot_priors, montegrid.ewniiha, pos[*,4], /overplot, logbins=0, $
          /nofill, line=5, color_outline='tan', xrange=xrange, thick=8
@@ -597,13 +605,19 @@ function build_modelgrid, montegrid, params=params, debug=debug, $
           klam = rebin(reform(klam,npix,1),npix,n_elements(sspfits[0].age)) ; [NPIX,NAGE]
 
 ; convolve each SSP with the specified SFH
+;         oii_nodust = fltarr(nsspindx)
           for jj = 0, nsspindx-1 do begin
              if ((jj mod 10) eq 0) then print, format='("Chunk=",I4.4,"/",I4.4,", '+$
                'Minichunk=",I4.4,"/",I4.4,", SSP(Z)=",I3.3,"/",I3.3,", '+$
                'Model=",I4.4,"/",I4.4,"   ",A5,$)', ichunk+1, nchunk, $
                imini+1, nmini, issp+1, nssp, jj, nsspindx, string(13b)
 ; attenuation; for the Charlot & Fall attenuation curve adopt the
-; time-dependent dust model of Pacifici et al. 2012
+; time-dependent dust model of Pacifici et al. 2012; should probably
+; push this to its own function; note that for the other foreground
+; dust laws (e.g., Calzetti) it doesn't matter whether we
+; attenuate before or after the convolution with the SFH (dust
+; attenuation is just a scalar multiplier, so we do it here since we
+; already built the big KLAM and ALAM arrays 
              if keyword_set(charlot) then begin ; special case
                 alam_bc = (1.0-modelgrid1[sspindx[jj]].mu)*modelgrid1[sspindx[jj]].av*$
                   (wave/5500D)^(-1.3)
@@ -658,6 +672,28 @@ function build_modelgrid, montegrid, params=params, debug=debug, $
                 nebflux = isedfit_nebular(10D^outnlyc,inst_vsigma=sspinfo.inst_vsigma,$
                   vsigma=vsigma,oiiihb=oiiihb,wave=wave,line=line,flam_line=flam_line,$
                   flam_cont=flam_cont)
+                
+; attenuate the spectra and the line-fluxes; by using the zeroth index
+; we are guaranteeing that we are attenuating by the birth cloud (BC)
+; attenuation if the Charlot & Fall attenuation curve has been
+; selected 
+;               aline = interpol(alam[*,0],wave,line[30].wave)
+;               print, line[30].flux, im_integral(wave,nebflux,4980,5030), $
+;                 line[30].flux*10^(-0.4*aline), im_integral(wave,nebflux*10^(-0.4*alam[*,0]),4980,5030)
+                nebflux = nebflux*10.0^(-0.4*alam[*,0])
+                flam_line = flam_line*10.0^(-0.4*alam[*,0])
+                flam_cont = flam_cont*10.0^(-0.4*alam[*,0])
+
+                for ll = 0, n_elements(line)-1 do begin
+                   aline = interpol(alam[*,0],wave,line[ll].wave)
+                   line[ll].flux = line[ll].flux*10.0^(-0.4*aline)
+                   line[ll].amp = line[ll].amp*10.0^(-0.4*aline)
+                endfor
+                
+;               djs_plot, wave/1D4, outflux, xr=[0.1,1], xsty=3, ysty=3
+;               djs_oplot, wave/1D4, outflux+nebflux, color='green'
+;               djs_oplot, wave/1D4, outflux+nebflux*10.0^(-0.4*alam), color='red'
+;               cc = get_kbrd(1)
 
 ; get the EWs of some emission lines; the wavelengths correspond to
 ; [OII], Hb+[OIII], and Ha+[NII]; note that I'm ignoring the
@@ -678,20 +714,7 @@ function build_modelgrid, montegrid, params=params, debug=debug, $
                 modelgrid1[sspindx[jj]].ewoii = total(line[isoii].flux)/cflux[0]
                 modelgrid1[sspindx[jj]].ewoiiihb = total(line[isoiiihb].flux)/cflux[1]
                 modelgrid1[sspindx[jj]].ewniiha = total(line[isniiha].flux)/cflux[2]
-
-; finally attenuate
-                alam = klam[*,0]*(modelgrid1[sspindx[jj]].av/rv) ; never decrease by MU, if /CHARLOT
-;               djs_plot, wave/1D4, outflux, xr=[0.1,1], xsty=3, ysty=3
-;               djs_oplot, wave/1D4, outflux+nebflux, color='green'
-;               djs_oplot, wave/1D4, outflux+nebflux*10.0^(-0.4*alam), color='red'
-;               cc = get_kbrd(1)
-                nebflux = nebflux*10.0^(-0.4*alam)
-                flam_line = flam_line*10.0^(-0.4*alam)
-                flam_cont = flam_cont*10.0^(-0.4*alam)
-                
-;               if modelgrid1[sspindx[jj]].ewoii gt 1E3 then stop
-;               splog, modelgrid1[sspindx[jj]].age, modelgrid1[sspindx[jj]].ewoii, $
-;                 modelgrid1[sspindx[jj]].ewoiiihb, modelgrid1[sspindx[jj]].ewniiha
+;               oii_nodust[jj] = total(line_nodust[isoii].flux)/cflux[0]
              endif else nebflux = outflux*0.0
 
 ; ToDo: add additional interesting outputs like beta (UV slope)
@@ -712,6 +735,12 @@ function build_modelgrid, montegrid, params=params, debug=debug, $
        endfor    ; close SSP loop 
        if imini eq 0 then modelgrid = temporary(modelgrid1) else $
          modelgrid = [temporary(modelgrid),temporary(modelgrid1)]
+
+;; simple check
+;       djs_plot, modelgrid.nlyc, alog10(modelgrid.ewoii), psym=8
+;       djs_oplot, modelgrid.nlyc, yfit, color='green'
+;       print, poly_fit(modelgrid.nlyc, alog10(modelgrid.ewoii),2,yfit=yfit)
+;       djs_plot, modelgrid.av, alog10(modelgrid.ewoii)-yfit, psym=8
     endfor        ; close miniChunk loop   
 
 return, modelgrid
