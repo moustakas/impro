@@ -55,6 +55,7 @@
 ;       JM  '07aug18 - added USE_ROW optional input
 ;       JM  '08jul25 - use a variable logical unit number
 ;       LAM+JM '08dec11 - vetted - no changes made
+;       jm14jul12siena - use IDL_VALIDNAME() to ensure valid structure tags
 ;-
 
 FUNCTION rsex,catalog, use_row=use_row
@@ -173,7 +174,7 @@ FUNCTION rsex,catalog, use_row=use_row
        if tindint[0] eq 1 then $
        type=0l else $
        type=0.d0
-     cs=create_struct(tothead[0],type)
+     cs=create_struct(idl_validname(tothead[0],/convert_all),type)
 
      for i=1l,ntothead-1 do begin
          if tind[i] eq 0 then $
@@ -181,7 +182,7 @@ FUNCTION rsex,catalog, use_row=use_row
            if tindint[i] eq 1 then $
            type=0l else $
            type=0.d0
-         cs=create_struct(cs,tothead[i],type)
+         cs=create_struct(cs,idl_validname(tothead[i],/convert_all),type)
      endfor
      cs=replicate(cs,nbody)
 

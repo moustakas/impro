@@ -37,9 +37,8 @@
 ;   noigm - do not convolve with the IGM, over-riding the content of
 ;     ISEDFIT_PARAMFILE; this can be useful for testing but should not
 ;     in general be used
-;   restframe - convert to the rest-frame on output (simply 
-;     multiplies/divides the flux/wavelength by 1+z); should probably
-;     be used in conjunction with /NOIGM
+;   restframe - convert to the rest-frame at 10 pc on output; should
+;     probably be used in conjunction with /NOIGM
 ;   silent - suppress messages to STDOUT
 ;
 ; OUTPUTS:
@@ -220,10 +219,10 @@ function read_isedfit, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid
              if keyword_set(fnu) then result[igal].flux = zflux_fnu
              if keyword_set(flambda) then result[igal].flux = zflux_flam
           endif
-; convert to the rest frame
+; convert to the rest frame at 10 pc
           if keyword_set(restframe) then begin
              result[igal].wave = result[igal].wave/(1.0+z)
-             result[igal].flux = result[igal].flux*(1.0+z)
+             result[igal].flux = result[igal].flux/(pc10/dlum[igal])^2.0*(1.0+z)
           endif
        endfor 
     endelse

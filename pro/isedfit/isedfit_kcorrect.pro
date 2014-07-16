@@ -131,6 +131,7 @@ pro isedfit_kcorrect, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid,
     kcorrect_results = struct_trimtags(isedfit,select=['isedfit_id',$
       'z','maggies','ivarmaggies','chi2'])
     kcorrect_results = struct_addtags(temporary(kcorrect_results),replicate({$
+      flam_1500:                   0.0,$
       cflux_3727:                  0.0,$
       kcorrect:          fltarr(nfilt),$
       absmag:            fltarr(nfilt),$
@@ -172,8 +173,9 @@ pro isedfit_kcorrect, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid,
             filterlist,absmag_filterlist,restwave,restflux,band_shift=band_shift,$
             absmag=chunk_absmag,ivarabsmag=chunk_ivarabsmag,synth_absmag=chunk_synth_absmag,$
             h100=params.h100,omega0=params.omega0,omegal=params.omegal,$
-            chi2=chi2,vega=vega,/silent,clineflux=cflux)
+            chi2=chi2,vega=vega,/silent,clineflux=cflux,uvflux=uvflux)
 
+          kcorrect_results[index[sortindx[gthese[good]]]].flam_1500 = reform(uvflux[0,*])
           kcorrect_results[index[sortindx[gthese[good]]]].cflux_3727 = reform(cflux[0,*])
           kcorrect_results[index[sortindx[gthese[good]]]].kcorrect = chunk_kcorr
           kcorrect_results[index[sortindx[gthese[good]]]].absmag = chunk_absmag
