@@ -172,8 +172,14 @@ function read_isedfit, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid
        junk = gz_mrdfits(fp.montegrids_chunkfiles[0],1,row=0,/silent)
        npix = n_elements(junk.wave)
 
-       result = struct_addtags(temporary(isedfit),replicate($
-         {wave: fltarr(npix), flux: fltarr(npix)},ngal))
+       if params.nebular then begin
+          result = struct_addtags(temporary(isedfit),replicate($
+            {wave: fltarr(npix), flux: fltarr(npix), $
+            nebflux: fltarr(npix)},ngal))
+       endif else begin
+          result = struct_addtags(temporary(isedfit),replicate($
+            {wave: fltarr(npix), flux: fltarr(npix)},ngal))
+       endelse
        
        for ichunk = 0L, nchunk-1L do begin
           these = where(chunks[ichunk] eq allchunks,nthese)
@@ -186,6 +192,7 @@ function read_isedfit, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid
                    i1 = result[these[ii]].modelindx ; mod 100
                    result[these[ii]].wave = grid[i1].wave
                    result[these[ii]].flux = grid[i1].flux
+                   if params.nebular then result[these[ii]].nebflux = grid[i1].nebflux
                 endif
              endfor
           endif  
@@ -204,13 +211,15 @@ function read_isedfit, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid
           if (result[igal].chi2 lt 1E6) then begin
              z = result[igal].z
              zwave = result[igal].wave*(1+z)
-             zflux_flam = result[igal].totalmass*result[igal].flux*$ ; [erg/s/cm2/A]
-               (pc10/dlum[igal])^2.0/(1.0+z)
+             factor = result[igal].totalmass*(pc10/dlum[igal])^2.0/(1.0+z)
+             zflux_flam = factor*result[igal].flux                              ; [erg/s/cm2/A]
+             if params.nebular then znebflux_flam = factor*result[igal].nebflux ; [erg/s/cm2/A]
              if params.igm and (keyword_set(noigm) eq 0) then begin
                 windx = findex(igmgrid.wave,zwave)
                 zindx = findex(igmgrid.zgrid,z)
                 igm = interpolate(igmgrid.igm,windx,zindx,/grid,missing=1.0)
-                zflux_flam = zflux_flam*igm
+                zflux_flam *= igm
+                if params.nebular then znebflux_flam *= igm
              endif
              zflux_fnu = zflux_flam*zwave^2/light ; [erg/s/cm2/Hz]
              zflux_ab = -2.5*alog10(zflux_fnu>1D-50)-48.6
@@ -218,11 +227,20 @@ function read_isedfit, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid
              result[igal].flux = zflux_ab ; default
              if keyword_set(fnu) then result[igal].flux = zflux_fnu
              if keyword_set(flambda) then result[igal].flux = zflux_flam
+             if params.nebular then begin
+                znebflux_fnu = znebflux_flam*zwave^2/light ; [erg/s/cm2/Hz]
+                znebflux_ab = -2.5*alog10(znebflux_fnu>1D-50)-48.6
+                result[igal].nebflux = znebflux_ab ; default
+                if keyword_set(fnu) then result[igal].nebflux = znebflux_fnu
+                if keyword_set(flambda) then result[igal].nebflux = znebflux_flam
+             endif
           endif
 ; convert to the rest frame at 10 pc
           if keyword_set(restframe) then begin
+             factor = (1.0+z)/(pc10/dlum[igal])^2.0
              result[igal].wave = result[igal].wave/(1.0+z)
-             result[igal].flux = result[igal].flux/(pc10/dlum[igal])^2.0*(1.0+z)
+             result[igal].flux *= factor 
+             if params.nebular then result[igal].nebflux *= factor 
           endif
        endfor 
     endelse

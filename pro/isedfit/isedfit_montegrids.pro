@@ -19,6 +19,12 @@
 ;   montegrids_dir - full directory path where the Monte Carlo grids
 ;     should be written (default 'montegrids' subdirectory of the
 ;     PWD=present working directory) 
+;   priors_pdffile - QAplot PDF file name (default is determined in
+;     ISEDFIT_FILEPATHS) 
+;   montefile - read the Monte Carlo parameters from this file,
+;     overriding the default behavior of this routine, which is to
+;     generate this file when this routine is called (therefore this
+;     parameter should only be used if you know what you're doing!) 
 ;
 ;   modelchunksize, minichunksize - to deal with disk space issues
 ;     this routine splits the full set of models (NMODEL) into
@@ -594,8 +600,19 @@ function build_modelgrid, montegrid, params=params, debug=debug, $
 ; space by replicating the wavelength array for each model, but
 ; it's fine, disk is cheap
           if issp eq 0 then begin
-             spectags = replicate({ewoii: -1.0, ewoiiihb: -1.0, ewniiha: -1.0, $
-               wave: float(wave), flux: fltarr(npix)},nthese)
+             if params.nebular then begin
+                spectags = replicate({ewoii: -1.0, ewoiiihb: -1.0, ewniiha: -1.0, $
+                  wave: float(wave), nebflux: fltarr(npix), flux: fltarr(npix)},nthese)
+             endif else begin
+                spectags = replicate({ewoii: -1.0, ewoiiihb: -1.0, ewniiha: -1.0, $
+                  wave: float(wave), flux: fltarr(npix)},nthese)
+             endelse
+; if the EWOII, EWOIIIHB, and EWNIIHA tags exist, it's because
+; this routine was called with MONTEFILE as an optional input; get rid
+; of them here
+             if tag_exist(modelgrid1,'ewoii') and tag_exist(modelgrid1,'ewoiiihb') and $
+               tag_exist(modelgrid1,'ewniiha') then spectags = struct_trimtags($
+               spectags,except=['ewoii','ewoiiihb','ewniiha'])
              modelgrid1 = struct_addtags(temporary(modelgrid1),spectags)
           endif
 
@@ -731,6 +748,7 @@ function build_modelgrid, montegrid, params=params, debug=debug, $
 
              modelgrid1[sspindx[jj]].nlyc = outnlyc
              modelgrid1[sspindx[jj]].flux = outflux+nebflux
+             if params.nebular then modelgrid1[sspindx[jj]].nebflux = nebflux
           endfor 
        endfor    ; close SSP loop 
        if imini eq 0 then modelgrid = temporary(modelgrid1) else $
@@ -748,7 +766,7 @@ end
 
 pro isedfit_montegrids, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid, $
   isedfit_dir=isedfit_dir, montegrids_dir=montegrids_dir, minichunksize=minichunksize, $
-  priors_pdffile=priors_pdffile, debug=debug, clobber=clobber
+  montefile=in_montefile, priors_pdffile=priors_pdffile, debug=debug, clobber=clobber
 
 ; read the SFHGRID parameter file
     if n_elements(isedfit_paramfile) eq 0 and n_elements(params) eq 0 then begin
@@ -804,162 +822,178 @@ pro isedfit_montegrids, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
     endif
 
 ; ---------------------------------------------------------------------------
-; first major step: build (or overwrite) the Monte Carlo grid
-    montefile = strtrim(fp.montegrids_montefile,2)
-    if file_test(montefile+'*') and keyword_set(clobber) eq 0 then begin
-       splog, 'MonteCarlo grid file '+montefile+' exists; use /CLOBBER'
-       return
-    endif
+; first major step: build (or overwrite) the Monte Carlo grid (or use
+; an existing one); warning! very little checking is done to ensure
+; that the existing MONTEFILE is valid!
+    if n_elements(in_montefile) ne 0 then begin
+       montefile = in_montefile
+       if file_test(montefile) eq 0 then begin
+          splog, 'Monte grids file '+montefile+' not found'
+          return
+       endif
+       splog, 'Reading '+montefile
+       montegrid = mrdfits(montefile,1)
+       if n_elements(montegrid) ne params.nmodel then begin
+          splog, 'The grids in MONTEFILE appear to be out of sync with the parameter file!'
+          return
+       endif
+    endif else begin
+       montefile = strtrim(fp.montegrids_montefile,2)
+       if file_test(montefile+'*') and keyword_set(clobber) eq 0 then begin
+          splog, 'MonteCarlo grid file '+montefile+' exists; use /CLOBBER'
+          return
+       endif
 
 ; clean up old files which can conflict with this routine
-    delfiles = file_search(strtrim(fp.montegrids_chunkfiles,2)+'*',count=ndel)
-    if ndel ne 0 then file_delete, delfiles, /quiet
+       delfiles = file_search(strtrim(fp.montegrids_chunkfiles,2)+'*',count=ndel)
+       if ndel ne 0 then file_delete, delfiles, /quiet
 
-    splog, 'Building SFHGRID='+'sfhgrid'+string(params.sfhgrid,format='(I2.2)')+$
-      ' REDCURVE='+strtrim(params.redcurve,2)+' IMF='+strtrim(params.imf,2)+$
-      ' NMODEL='+string(params.nmodel,format='(I0)')
-    montegrid = init_montegrid(params.nmodel,nmaxburst=params.nmaxburst)
+       splog, 'Building SFHGRID='+'sfhgrid'+string(params.sfhgrid,format='(I2.2)')+$
+         ' REDCURVE='+strtrim(params.redcurve,2)+' IMF='+strtrim(params.imf,2)+$
+         ' NMODEL='+string(params.nmodel,format='(I0)')
+       montegrid = init_montegrid(params.nmodel,nmaxburst=params.nmaxburst)
        
 ; draw uniformly from linear TAU, or 1/TAU?
-    tau = randomu(seed,params.nmodel)*(params.tau[1]-params.tau[0])+params.tau[0]
-    if params.oneovertau eq 1 and params.delayed eq 1 then $
-      message, 'DELAYED and ONEOVERTAU may not work well together.'
-    if params.oneovertau eq 1 then tau = 1D/tau
-    montegrid.tau = tau
+       tau = randomu(seed,params.nmodel)*(params.tau[1]-params.tau[0])+params.tau[0]
+       if params.oneovertau eq 1 and params.delayed eq 1 then $
+         message, 'DELAYED and ONEOVERTAU may not work well together.'
+       if params.oneovertau eq 1 then tau = 1D/tau
+       montegrid.tau = tau
     
 ; metallicity; check to make sure that the prior boundaries do not
 ; exceed the metallicity range available from the chosen SPSMODELS
-    if (params.Zmetal[0] lt min(sspinfo.Zmetal)) then begin
-       splog, 'Adjusting minimum prior metallicity!'
-       params.Zmetal[0] = min(sspinfo.Zmetal)
-    endif
-    if (params.Zmetal[1] gt max(sspinfo.Zmetal)) then begin
-       splog, 'Adjusting maximum prior metallicity!'
-       params.Zmetal[1] = max(sspinfo.Zmetal)
-    endif
-    montegrid.Zmetal = randomu(seed,params.nmodel)*(params.Zmetal[1]-params.Zmetal[0])+params.Zmetal[0]
-    
+       if (params.Zmetal[0] lt min(sspinfo.Zmetal)) then begin
+          splog, 'Adjusting minimum prior metallicity!'
+          params.Zmetal[0] = min(sspinfo.Zmetal)
+       endif
+       if (params.Zmetal[1] gt max(sspinfo.Zmetal)) then begin
+          splog, 'Adjusting maximum prior metallicity!'
+          params.Zmetal[1] = max(sspinfo.Zmetal)
+       endif
+       montegrid.Zmetal = randomu(seed,params.nmodel)*(params.Zmetal[1]-params.Zmetal[0])+params.Zmetal[0]
+       
 ; age; unfortunately I think we have to loop to sort
-    montegrid.age = randomu(seed,params.nmodel)*(params.age[1]-params.age[0])+params.age[0]
-    
+       montegrid.age = randomu(seed,params.nmodel)*(params.age[1]-params.age[0])+params.age[0]
+       
 ; reddening, if any; Gamma distribution is the default, unless FLATAV==1
-    if (params.av[1] gt 0) then begin
-       if params.flatav then begin
-          montegrid.av = randomu(seed,params.nmodel)*(params.av[1]-params.av[0])+params.av[0] 
-       endif else begin
-          montegrid.av = params.av[0]*randomu(seed,params.nmodel,gamma=params.av[1])
-;         montegrid.av = ((10.0^(randomn(seed,params.nmodel)*params.av[1]+alog10(params.av[0]))>0.0
-;         montegrid.av = randomu(seed,params.nmodel,gamma=1.0)*params.av[1]+params.av[0]
-;         montegrid.av = 10.0^(randomn(seed,params.nmodel)*params.av[1]+alog10(params.av[0]))
-       endelse
+       if (params.av[1] gt 0) then begin
+          if params.flatav then begin
+             montegrid.av = randomu(seed,params.nmodel)*(params.av[1]-params.av[0])+params.av[0] 
+          endif else begin
+             montegrid.av = params.av[0]*randomu(seed,params.nmodel,gamma=params.av[1])
+;            montegrid.av = ((10.0^(randomn(seed,params.nmodel)*params.av[1]+alog10(params.av[0]))>0.0
+;            montegrid.av = randomu(seed,params.nmodel,gamma=1.0)*params.av[1]+params.av[0]
+;            montegrid.av = 10.0^(randomn(seed,params.nmodel)*params.av[1]+alog10(params.av[0]))
+          endelse
        
 ; "mu" is the Charlot & Fall (2000) factor for evolved stellar
 ; populations; Gamma distribution is the default, unless FLATMU==1; do
 ; not let MU exceed unity
-       if (strtrim(params.redcurve,2) eq 'charlot') then begin
-          if params.flatmu then begin
-             montegrid.mu = (randomu(seed,params.nmodel)*(params.mu[1]-params.mu[0])+params.mu[0])<1.0
-          endif else begin
-             montegrid.mu = (params.mu[0]*randomu(seed,params.nmodel,gamma=params.mu[1]))<1.0
-;            montegrid.mu = ((10.0^(randomn(seed,params.nmodel)*params.mu[1]+alog10(params.mu[0])))<1.0)>0.0
-          endelse
+          if (strtrim(params.redcurve,2) eq 'charlot') then begin
+             if params.flatmu then begin
+                montegrid.mu = (randomu(seed,params.nmodel)*(params.mu[1]-params.mu[0])+params.mu[0])<1.0
+             endif else begin
+                montegrid.mu = (params.mu[0]*randomu(seed,params.nmodel,gamma=params.mu[1]))<1.0
+;               montegrid.mu = ((10.0^(randomn(seed,params.nmodel)*params.mu[1]+alog10(params.mu[0])))<1.0)>0.0
+             endelse
+          endif
        endif
-    endif
 
 ; add emission lines; draw [OIII]/H-beta from a uniform logarithmic
 ; distribution 
-    if params.nebular then begin
-       montegrid.oiiihb = randomu(seed,params.nmodel)*$
-         (params.oiiihb[1]-params.oiiihb[0])+params.oiiihb[0] 
-    endif
+       if params.nebular then begin
+          montegrid.oiiihb = randomu(seed,params.nmodel)*$
+            (params.oiiihb[1]-params.oiiihb[0])+params.oiiihb[0] 
+       endif
 
 ; now assign bursts; note that the bursts can occur outside
 ; (generally, before) the AGE vector; divide the time vector into
 ; NMAXBURST intervals of width INTERVAL_PBURST [Gyr]
-    ntime = 100
-;   ntime = params.nage
+       ntime = 100
+;      ntime = params.nage
        
 ; type of burst: 0 (step function, default), 1 (gaussian), 2 (step
 ; function with exponential wings) 
-    if (params.nmaxburst gt 0) then begin
-       tburst = dblarr(params.nmaxburst,params.nmodel)-1.0
-       ran = randomu(seed,params.nmaxburst,params.nmodel)
-       for imod = 0L, params.nmodel-1 do begin
-          for ib = 0, params.nmaxburst-1 do begin
-             tmin = params.tburst[0]+ib*params.interval_pburst
-             tmax = (params.tburst[0]+(ib+1)*params.interval_pburst)<params.tburst[1]
-;            tmin = params.minage+ib*params.interval_pburst
-;            tmax = (params.minage+(ib+1)*params.interval_pburst)<params.maxage
+       if (params.nmaxburst gt 0) then begin
+          tburst = dblarr(params.nmaxburst,params.nmodel)-1.0
+          ran = randomu(seed,params.nmaxburst,params.nmodel)
+          for imod = 0L, params.nmodel-1 do begin
+             for ib = 0, params.nmaxburst-1 do begin
+                tmin = params.tburst[0]+ib*params.interval_pburst
+                tmax = (params.tburst[0]+(ib+1)*params.interval_pburst)<params.tburst[1]
+;               tmin = params.minage+ib*params.interval_pburst
+;               tmax = (params.minage+(ib+1)*params.interval_pburst)<params.maxage
 
-             if (tmax le tmin) then message, 'This violates causality!'
-             time1 = randomu(seed,ntime)*(tmax-tmin)+tmin
-             time1 = time1[sort(time1)]
+                if (tmax le tmin) then message, 'This violates causality!'
+                time1 = randomu(seed,ntime)*(tmax-tmin)+tmin
+                time1 = time1[sort(time1)]
                 
 ; compute the cumulative probability, dealing with edge effects correctly
-             dtimeleft = (time1-shift(time1,1))/2.0
-             dtimeleft[0] = time1[0]-tmin
-             dtimeright = (shift(time1,-1)-time1)/2.0
-             dtimeright[ntime-1] = tmax-time1[ntime-1]
-             prob = params.pburst*total([[dtimeleft],[dtimeright]],2)/$
-               params.interval_pburst
-             if (prob[0] le 0) then message, 'This should not happen!'
-             
-             this = where(total(prob,/cum) gt ran[ib,imod])
-             if (this[0] ne -1) then tburst[ib,imod] = time1[this[0]]
-;            splog, tmin, tmax, ran[ib,imod], tburst[ib,imod] & if ib eq 0 then print
-          endfor
-       endfor 
-       montegrid.nburst = total(tburst gt -1.0,1) ; total number of bursts
-    endif
+                dtimeleft = (time1-shift(time1,1))/2.0
+                dtimeleft[0] = time1[0]-tmin
+                dtimeright = (shift(time1,-1)-time1)/2.0
+                dtimeright[ntime-1] = tmax-time1[ntime-1]
+                prob = params.pburst*total([[dtimeleft],[dtimeright]],2)/$
+                  params.interval_pburst
+                if (prob[0] le 0) then message, 'This should not happen!'
+                
+                this = where(total(prob,/cum) gt ran[ib,imod])
+                if (this[0] ne -1) then tburst[ib,imod] = time1[this[0]]
+;               splog, tmin, tmax, ran[ib,imod], tburst[ib,imod] & if ib eq 0 then print
+             endfor
+          endfor 
+          montegrid.nburst = total(tburst gt -1.0,1) ; total number of bursts
+       endif
     
 ; assign burst strengths and durations       
-    hasburst = where(montegrid.nburst gt 0,nhasburst)
-    nallburst = long(total(montegrid.nburst))
-    if (nhasburst ne 0L) then begin
-       if params.flatdtburst then begin
-          dtburst = randomu(seed,nallburst)*(params.dtburst[1]-$
-            params.dtburst[0])+params.dtburst[0]
-       endif else begin
-          dtburst = 10.0^(randomu(seed,nallburst)*(alog10(params.dtburst[1])-$
-            alog10(params.dtburst[0]))+alog10(params.dtburst[0]))
-       endelse
-       
-       if params.flatfburst then begin
-          fburst = randomu(seed,nallburst)*(params.fburst[1]-$
-            params.fburst[0])+params.fburst[0]
-       endif else begin
-          fburst = 10.0^(randomu(seed,nallburst)*(alog10(params.fburst[1])-$
-            alog10(params.fburst[0]))+alog10(params.fburst[0]))
-       endelse
-       
-       count = 0L
-       for ii = 0L, nhasburst-1 do begin ; sort
-          if (montegrid[hasburst[ii]].nburst gt 0) then begin
-             nb = montegrid[hasburst[ii]].nburst
-             good = where(tburst[*,hasburst[ii]] gt -1.0)
-             montegrid[hasburst[ii]].tburst = tburst[good,hasburst[ii]]
-             montegrid[hasburst[ii]].fburst = fburst[count:count+nb-1]
-             montegrid[hasburst[ii]].dtburst = dtburst[count:count+nb-1]
-             count = count + nb
-          endif
-       endfor
-       
+       hasburst = where(montegrid.nburst gt 0,nhasburst)
+       nallburst = long(total(montegrid.nburst))
+       if (nhasburst ne 0L) then begin
+          if params.flatdtburst then begin
+             dtburst = randomu(seed,nallburst)*(params.dtburst[1]-$
+               params.dtburst[0])+params.dtburst[0]
+          endif else begin
+             dtburst = 10.0^(randomu(seed,nallburst)*(alog10(params.dtburst[1])-$
+               alog10(params.dtburst[0]))+alog10(params.dtburst[0]))
+          endelse
+          
+          if params.flatfburst then begin
+             fburst = randomu(seed,nallburst)*(params.fburst[1]-$
+               params.fburst[0])+params.fburst[0]
+          endif else begin
+             fburst = 10.0^(randomu(seed,nallburst)*(alog10(params.fburst[1])-$
+               alog10(params.fburst[0]))+alog10(params.fburst[0]))
+          endelse
+          
+          count = 0L
+          for ii = 0L, nhasburst-1 do begin ; sort
+             if (montegrid[hasburst[ii]].nburst gt 0) then begin
+                nb = montegrid[hasburst[ii]].nburst
+                good = where(tburst[*,hasburst[ii]] gt -1.0)
+                montegrid[hasburst[ii]].tburst = tburst[good,hasburst[ii]]
+                montegrid[hasburst[ii]].fburst = fburst[count:count+nb-1]
+                montegrid[hasburst[ii]].dtburst = dtburst[count:count+nb-1]
+                count = count + nb
+             endif
+          endfor
+          
 ; allow a FRACTRUNC fraction of the models with bursts to have
 ; truncated bursts 
-       if (params.fractrunc gt 0D) then begin
-          ntrunc = long(params.fractrunc*nhasburst)
-          if params.fractrunc eq 1D then trunc = lindgen(ntrunc) else $
-            trunc = random_indices(nhasburst,ntrunc)
-       endif else ntrunc = 0L
-       if (ntrunc gt 0L) then begin
-          if (params.bursttype ne 1) then message, 'Should use truncated *Gaussian* bursts.'
-;         montegrid[hasburst[trunc]].trunctau = params.trunctau ; [Gyr]
-          montegrid[hasburst[trunc]].trunctau = $
-            randomu(seed,ntrunc)*(params.trunctau[1]-$
-            params.trunctau[0])+params.trunctau[0] ; [Gyr]
-       endif
-    endif  
-    
+          if (params.fractrunc gt 0D) then begin
+             ntrunc = long(params.fractrunc*nhasburst)
+             if params.fractrunc eq 1D then trunc = lindgen(ntrunc) else $
+               trunc = random_indices(nhasburst,ntrunc)
+          endif else ntrunc = 0L
+          if (ntrunc gt 0L) then begin
+             if (params.bursttype ne 1) then message, 'Should use truncated *Gaussian* bursts.'
+;            montegrid[hasburst[trunc]].trunctau = params.trunctau ; [Gyr]
+             montegrid[hasburst[trunc]].trunctau = $
+               randomu(seed,ntrunc)*(params.trunctau[1]-$
+               params.trunctau[0])+params.trunctau[0] ; [Gyr]
+          endif
+       endif                    ; close the burst loop
+    endelse                     ; close the MONTEFILE optional input 
+
 ; ---------------------------------------------------------------------------
 ; now build the actual composite stellar populations; do it in chunks
 ; to avoid memory issues and pass along all the parameters
@@ -994,13 +1028,15 @@ pro isedfit_montegrids, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
 
 ; finally, build a QAplot; allow the user to overwrite PDFFILE 
     if file_test(fp.isedfit_dir+fp.qaplot_priors_pdffile) and $
-      keyword_set(clobber) eq 0 then begin
+      keyword_set(clobber) eq 0 and n_elements(in_montefile) eq 0 then begin
        splog, 'Output file '+fp.qaplot_priors_pdffile+' exists; use /CLOBBER'
        return
     endif
 
-    qafile = fp.isedfit_dir+fp.qaplot_priors_psfile
-    montegrids_qaplot, newmontegrid, params=params, qafile=qafile
+    if n_elements(in_montefile) eq 0 then begin
+       qafile = fp.isedfit_dir+fp.qaplot_priors_psfile
+       montegrids_qaplot, newmontegrid, params=params, qafile=qafile
+    endif
 
 return
 end

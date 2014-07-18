@@ -76,6 +76,7 @@ function isedfit_posterior, isedfit, params=params, modelgrid=modelgrid, $
           isedfit[igal].mstar = alog10(modelgrid[mindx].mstar*isedfit[igal].totalmass)
           isedfit[igal].sfr = modelgrid[mindx].sfr+alog10(isedfit[igal].totalmass)
           isedfit[igal].sfr100 = modelgrid[mindx].sfr100+alog10(isedfit[igal].totalmass)
+          isedfit[igal].nlyc = modelgrid[mindx].nlyc+alog10(isedfit[igal].totalmass)
           isedfit[igal].b100 = modelgrid[mindx].b100
           isedfit[igal].b1000 = modelgrid[mindx].b1000
 

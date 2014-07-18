@@ -162,9 +162,11 @@ FUNCTION rsex,catalog, use_row=use_row
      readf,lun,body
      free_lun, lun
      bodyslam=strarr(ntothead,nbody)
-     for i=0l,nbody-1 do $
-;      bodyslam[*,i]=(str_sep(strcompress(strtrim(body[i],2)),' '))[0L:nhead-1L]
-       bodyslam[*,i]=(str_sep(strcompress(strtrim(body[i],2)),' '))[0L:ntothead-1L] ; jm04nov22uofa
+     for i=0l,nbody-1 do begin
+;       print, i, body[i]
+;       bodyslam[*,i]=(str_sep(strcompress(strtrim(body[i],2)),' '))[0L:nhead-1L]
+        bodyslam[*,i]=(str_sep(strcompress(strtrim(body[i],2)),' '))[0L:ntothead-1L] ; jm04nov22uofa
+     endfor
      carr=str_sep(strcompress(strtrim(cstr,1)),' ')
 
      tind    = valid_num(carr) ; 0=string 1=number
