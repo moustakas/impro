@@ -194,7 +194,8 @@ pro isedfit_qaplot_sed, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
             galaxy=galaxy1, pdffile=pdffile, xrange=in_xrange, yrange=in_yrange, $
             xlog=xlog, nrandom=nrandom, nsigma=nsigma, clobber=clobber, $
             isedfit_results=isedfit_results1
-          isedfit_results1 = struct_trimtags(isedfit_results1,except=['WAVE','FLUX'])
+          isedfit_results1 = struct_trimtags(isedfit_results1,$
+            except=['WAVE','FLUX','NEBFLUX'])
           if ii eq 0 then isedfit_results = isedfit_results1 else $
             isedfit_results = [[isedfit_results],[isedfit_results1]]
        endfor
