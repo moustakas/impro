@@ -33,8 +33,8 @@ function isedfit_chi2, maggies, ivarmaggies, modelmaggies, $
     for igal = 0L, ngal-1 do begin
        if (keyword_set(silent) eq 0) then begin
           if ((igal mod 50) eq 0) then print, format='("GalaxyChunk ",I0,"/",I0,", '+$
-            'Modelgrid ",I0,"/",I0,", Galaxy ",I0,"/",I0,A10,$)', gchunk+1, ngalchunk, $
-            ichunk+1, nchunk, igal, ngal, string(13b)
+            'Modelgrid ",I0,"/",I0,", Galaxy ",I0,"/",I0,A10,$)', gchunk, ngalchunk, $
+            ichunk, nchunk, igal, ngal, string(13b)
 ;         if ((igal mod 50) eq 0) then print, format='("GalaxyChunk ",I0,"/",I0,", '+$
 ;           'Modelgrid ",I0,"/",I0,", Galaxy ",I0,"/",I0,A10,$)', gchunk+1, ngalchunk, $
 ;           ichunk+1, nchunk, igal, ngal, string(13b)

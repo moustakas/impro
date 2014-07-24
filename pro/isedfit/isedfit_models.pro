@@ -189,7 +189,7 @@ pro isedfit_models, isedfit_paramfile, params=params, isedfit_dir=isedfit_dir, $
        distfactor = rebin(reform((pc10/dlum)^2.0,nredshift,1),nredshift,nmodel)
 ; initialize the output structure; the 'reform' bit is to guarantee
 ; the right-sized array for NZZ==1
-       isedfit_models = struct_trimtags(chunk,except=['WAVE','FLUX'])
+       isedfit_models = struct_trimtags(chunk,except=['WAVE','NEBFLUX','FLUX'])
        isedfit_models = struct_addtags(temporary(isedfit_models),$
          replicate({modelmaggies: reform(fltarr(nfilt,nredshift),nfilt,nredshift)},nmodel))
 ; build the IGM absorption vector
