@@ -345,6 +345,8 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, z, params=params, $
        isedfit_results.isedfit_id = lindgen(ngal)
        isedfit_results.maggies = maggies
        isedfit_results.ivarmaggies = ivarmaggies
+       isedfit_results.ra = ra
+       isedfit_results.dec = dec
        if keyword_set(photoz) eq 0 then isedfit_results.z = z
        if (keyword_set(nowrite) eq 0) then begin
           im_mwrfits, isedfit_results, isedfit_outfile, /clobber, silent=silent
