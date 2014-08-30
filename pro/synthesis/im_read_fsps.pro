@@ -3,7 +3,7 @@
 ;   IM_READ_FSPS()
 ;
 ; PURPOSE:
-;   Read an FSPS SSP into a structure.
+;   Read an FSPS-style SSP into a structure.
 ;
 ; INPUTS:
 ;   None required.
@@ -16,6 +16,7 @@
 ;     IDL> ssp = im_read_fsps(metallicity='Z')
 ;
 ; KEYWORD PARAMETERS:
+;   ckc14 - read the latest high-resolution SSPs
 ;   basti - read the BaSTI isochrones (default is to use Padova) (not
 ;     supported as of v2.3 of FSPS!)
 ;   miles - read the MILES stellar library (available just in the
@@ -27,6 +28,7 @@
 ;   abmag - convert the output spectra to AB mag at 10 pc
 ;   flambda - convert the output spectra to F_lambda units (erg/s/cm^2/A) at 10 pc
 ;   fnu - convert the output spectra to F_nu units (erg/s/cm^2/Hz) at 10 pc 
+;   vacuum - retain vacuum wavelengths (default is to convert to air)
 ;
 ; OUTPUTS:
 ;   fsps - output data structure
@@ -47,6 +49,7 @@
 ;   J. Moustakas, 2011 Jan 30, UCSD
 ;   jm11mar14ucsd - updated to the latest SSPs
 ;   jm11mar28ucsd - read the BaSeL library by default 
+;   jm14aug28siena - added CKC14 and VACUUM keywords 
 ;
 ; Copyright (C) 2011, John Moustakas
 ; 
@@ -62,14 +65,16 @@
 ;-
 
 function im_read_fsps, metallicity=metallicity, basti=basti, $
-  miles=miles, kroupa=kroupa, chabrier=chabrier, abmag=abmag, $
-  flambda=flambda, fnu=fnu
+  ckc14=ckc14, miles=miles, kroupa=kroupa, chabrier=chabrier, abmag=abmag, $
+  flambda=flambda, fnu=fnu, vacuum=vacuum
 
-    fspspath = getenv('IM_RESEARCH_DIR')+'/synthesis/fsps/'
-    ssppath = fspspath+'SSP/'
-
+    ssppath = getenv('IM_RESEARCH_DIR')+'/synthesis/fsps/SSP/'
+    if keyword_set(ckc14) then ssppath = getenv('IM_RESEARCH_DIR')+'/synthesis/CKC14z/'
+    
 ; defaults
-    if keyword_set(miles) then lib = 'MILES' else lib = 'BaSeL' ; stellar library
+    lib = 'BaSeL' ; stellar library
+    if keyword_set(miles) then lib = 'MILES'
+    if keyword_set(ckc14) then lib = 'CKC14z'
     if keyword_set(basti) then begin
        iso = 'BaSTI' 
        splog, 'The BaSTI isochrones are not supported as of FSPS v2.3!!'
@@ -80,19 +85,21 @@ function im_read_fsps, metallicity=metallicity, basti=basti, $
     imf = 'Salpeter'
     if keyword_set(kroupa) then imf = 'Kroupa'
     if keyword_set(chabrier) then imf = 'Chabrier'
+    if keyword_set(ckc14) then imf = 'Kroupa'
 
 ; metallicity
     case strlowcase(iso) of
        'padova': begin
           if (n_elements(metallicity) eq 0) then metallicity = 'Z0.0190'
-          if keyword_set(miles) then begin ; MILES
-             allZ = ['Z0.0008','Z0.0031','Z0.0096','Z0.0190','Z0.0300']
-          endif else begin ; BaSeL
-             allZ = ['Z0.0002','Z0.0003','Z0.0004','Z0.0005','Z0.0006',$
-               'Z0.0008','Z0.0010','Z0.0012','Z0.0016','Z0.0020','Z0.0025',$
-               'Z0.0031','Z0.0039','Z0.0049','Z0.0061','Z0.0077','Z0.0096',$
-               'Z0.0120','Z0.0150','Z0.0190','Z0.0240','Z0.0300']
-          endelse
+          allZ = ['Z0.0002','Z0.0003','Z0.0004','Z0.0005','Z0.0006',$ ; BaSeL
+            'Z0.0008','Z0.0010','Z0.0012','Z0.0016','Z0.0020','Z0.0025',$
+            'Z0.0031','Z0.0039','Z0.0049','Z0.0061','Z0.0077','Z0.0096',$
+            'Z0.0120','Z0.0150','Z0.0190','Z0.0240','Z0.0300']
+          if keyword_set(miles) then $ ; MILES
+            allZ = ['Z0.0008','Z0.0031','Z0.0096','Z0.0190','Z0.0300']
+          if keyword_set(ckc14) then $ ; MILES
+            allZ = ['Z0.0003','Z0.0006','Z0.0012','Z0.0025','Z0.0049',$
+            'Z0.0096','Z0.0190','Z0.0300']
        end
        'basti': begin
           if (n_elements(metallicity) eq 0) then metallicity = 'Z0.0200'
@@ -146,8 +153,7 @@ function im_read_fsps, metallicity=metallicity, basti=basti, $
     readf, lun, wave
 
 ; convert to air!
-    airwave = wave
-    vactoair, airwave
+    if keyword_set(vacuum) eq 0 then vactoair, wave, airwave
     
     fsps = {Z: zz, age: dblarr(nage), mstar: fltarr(nage), $
       lbol: fltarr(nage), wave: airwave, $
