@@ -149,14 +149,14 @@ function im_read_fsps, metallicity=metallicity, basti=basti, $
     nage = long(char[0])
     npix = long(char[1])
 
-    wave = fltarr(npix)
-    readf, lun, wave
+    wave1 = fltarr(npix)
+    readf, lun, wave1
 
 ; convert to air!
-    if keyword_set(vacuum) eq 0 then vactoair, wave, airwave
+    if keyword_set(vacuum) then wave = wave1 else vactoair, wave1, wave
     
     fsps = {Z: zz, age: dblarr(nage), mstar: fltarr(nage), $
-      lbol: fltarr(nage), wave: airwave, $
+      lbol: fltarr(nage), wave: wave, $
       flux: fltarr(npix,nage)}
 
     tspec = fltarr(npix)
@@ -168,7 +168,7 @@ function im_read_fsps, metallicity=metallicity, basti=basti, $
        fsps.age[ii]  = 10.0^t  ; [yr]
        fsps.mstar[ii] = 10.0^m ; [Msun]
        fsps.lbol[ii] = l
-       fsps.flux[*,ii] = 3.826D33*tspec*im_light(/ang)/airwave^2 ; [Lsun/Hz]-->[erg/s/A]
+       fsps.flux[*,ii] = 3.826D33*tspec*im_light(/ang)/fsps.wave^2 ; [Lsun/Hz]-->[erg/s/A]
     endfor
     free_lun,lun
 
