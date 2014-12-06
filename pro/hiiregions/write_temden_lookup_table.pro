@@ -35,8 +35,9 @@
 ;
 ; MODIFICATION HISTORY:
 ;       J. Moustakas, 2007 Nov 27, NYU - written
+;       jm14dec06siena - updated to use the latest atomic data
 ;
-; Copyright (C) 2007, John Moustakas
+; Copyright (C) 2007, 2013 John Moustakas
 ; 
 ; This program is free software; you can redistribute it and/or modify 
 ; it under the terms of the GNU General Public License as published by 
