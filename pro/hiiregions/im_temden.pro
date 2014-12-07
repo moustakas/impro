@@ -35,6 +35,11 @@
 ; OUTPUTS:
 ;   result - data structure with lots of goodies
 ;
+; OPTIONAL OUTPUTS:
+;   result_monte - if NMONTE>0 then optionally return the Monte Carlo
+;     data structure so that the PDF on the output quantities can be
+;     analyzed 
+;
 ; COMMENTS:
 ;   Temperature-sensitive line-ratios:
 ;      O_III = (4959+5007)/4363
@@ -60,7 +65,7 @@
 
 function im_temden, ionlist, ratio, ratio_err=ratio_err, $
   frac_tol=frac_tol, nmonte=nmonte, temp_guess=temp_guess1, $
-  dens_guess=dens_guess1, noiter=noiter
+  dens_guess=dens_guess1, noiter=noiter, result_monte=result_monte
 
     common temden_table, temden_table
     
@@ -86,8 +91,12 @@ function im_temden, ionlist, ratio, ratio_err=ratio_err, $
           if (n_elements(ratio_err) ne 0L) then thisratio_err = ratio_err[ir]
           result1 = im_temden(ionlist[0],ratio[ir],ratio_err=thisratio_err,$
             frac_tol=frac_tol,nmonte=nmonte,temp_guess=temp_guess1,$
-            dens_guess=dens_guess1,noiter=noiter)
+            dens_guess=dens_guess1,noiter=noiter,result_monte=result_monte1)
           if (ir eq 0L) then result = result1 else result = [result,result1]
+          if n_elements(result_monte1) ne 0L then begin
+             if (ir eq 0L) then result_monte = result_monte1 else $
+               result_monte = [[result_monte],[result_monte1]]
+          endif
        endfor
        return, reform(result)
     endif
@@ -123,21 +132,21 @@ function im_temden, ionlist, ratio, ratio_err=ratio_err, $
     nquant = n_elements(quant)
     
     result = {$
-      ion:                        '', $
-      ratio:                  -999.0, $
-      ratio_err:              -999.0, $
-      model_ratio:            -999.0, $
-      ratio_frac_err:         -999.0, $
-      temp_ion:                   0B, $ ; temperature-sensitive ion (Boolean) 
-      temp_edge:                  0B, $ ; implied temperature is on the edge of the grid
-      temp:                   -999.0, $
-      temp_err:               -999.0, $
-      temp_quant:      quant*0.0-1.0, $ 
-      dens_ion:                    0, $ ; density-sensitive ion (Boolean) 
-      dens_edge:                   0, $ ; implied density is on the edge of the grid
-      dens:                   -999.0, $
-      dens_err:               -999.0, $
-      dens_quant:      quant*0.0-1.0}
+      ion:                        '',$
+      ratio:                  -999.0,$
+      ratio_err:              -999.0,$
+      model_ratio:            -999.0,$
+      ratio_frac_err:         -999.0,$
+      temp_ion:                   0B,$ ; temperature-sensitive ion (Boolean) 
+      temp_edge:                  0B,$ ; implied temperature is on the edge of the grid
+      temp:                   -999.0,$
+      temp_err:               -999.0,$
+;     temp_quant:      quant*0.0-1.0,$ 
+      dens_ion:                    0,$ ; density-sensitive ion (Boolean) 
+      dens_edge:                   0,$ ; implied density is on the edge of the grid
+      dens:                   -999.0,$
+      dens_err:               -999.0}
+;     dens_quant:      quant*0.0-1.0}
     result = replicate(result,nion)
 
     result.ion   = ionlist
@@ -239,38 +248,37 @@ function im_temden, ionlist, ratio, ratio_err=ratio_err, $
 
           for imonte = 0L, nmonte-1L do begin
              if (result[ii].temp_ion eq 1B) and (result[ii].temp_edge eq 0B) then begin ; temperature
-                resmonte1 = im_temden(ionlist[ii],ratio_monte[imonte],/noiter,$
+                result_monte1 = im_temden(ionlist[ii],ratio_monte[imonte],/noiter,$
                   temp_guess=result[ii].temp,dens_guess=result[ii].dens)
-                if (imonte eq 0L) then resmonte = resmonte1 else $
-                  resmonte = [resmonte,resmonte1]
+                if (imonte eq 0L) then result_monte = result_monte1 else $
+                  result_monte = [result_monte,result_monte1]
              endif
              if (result[ii].dens_ion eq 1B) and (result[ii].dens_edge eq 0B) then begin ; density
-                resmonte1 = im_temden(ionlist[ii],ratio_monte[imonte],/noiter,$
+                result_monte1 = im_temden(ionlist[ii],ratio_monte[imonte],/noiter,$
                   dens_guess=result[ii].dens,temp_guess=result[ii].temp)
-                if (imonte eq 0L) then resmonte = resmonte1 else $
-                  resmonte = [resmonte,resmonte1]
+                if (imonte eq 0L) then result_monte = result_monte1 else $
+                  result_monte = [result_monte,result_monte1]
              endif
           endfor
 
 ; discard Monte Carlo realizations that result in large fractional
 ; differences between the measured and the model line-ratios as being
 ; unphysical 
-          if result[ii].temp_ion and (n_elements(resmonte) ne 0L) then begin
-             temp_good = where((abs(resmonte.ratio_frac_err) lt frac_tol),ngood)
+          if result[ii].temp_ion and (n_elements(result_monte) ne 0L) then begin
+             temp_good = where((abs(result_monte.ratio_frac_err) lt frac_tol),ngood)
              if (ngood gt 3L) then begin
-                result[ii].temp_err = djsig(resmonte[temp_good].temp)
-                result[ii].temp_quant = weighted_quantile(resmonte[temp_good].temp,quant=quant)
+                result[ii].temp_err = djsig(result_monte[temp_good].temp)
+;               result[ii].temp_quant = weighted_quantile(result_monte[temp_good].temp,quant=quant)
              endif
           endif
-          if result[ii].dens_ion and (n_elements(resmonte) ne 0L) then begin
-             dens_good = where((abs(resmonte.ratio_frac_err) lt frac_tol),ngood)
+          if result[ii].dens_ion and (n_elements(result_monte) ne 0L) then begin
+             dens_good = where((abs(result_monte.ratio_frac_err) lt frac_tol),ngood)
              if (ngood gt 3L) then begin
-                result[ii].dens_err = djsig(resmonte[dens_good].dens)
-                result[ii].dens_quant = weighted_quantile(resmonte[dens_good].dens,quant=quant)
+                result[ii].dens_err = djsig(result_monte[dens_good].dens)
+;               result[ii].dens_quant = weighted_quantile(result_monte[dens_good].dens,quant=quant)
              endif
           endif
        endfor 
-    
     endif
 
 return, result
