@@ -169,7 +169,7 @@ function read_isedfit, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid
           return, -1
        endif
 
-       junk = gz_mrdfits(fp.montegrids_chunkfiles[0],1,row=0,/silent)
+       junk = im_mrdfits(fp.montegrids_chunkfiles[0],1,row=0,/silent)
        npix = n_elements(junk.wave)
 
        if params.nebular then begin
@@ -186,7 +186,7 @@ function read_isedfit, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid
           if (nthese ne 0L) and (chunks[ichunk] ge 0) then begin
              chunkfile = strtrim(fp.montegrids_chunkfiles[chunks[ichunk]],2)
              if (not keyword_set(silent)) then splog, 'Reading '+chunkfile
-             grid = gz_mrdfits(chunkfile,1,/silent)
+             grid = im_mrdfits(chunkfile,1,/silent)
              for ii = 0L, nthese-1L do begin
                 if (result[these[ii]].chi2 lt 1E6) then begin
                    i1 = result[these[ii]].modelindx ; mod 100
@@ -202,7 +202,7 @@ function read_isedfit, isedfit_paramfile, params=params, thissfhgrid=thissfhgrid
        if n_elements(igmgrid) eq 0 then begin
           if params.igm and (keyword_set(noigm) eq 0) then begin
              splog, 'Reading IGM attenuation lookup table'
-             igmgrid = mrdfits(getenv('IMPRO_DIR')+'/etc/igmtau_grid.fits.gz',1)
+             igmgrid = im_mrdfits(getenv('IMPRO_DIR')+'/etc/igmtau_grid.fits.gz',1)
           endif
        endif
 
