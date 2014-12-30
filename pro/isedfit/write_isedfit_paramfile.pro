@@ -186,6 +186,8 @@ function init_paramfile, filterlist=filterlist, prefix=prefix, $
       Zmetal:  [0.004,0.04],$ ; metallicity
       AV:        [0.35,2.0],$ ; Gamma-distribution parameters
       mu:           [0.1,4],$ ; Gamma-distribution parameters
+; Mendez tau_dust from Conroy09a
+      tau_dust:  [0.0, 0.0],$ ; Parameters from FSPS Keep it off unless directed
 ; burst priors
       pburst:           0.0,$ ; burst probability 
       interval_pburst:  2.0,$ ; [Gyr]
@@ -226,6 +228,7 @@ pro write_isedfit_paramfile, params=params, isedfit_dir=isedfit_dir, $
   dtburst=dtburst, trunctau=trunctau, fractrunc=fractrunc, oiiihb=oiiihb, $
   nebular=nebular, oneovertau=oneovertau, delayed=delayed, flatAV=flatAV, $
   flatmu=flatmu, flatfburst=flatfburst, flatdtburst=flatdtburst, bursttype=bursttype, $
+  dust_tau=dust_tau,$ ; this is stupid!
   append=append, help=help, clobber=clobber
 
     if keyword_set(help) then begin
@@ -337,7 +340,12 @@ pro write_isedfit_paramfile, params=params, isedfit_dir=isedfit_dir, $
        if n_elements(mu) ne 2 then message, 'MU must be a 2-element array!'
        params.mu = mu
     endif
-
+    ; yes, this is stupid
+    if n_elements(dust_tau) ne 0 then begin
+       if n_elements(dust_tau) ne 2 then message, 'tau_dust must be a 2-element array!'
+       params.tau_dust = dust_tau
+    endif
+    
 ; some error checking
     if params.redcurve eq 'none' then begin
        if total(params.AV gt 0) ne 0.0 then begin

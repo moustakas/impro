@@ -95,6 +95,7 @@ function init_montegrid, nmodel, nmaxburst=nmaxburst
       tau:                     -1.0,$
       Zmetal:                  -1.0,$
       AV:                       0.0,$ ; always initialize with zero to accommodate the dust-free models!
+      tau_dust:                 0.0,$ ; SSP DUST (Conry09a dust normalization)
       mu:                       1.0,$ ; always default to 1.0!
       oiiihb:                  -1.0,$ ; [OIII] 5007/H-beta
       nlyc:                    -1.0,$ ; number of Lyman-continuum photons
@@ -119,17 +120,44 @@ function get_bracket_files, info, sspinfo=sspinfo
 ; metallicity, to allow for interpolation
     ninfo = n_elements(info)
     bracket_files = strarr(2,ninfo)
-
-    for ii = 0L, ninfo-1 do begin
-       indx = findex(sspinfo.Zmetal,info[ii].Zmetal)
-       below = fix(indx)
-       above = ceil(indx)
-       bracket_files[0,ii] = sspinfo.sspfile[below]
-       bracket_files[1,ii] = sspinfo.sspfile[above]
-    endfor
     
-return, bracket_files
+; ensure we do not mess with the orginal
+    if tag_exist(sspinfo, 'tau_dust') then begin
+      ; New search between dust and metal
+      for ii = 0L, ninfo-1 do begin
+         jj = findex(sspinfo.Zmetal[*,0], info[ii].Zmetal)
+         kk = findex(sspinfo.tau_dust[0,*], info[ii].tau_dust)
+         j = [fix(jj), ceil(jj)]
+         k = [fix(kk), ceil(kk)]
+         bracket_files[0,ii] = sspinfo.sspfile[j[0], k[0]]
+         bracket_files[1,ii] = sspinfo.sspfile[j[1], k[1]]
+       endfor
+     endif else begin
+       ; Original search on zmetal
+       for ii = 0L, ninfo-1 do begin
+         indx = findex(sspinfo.Zmetal, info[ii].Zmetal)
+         below = fix(indx)
+         above = ceil(indx)
+         bracket_files[0,ii] = sspinfo.sspfile[below]
+         bracket_files[1,ii] = sspinfo.sspfile[above]
+       endfor
+     endelse
+  return, bracket_files
 end
+
+pro test_dust_bracket
+  info = {zmetal:0.0009, tau_dust:0.002}
+  sspinfo = mrdfits('/home/ajmendez/raid/isedfit4/isedfit_ssp/info_fsps_v2.4dust_miles_chab.fits.gz',1)
+  print, get_bracket_files(info, sspinfo=sspinfo)
+  
+  info = {zmetal:0.0009}
+  sspinfo = mrdfits('/home/ajmendez/raid/isedfit4/isedfit_ssp/info_fsps_v2.4_miles_chab.fits.gz',1)
+  print, get_bracket_files(info, sspinfo=sspinfo)
+  
+end
+
+
+
 
 function read_and_interpolate, files, info=info, $
   ssppath=ssppath, fits_grid=fits_grid
@@ -157,6 +185,11 @@ function read_and_interpolate, files, info=info, $
 ;      splog, 'Total time (sec) = ', (systime(1)-t0)
        fits.mstar = interpolate(fits_grid.mstar,indx)
        fits.Zmetal = interpolate(fits_grid.Zmetal,indx)
+
+; if there is tau_dust interpolate it. Not entirely correct, but close.
+;  Might be worth adding a bunch more dust so that it is a smoother interp
+       if tag_exist(fits,'tau_dust') then $
+         fits.tau_dust = interpolate(fits_grid.tau_dust, indx)
     endelse
 return, fits
 end
@@ -870,6 +903,18 @@ pro isedfit_montegrids, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
           params.Zmetal[1] = max(sspinfo.Zmetal)
        endif
        montegrid.Zmetal = randomu(seed,params.nmodel)*(params.Zmetal[1]-params.Zmetal[0])+params.Zmetal[0]
+       
+; tau_dust -- modeled after metalicity
+        if (params.tau_dust[0] lt min(sspinfo.tau_dust)) then begin
+           splog, 'Adjusting minimum prior tau_dust!'
+           params.tau_dust[0] = min(sspinfo.tau_dust)
+        endif
+        if (params.tau_dust[1] gt max(sspinfo.tau_dust)) then begin
+           splog, 'Adjusting maximum prior tau_dust!'
+           params.tau_dust[1] = max(sspinfo.tau_dust)
+        endif
+        montegrid.tau_dust = randomu(seed, params.nmodel)*(params.tau_dust[1]-params.tau_dust[0])+params.tau_dust[0]
+
        
 ; age; unfortunately I think we have to loop to sort
        montegrid.age = randomu(seed,params.nmodel)*(params.age[1]-params.age[0])+params.age[0]
