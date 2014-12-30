@@ -60,7 +60,7 @@ pro build_fsps_ssp, kroupa=kroupa, chabrier=chabrier, miles=miles, doitall=doita
     splog, 'Building the FSPS SSPs'
     outpath = getenv('ISEDFIT_SSP_DIR')+'/'
 
-    fsps_ver = 'v2.4'           ; hard-coded version number!
+    fsps_ver = 'v2.4a'           ; hard-coded version number!
     imfstr = 'salp'
     if keyword_set(kroupa) then imfstr = 'kroupa01'
     if keyword_set(chabrier) then imfstr = 'chab'

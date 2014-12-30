@@ -157,8 +157,7 @@ function read_and_interpolate, files, info=info, $
 ;      splog, 'Total time (sec) = ', (systime(1)-t0)
        fits.mstar = interpolate(fits_grid.mstar,indx)
        fits.Zmetal = interpolate(fits_grid.Zmetal,indx)
-    endelse       
-
+    endelse
 return, fits
 end
 
