@@ -12,11 +12,8 @@
 ;   metallicity - stellar metallicity to read; the choices depends on
 ;     the stellar library and isochrones desired; to see the full list
 ;     just call this routine with
-;   dust - dust_tau2 -- normalization of dust amount 
-;   subdir - subdirectory to load data from -- for different runs
 ;
 ;     IDL> ssp = im_read_fsps(metallicity='Z')
-;     IDL> ssp = im_read_fsps(metallicity=0.008, dust=0.01, subdir='dust_array')
 ;
 ; KEYWORD PARAMETERS:
 ;   ckc14 - read the latest high-resolution SSPs
@@ -41,6 +38,7 @@
 ;     lbol - bolometric luminosity [NAGE]
 ;     wave - wavelength vector [NPIX] (Angstrom)
 ;     flux - flux vector [NPIX,NAGE] (erg/s/A)
+;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
@@ -48,7 +46,6 @@
 ;   relevant details. 
 ;
 ; MODIFICATION HISTORY:
-;   A. Mendez, 2014 Dec JHU -- dust incorporation
 ;   J. Moustakas, 2011 Jan 30, UCSD
 ;   jm11mar14ucsd - updated to the latest SSPs
 ;   jm11mar28ucsd - read the BaSeL library by default 
@@ -69,13 +66,10 @@
 
 function im_read_fsps, metallicity=metallicity, basti=basti, $
   ckc14=ckc14, miles=miles, kroupa=kroupa, chabrier=chabrier, abmag=abmag, $
-  flambda=flambda, fnu=fnu, vacuum=vacuum, $
-  dust=dust, subdir=subdir
+  flambda=flambda, fnu=fnu, vacuum=vacuum
 
     ssppath = getenv('IM_RESEARCH_DIR')+'/synthesis/fsps/SSP/'
     if keyword_set(ckc14) then ssppath = getenv('IM_RESEARCH_DIR')+'/synthesis/CKC14z/'
-    if n_elements(subdir) ne 0 then ssppath += subdir + '/'
-    
     
 ; defaults
     lib = 'BaSeL' ; stellar library
@@ -92,22 +86,7 @@ function im_read_fsps, metallicity=metallicity, basti=basti, $
     if keyword_set(kroupa) then imf = 'Kroupa'
     if keyword_set(chabrier) then imf = 'Chabrier'
     if keyword_set(ckc14) then imf = 'Kroupa'
-    
-    
-    
-    ;; Added dust amount, will be assumed to be zero otherwise
-    if n_elements(dust) ne 0 then begin
-      dust_prefix = '_D' + string(dust, format='(F0.5)')
-    endif else begin
-      dust = 0.0
-      dust_prefix = ''
-    endelse
-    
-    ;; if the bone headed user wants to use floats lets not break
-    if (n_elements(metallicity) ne 0) and (size(metallicity,/type) eq 4) then begin
-      metallicity = string(metallicity, format='("Z",(F0.4))')
-    endif
-    
+
 ; metallicity
     case strlowcase(iso) of
        'padova': begin
@@ -141,7 +120,7 @@ function im_read_fsps, metallicity=metallicity, basti=basti, $
     endif
     zz = float(strmid(metallicity,1))
 
-    sspfile = ssppath+'SSP_'+iso+'_'+lib+'_'+imf+dust_prefix+'_'+metallicity+'.out.spec'
+    sspfile = ssppath+'SSP_'+iso+'_'+lib+'_'+imf+'_'+metallicity+'.out.spec'
     if (file_test(sspfile) eq 0) then begin
        splog, 'SSP '+sspfile+' not found!'
        return, -1
@@ -177,7 +156,6 @@ function im_read_fsps, metallicity=metallicity, basti=basti, $
     if keyword_set(vacuum) then wave = wave1 else vactoair, wave1, wave
     
     fsps = {Z: zz, age: dblarr(nage), mstar: fltarr(nage), $
-      tau_dust:dust, $
       lbol: fltarr(nage), wave: wave, $
       flux: fltarr(npix,nage)}
 
@@ -211,17 +189,3 @@ function im_read_fsps, metallicity=metallicity, basti=basti, $
     
 return, fsps
 end
-
-
-
-
-
-pro test_dust
-  ; [TEST] Ensure that the dust is incorporated to the structure
-  setenv, 'IM_RESEARCH_DIR=/home/ajmendez/raid/isedfit4'
-  x = im_read_fsps(metallicity=0.0008, dust=0.001, subdir='dust_array', $
-                   /miles, /chabrier)
-  help, x, /struct
-  
-end
-

@@ -42,8 +42,7 @@
 ; General Public License for more details. 
 ;-
 
-pro build_fsps_ssp, kroupa=kroupa, chabrier=chabrier, miles=miles, $
-  doitall=doitall, dust=dust, subdir=subdir
+pro build_fsps_ssp, kroupa=kroupa, chabrier=chabrier, miles=miles, doitall=doitall
 
     if keyword_set(doitall) then begin
 ; Salpeter with and without MILES
@@ -55,9 +54,6 @@ pro build_fsps_ssp, kroupa=kroupa, chabrier=chabrier, miles=miles, $
 ; Chabrier with and without MILES
        build_fsps_ssp, kroupa=0, chabrier=1, miles=0
        build_fsps_ssp, kroupa=0, chabrier=1, miles=1
-; [mendez] Chabrier, MILES and DUST
-       build_fsps_ssp, kroupa=0, chabrier=1, miles=1, $
-          dust=1, subdir='dust_array'
        return
     endif
     
@@ -69,6 +65,9 @@ pro build_fsps_ssp, kroupa=kroupa, chabrier=chabrier, miles=miles, $
     if keyword_set(kroupa) then imfstr = 'kroupa01'
     if keyword_set(chabrier) then imfstr = 'chab'
     if keyword_set(miles) then sspstr = 'miles' else sspstr = 'basel'
+
+    ssppath = outpath+'fsps_'+fsps_ver+'_'+sspstr+'/'
+    if file_test(ssppath,/dir) eq 0 then file_mkdir, ssppath
     
     const = 1D/(6.626D-27*2.9979246D18) ; [erg*Angstrom]
     dist = 10.0*3.085678D18             ; fiducial distance [10 pc in cm]
@@ -85,19 +84,7 @@ pro build_fsps_ssp, kroupa=kroupa, chabrier=chabrier, miles=miles, $
 ;      inst_vsigma = 20.0/5500.0/fwhm2sig*light 
        inst_vsigma = 450.0       ; [km/s]
     endelse
-  
-; Build up the dust parameters
-    if keyword_set(dust) then begin
-      fsps_ver += 'dust'
-      DUSTval = [0.0, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1.0]
-      DUSTstr = '_D' + string(DUSTval, format='(F0.5)')
-      ;
-      ; DUSTstr = '_' + ['D0.00000', 'D0.00001', 'D0.00010', 'D0.00100', $
-      ;            'D0.01000', 'D0.10000', 'D1.00000']
-      
-    endif else DUSTstr = ''
-    nDust = n_elements(DUSTstr)
-  
+    
 ; read each SSP in turn, convert to a FITS structure, do some magic,
 ; and then write out
     if keyword_set(miles) then begin
@@ -110,63 +97,47 @@ pro build_fsps_ssp, kroupa=kroupa, chabrier=chabrier, miles=miles, $
     endelse
     nZ = n_elements(Zstr)
 
-; Setup Directory
-    ssppath = outpath+'fsps_'+fsps_ver+'_'+sspstr+'/'
-    if file_test(ssppath,/dir) eq 0 then file_mkdir, ssppath
+    Z = fltarr(nZ)
+    sspfile = strarr(nZ)
+    for iZ = 0, nZ-1 do begin 
+       fsps = im_read_fsps(metallicity=Zstr[iZ],$ ; Padova/BaSeL unless /MILES
+         kroupa=kroupa,chabrier=chabrier,miles=miles)
+       nage = n_elements(fsps.age)
+       npix = n_elements(fsps.wave)
+       ssp = init_isedfit_ssp(nage=nage,npix=npix)
 
-
-    Z = fltarr(nZ, nDust)
-    TAU_dust = fltarr(nZ, nDust)
-    sspfile = strarr(nZ, nDust)
-    for iZ = 0, nZ-1 do begin
-      for iD = 0, nDust-1 do begin
-         fsps = im_read_fsps(metallicity=Zstr[iZ],$ ; Padova/BaSeL unless /MILES
-           kroupa=kroupa,chabrier=chabrier,miles=miles,$
-           dust=dustval[id], subdir=subdir)
-         nage = n_elements(fsps.age)
-         npix = n_elements(fsps.wave)
-         ssp = init_isedfit_ssp(nage=nage,npix=npix)
-
-         ssp.age = fsps.age
-         ssp.flux = fsps.flux
-         ssp.wave = fsps.wave
-         ssp.mstar = fsps.mstar
-         ssp.Zmetal = fsps.Z
-         ssp.tau_dust = fsps.tau_dust
+       ssp.age = fsps.age
+       ssp.flux = fsps.flux
+       ssp.wave = fsps.wave
+       ssp.mstar = fsps.mstar
+       ssp.Zmetal = fsps.Z
 
 ; compute the number of hydrogen-ionizing photons
-         for jj = 0, nage-1 do $
-           ssp.nlyc[jj] = alog10(const*im_integral(ssp.wave,$
-                                 1D*ssp.wave*ssp.flux[*,jj],0D,912D))
+       for jj = 0, nage-1 do ssp.nlyc[jj] = alog10(const*im_integral(ssp.wave,$
+         1D*ssp.wave*ssp.flux[*,jj],0D,912D))
 
 ; normalize the spectrum by the stellar mass, put it at a fiducial
 ; distance of 10 pc, and convert to erg/s
-;        ssp.flux = ssp.flux/rebin(reform(ssp.mstar,1,nage),npix,nage)
-         ssp.flux = ssp.flux/(4.0*!dpi*dist^2.0) ; [erg/s/cm2/A/Msun]
+;      ssp.flux = ssp.flux/rebin(reform(ssp.mstar,1,nage),npix,nage)
+       ssp.flux = ssp.flux/(4.0*!dpi*dist^2.0) ; [erg/s/cm2/A/Msun]
 
 ;; get the r-band mass-to-light ratio
 ;       rmaggies = k_project_filters(k_lambda_to_edges(ssp.wave),$
 ;         ssp.flux,filterlist='sdss_r0.par')
 
 ; write out       
-         sspfile1 = 'fsps_'+fsps_ver+$
-                    '_'+sspstr+'_'+imfstr+$
-                    DUSTstr[iD]+$
-                    '_Z'+$
-           string(ssp.Zmetal,format='(G0.0)')+'.fits'
-         im_mwrfits, ssp, ssppath+sspfile1, /clobber
+       sspfile1 = 'fsps_'+fsps_ver+'_'+sspstr+'_'+imfstr+'_Z'+$
+         string(ssp.Zmetal,format='(G0.0)')+'.fits'
+       im_mwrfits, ssp, ssppath+sspfile1, /clobber
 
-         Z[iZ, iD] = ssp.Zmetal
-         TAU_dust[iZ, iD] = ssp.tau_dust
-         sspfile[iZ, iD] = sspfile1
-       endfor
-     endfor
+       Z[iZ] = ssp.Zmetal
+       sspfile[iZ] = sspfile1
+    endfor
 
 ; write out an information structure
     info = {$
       imf:               imfstr,$
       Zmetal:                 Z,$
-      tau_dust:       TAU_dust, $
       inst_vsigma:  inst_vsigma,$ ; [km/s]
       sspfile:      sspfile+'.gz'}
 
@@ -176,12 +147,3 @@ pro build_fsps_ssp, kroupa=kroupa, chabrier=chabrier, miles=miles, $
     
 return
 end
-
-
-
-pro test_dust_ssp
-  setenv, 'ISEDFIT_SSP_DIR=~/raid/isedfit4/isedfit_ssp/'
-  build_fsps_ssp, kroupa=0, chabrier=1, miles=1, $
-     dust=1, subdir='dust_array'
-end
-

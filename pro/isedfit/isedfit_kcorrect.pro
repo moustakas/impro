@@ -48,8 +48,7 @@
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
-;   This routine is a glorified wrapper on IM_SIMPLE_KCORRECT that
-;   uses the right cosmological parameters from params.
+;   This routine is a glorified wrapper on IM_SIMPLE_KCORRECT. 
 ;
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2011 Aug 30, UCSD
