@@ -905,16 +905,17 @@ pro isedfit_montegrids, isedfit_paramfile, params=params, thissfhgrid=thissfhgri
        montegrid.Zmetal = randomu(seed,params.nmodel)*(params.Zmetal[1]-params.Zmetal[0])+params.Zmetal[0]
        
 ; tau_dust -- modeled after metalicity
-        if (params.tau_dust[0] lt min(sspinfo.tau_dust)) then begin
-           splog, 'Adjusting minimum prior tau_dust!'
-           params.tau_dust[0] = min(sspinfo.tau_dust)
+        if (tag_exist(sspinfo, 'tau_dust')) then begin
+          if (params.tau_dust[0] lt min(sspinfo.tau_dust)) then begin
+             splog, 'Adjusting minimum prior tau_dust!'
+             params.tau_dust[0] = min(sspinfo.tau_dust)
+          endif
+          if (params.tau_dust[1] gt max(sspinfo.tau_dust)) then begin
+             splog, 'Adjusting maximum prior tau_dust!'
+             params.tau_dust[1] = max(sspinfo.tau_dust)
+          endif
+          montegrid.tau_dust = randomu(seed, params.nmodel)*(params.tau_dust[1]-params.tau_dust[0])+params.tau_dust[0]
         endif
-        if (params.tau_dust[1] gt max(sspinfo.tau_dust)) then begin
-           splog, 'Adjusting maximum prior tau_dust!'
-           params.tau_dust[1] = max(sspinfo.tau_dust)
-        endif
-        montegrid.tau_dust = randomu(seed, params.nmodel)*(params.tau_dust[1]-params.tau_dust[0])+params.tau_dust[0]
-
        
 ; age; unfortunately I think we have to loop to sort
        montegrid.age = randomu(seed,params.nmodel)*(params.age[1]-params.age[0])+params.age[0]
