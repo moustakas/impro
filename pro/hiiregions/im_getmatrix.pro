@@ -307,6 +307,8 @@ function im_getmatrix, ionstr, tt, cloudy94=cloudy94
 ;;;  Set ion type, energy levels and Einstein A-values.  jm07dec05nyu
 ;;;  update: Energy levels and Einstein A values from Froese Fischer et
 ;;;  al. 2004 [Table 3, C-like, Z=7]
+;;;  used by Bersolin et al. 2009, ApJ 700, 309
+;;;  in agreement with Tayal 2011 as used by Chianti database
 ; NOTE -- uncommented over the above (KvC Jan 2014)
 
           iontype = 'p2'
@@ -315,16 +317,31 @@ function im_getmatrix, ionstr, tt, cloudy94=cloudy94
 ;                     3P0   3P1     3P2       1D2       1S0       5S2
 
           einas = dblarr(6,6)
-          einas[1,0]   = 2.08d-6                        ; [205 mu]
+          einas[1,0]   = 2.083d-6                       ; [205 mu]
           einas[2,0:1] = [1.116d-12, 7.420d-6]          ; [76 mu,122 mu]
           einas[3,0:2] = [5.253d-7, 9.842d-4, 2.905d-3] ; [6528,6549,6585]
           einas[4,1:3] = [3.185d-2, 1.547d-4, 1.136d0]  ; [3063,3071,5756]
           einas[5,1:3] = [5.155d1, 1.266d2, 8.949d-4]   ; [2139,2143,3177]
 
+;;;  A-values from Nussbaumer and Rusca 1979, except A(5S2-3P{2,1}) from
+;;;  Brage et al. 1997
+;;;
+;;            iontype = 'p2'
+;;            ee = invcm*[0, 48.7, 130.8, 15316.3, 32688.9, 46857.7]
+;;;                       ^    ^     ^      ^        ^        ^
+;;;                      3P0  3P1   3P2    1D2      1S0      5S2
+;;
+;;            einas = dblarr(6,6)
+;;            einas[1,0] = 2.08d-6
+;;            einas[2,0:1] = [1.16d-12, 7.46d-6]
+;;            einas[3,0:2] = [5.35d-7, 9.24d-4, 2.73d-3]
+;;            einas[4,1:3] = [3.16d-2, 1.51d-4, 1.17d0]
+;;            einas[5,1:3] = [5.36d1, 1.306d2, 4.92d-4]
+
 ;;  Collision strengths, interpolated for temperature 'logt'.  CS from
 ;;  Stafford et al. 1994.
 ;;
-          tgrid = alog10(5.0d3 + 5.0d3*findgen(4))
+;          tgrid = alog10(5.0d3 + 5.0d3*findgen(4))
 ;;          p1p0 = spline(tgrid, [4.097, 4.232, 4.371, 4.491], logt)*1d-1
 ;;          p2p0 = spline(tgrid, [2.439, 2.657, 2.859, 3.019], logt)*1d-1
 ;;          p2p1 = spline(tgrid, [1.061, 1.127, 1.190, 1.241], logt)*1d0
@@ -333,18 +350,27 @@ function im_getmatrix, ionstr, tt, cloudy94=cloudy94
 ;;          s0px = spline(tgrid, [3.812, 3.694, 3.656, 3.642], logt)*1d-1/9.
 ;;          s0d2 = spline(tgrid, [5.027, 5.014, 5.071, 5.140], logt)*1d-1
 
-;  Collision strengths Hudson & bell 2005, fit by Draine 2011.
-;  s2px Stafford et al. 1994 as not present in Draine 2011 
-; (KvC Jan 2014)
-          t4 = (10^logt)/1.0e4
-          p1p0 = 0.431 * t4^(0.099 + 0.014 * alog(t4))
-          p2p0 = 0.273 * t4^(0.166 + 0.030 * alog(t4)) 
-          p2p1 = 1.150 * t4^(0.137 + 0.024 * alog(t4))
-          s2px =  spline(tgrid, [1.155, 1.146, 1.152, 1.157], logt)*1d0/9.
-          d2px = 0.303 * t4^(0.053 + 0.009 * alog(t4))
-          s0px = 0.0352* t4^(0.066 + 0.018 * alog(t4))
-          s0d2 = 0.806 * t4^(-0.175- 0.014 * alog(t4))
-;
+;;  Collision strengths, fit by Draine 2011.  CS from Hudson & bell 2005.
+;;  s2px Stafford et al. 1994 as not present in Draine 2011
+;	  t4 = (10^logt)/1.0e4
+;          p1p0 = 0.431 * t4^(0.099 + 0.014 * alog(t4))
+;          p2p0 = 0.273 * t4^(0.166 + 0.030 * alog(t4)) 
+;          p2p1 = 1.150 * t4^(0.137 + 0.024 * alog(t4))
+;          s2px =  spline(tgrid, [1.155, 1.146, 1.152, 1.157], logt)*1d0/9.
+;          d2px = 0.303 * t4^(0.053 + 0.009 * alog(t4))
+;          s0px = 0.0352* t4^(0.066 + 0.018 * alog(t4))
+;          s0d2 = 0.806 * t4^(-0.175- 0.014 * alog(t4))
+
+;  KVCjan2015osu - Collision strengths from Tayal 2011 (ApJS,195,12)
+        tgrid = alog10(1e3*[0.5,1.0,2.0,4.0,6.0,8.0,10.0,20.0,40.0,60.0,100.0])
+        p1p0 = spline(tgrid,[3.96E-1, 3.77E-1, 3.56E-1, 3.53E-1, 3.64E-1, 3.74E-1, 3.80E-1, 3.95E-1, 4.19E-1, 4.37E-1, 4.53E-1],logt) ;1->2
+	    p2p0 = spline(tgrid,[1.09E-1, 1.10E-1, 1.15E-1, 1.33E-1, 1.52E-1, 1.71E-1, 1.88E-1, 2.46E-1, 3.00E-1, 3.18E-1, 3.25E-1],logt) ;1->3
+	    p2p1 = spline(tgrid,[1.22E-0, 1.22E-0, 1.25E-0, 1.34E-0, 1.40E-0, 1.43E-0, 1.45E-0, 1.49E-0, 1.50E-0, 1.48E-0, 1.44E-0],logt) ;2->3
+	    d2px = spline(tgrid,[2.63E-1, 2.62E-1, 2.67E-1, 2.76E-1, 2.81E-1, 2.84E-1, 2.86E-1, 2.91E-1, 2.98E-1, 3.02E-1, 3.01E-1],logt) ;1,2,3->4
+	    s0px = spline(tgrid,[3.57E-2, 3.51E-2, 3.45E-2, 3.37E-2, 3.33E-2, 3.33E-2, 3.33E-2, 3.43E-2, 3.63E-2, 3.74E-2, 3.75E-2],logt) ;1,2,3->5
+	    s0d2 = spline(tgrid,[2.49E-1, 2.54E-1, 2.73E-1, 3.47E-1, 4.24E-1, 4.81E-1, 5.22E-1, 6.09E-1, 6.53E-1, 6.68E-1, 6.81E-1],logt) ;4->5
+	    s2px = spline(tgrid,[1.26E-1, 1.26E-1, 1.26E-1, 1.26E-1, 1.27E-1, 1.27E-1, 1.28E-1, 1.31E-1, 1.34E-1, 1.33E-1, 1.27E-1],logt) ;1,2,3->6
+
        END
 ;
 ;
@@ -481,6 +507,7 @@ function im_getmatrix, ionstr, tt, cloudy94=cloudy94
           
 ;;; jm07dec05nyu: Energy levels and Einstein A values from Froese
 ;;;  Fischer et al. 2004 [Table 4, N-like, Z=8]
+;;;  used by Bersolin et al. 2009, ApJ 700, 309
 ;;
 ;;          iontype = 'p3a'
 ;;          ee = invcm*[0.0, 26810.73, 26830.45, 40468.36, 40470.96]
@@ -488,10 +515,10 @@ function im_getmatrix, ionstr, tt, cloudy94=cloudy94
 ;;;                     4S3/2   2D5/2     2D3/2     2P3/2     2P1/2
 ;;
 ;;          einas = dblarr(5,5)
-;;          einas[1,0]   = 3.382d-5                                ; [3729]
-;;          einas[2,0:1] = [1.414d-4,1.241d-7]                     ; [3727,507 mu]
-;;          einas[3,0:2] = [5.646d-2,1.018d-1,4.313d-2]            ; [2471,7321,7332]
-;;          einas[4,0:3] = [2.265d-2,5.824d-2,8.694d-2,3.158d-10]  ; [2470,7320,7331,3843 mu]
+;;          einas[1,0]   = 3.498d-5                                ; [3729]
+;;          einas[2,0:1] = [1.4305d-4,1.236d-7]                    ; [3727,507 mu]
+;;          einas[3,0:2] = [5.661d-2,1.066d-1,5.694d-2]            ; [2471,7321,7332]
+;;          einas[4,0:3] = [2.270d-2,5.601d-2,9.328d-2,3.083d-10]  ; [2470,7320,7331,3843 mu]
           
 ;;; A-values from NIST, as quoted in CLOUDY (cooloxyg.c)
 ;;
@@ -511,17 +538,46 @@ function im_getmatrix, ionstr, tt, cloudy94=cloudy94
 ;  and Peng 1992, with scale factor for P?-D? suggested by McLaughlin
 ;  and Bell 1993 as used in CLOUDY (cooloxyg.c).
 ;
-          tgrid = alog10([5.0d3, 1.0d4, 1.6d4, 2.0d4])
-          dxs3 = spline(tgrid, [1.361, 1.375, 1.391, 1.401], logt)*1d0/10.
-          pxs3 = spline(tgrid, [4.052, 4.147, 4.243, 4.304], logt)*1d-1/6.
+;;          tgrid = alog10([5.0d3, 1.0d4, 1.6d4, 2.0d4])
+;;          dxs3 = spline(tgrid, [1.361, 1.375, 1.391, 1.401], logt)*1d0/10.
+;;          pxs3 = spline(tgrid, [4.052, 4.147, 4.243, 4.304], logt)*1d-1/6.
+;;;
+;;          tgrid = alog10(5.0d3 + 5.0d3*findgen(4))
+;;          d3d5 = spline(tgrid, [1.22, 1.17, 1.14, 1.11], logt)*1d0
+;;          p1p3 = spline(tgrid, [2.80, 2.87, 2.93, 3.00], logt)*1d-1
+;;          p3d5 = spline(tgrid, 1.207*[7.18, 7.30, 7.41, 7.55], logt)*1d-1
+;;          p1d5 = spline(tgrid, 1.207*[2.90, 2.95, 3.00, 3.05], logt)*1d-1
+;;          p3d3 = spline(tgrid, 1.207*[4.01, 4.08, 4.14, 4.22], logt)*1d-1
+;;          p1d3 = spline(tgrid, 1.207*[2.70, 2.75, 2.81, 2.84], logt)*1d-1
+;
 
-          tgrid = alog10(5.0d3 + 5.0d3*findgen(4))
-          d3d5 = spline(tgrid, [1.22, 1.17, 1.14, 1.11], logt)*1d0
-          p1p3 = spline(tgrid, [2.80, 2.87, 2.93, 3.00], logt)*1d-1
-          p3d5 = spline(tgrid, 1.207*[7.18, 7.30, 7.41, 7.55], logt)*1d-1
-          p1d5 = spline(tgrid, 1.207*[2.90, 2.95, 3.00, 3.05], logt)*1d-1
-          p3d3 = spline(tgrid, 1.207*[4.01, 4.08, 4.14, 4.22], logt)*1d-1
-          p1d3 = spline(tgrid, 1.207*[2.70, 2.75, 2.81, 2.84], logt)*1d-1
+;;  KVCapril2014osu - Collision strengths from Tayal 2007
+;          iontype = 'p3a2'
+;          t4 = (10^logt)/1.0e4
+;          d3d5 = 1.434 * t4^(-0.176 + 0.004 * alog(t4))
+;          p1p3 = 0.322 * t4^(0.019 + 0.037 * alog(t4))
+;          p3d5 = 0.349 * t4^(0.060 + 0.052 * alog(t4))
+;          p1d5 = 0.832 * t4^(0.076 + 0.055 * alog(t4))
+;          p3d3 = 0.326 * t4^(0.063 + 0.052 * alog(t4))
+;          p1d3 = 0.485 * t4^(0.059 + 0.052 * alog(t4))
+;          d5s3 = 0.803 * t4^(0.023 - 0.008 * alog(t4))
+;          d3s3 = 0.550 * t4^(0.054 - 0.004 * alog(t4)) 
+;          p3s3 = 0.140 * t4^(0.025 - 0.006 * alog(t4))
+;          p1s3 = 0.283 * t4^(0.023 - 0.004 * alog(t4)) 
+
+;  KVCjan2015osu - Collision strengths from Kisielius et al. 2009 (MNRAS,397,903)
+        iontype = 'p3a2'
+	tgrid = alog10([1000., 1500., 2000., 3000., 5000., 7500., 10000., 15000., 20000., 30000.])
+        d5s3 = spline(tgrid,[0.823,   0.830,   0.832,   0.832,   0.831,   0.833,   0.834,   0.839,   0.844,   0.856],logt);1->2
+        d3s3 = spline(tgrid,[0.550,   0.554,   0.555,   0.554,   0.553,   0.553,   0.554,   0.557,   0.561,   0.569],logt);1->3
+        p3s3 = spline(tgrid,[0.246,   0.247,   0.247,   0.249,   0.251,   0.253,   0.256,   0.260,   0.265,   0.274],logt);1->4
+        p1s3 = spline(tgrid,[0.127,   0.127,   0.128,   0.128,   0.129,   0.131,   0.132,   0.134,   0.136,   0.141],logt);1->5
+        d3d5 = spline(tgrid,[1.194,   1.239,   1.254,   1.256,   1.241,   1.221,   1.203,   1.183,   1.179,   1.193],logt);2->3
+        p3d5 = spline(tgrid,[0.799,   0.801,   0.804,   0.809,   0.820,   0.834,   0.851,   0.891,   0.930,   0.997],logt);2->4
+        p1d5 = spline(tgrid,[0.318,   0.319,   0.320,   0.322,   0.326,   0.332,   0.339,   0.356,   0.371,   0.396],logt);2->5
+        p3d3 = spline(tgrid,[0.443,   0.444,   0.445,   0.448,   0.454,   0.462,   0.472,   0.494,   0.516,   0.551],logt);3->4
+        p1d3 = spline(tgrid,[0.311,   0.312,   0.313,   0.315,   0.319,   0.324,   0.331,   0.345,   0.360,   0.386],logt);3->5
+	    p1p3 = spline(tgrid,[0.275,   0.276,   0.276,   0.277,   0.279,   0.282,   0.285,   0.294,   0.305,   0.327],logt);4->5
 
        END
 ;
@@ -538,32 +594,32 @@ function im_getmatrix, ionstr, tt, cloudy94=cloudy94
 ; database, and have been set to 1d-20; additional info here:
 ; http://wwwsolar.nrl.navy.mil/database/o/o_3_table.html
 
-          iontype = 'p2'
-          ee = invcm*[0.0, 113.178, 306.174, 20273.27, 43185.74, 60324.79]
-;                      ^      ^       ^         ^         ^         ^
-;                     3P0    3P1     3P2       1D2       1S0       5S2
-
-          einas = dblarr(6,6)
-          einas[1,0]   = [2.70d-5]                    ; [88 mu]
-          einas[2,0:1] = [3.032d-11,1.010d-4]         ; [32 mu,51 mu]
-          einas[3,0:2] = [7.250d-6,6.791d-3,2.046d-2] ; [4932,4960,5008]
-          einas[4,1:3] = [2.26d-1,1d-20,1.71d0]       ; [2321,2332,4364]
-          einas[5,1:3] = [1.45d2,4.26d2,1d-20]        ; [1660,1666,2496]
-
-;;;  jm07dec05nyu: Energy levels and Einstein A values from Froese
-;;;  Fischer et al. 2004  [Table 3, C-like, Z=8]
-;;
 ;;          iontype = 'p2'
-;;          ee = invcm*[0.0, 113.03, 305.61, 20273.11, 43186.75, 60324.71]
+;;          ee = invcm*[0.0, 113.18, 306.17, 20273.27, 43185.74, 60324.79]
 ;;;                      ^      ^       ^         ^         ^         ^
 ;;;                     3P0    3P1     3P2       1D2       1S0       5S2
 ;;
 ;;          einas = dblarr(6,6)
-;;          einas[1,0]   = [2.596d-5]                    ; [88 mu]
-;;          einas[2,0:1] = [3.032d-11,9.632d-5]          ; [32 mu,52 mu]
-;;          einas[3,0:2] = [2.322d-6,6.946d-3,2.025d-2]  ; [4932,4960,5008]
-;;          einas[4,1:3] = [2.255d-1,6.998d-4,1.685d0]   ; [2321,2332,4364]
-;;          einas[5,1:3] = [2.308d2,5.765d2,5.777d-3]    ; [1660,1666,2496]
+;;          einas[1,0]   = [2.70d-5]                    ; [88 mu]
+;;          einas[2,0:1] = [3.032d-11,1.010d-4]         ; [32 mu,51 mu]
+;;          einas[3,0:2] = [7.250d-6,6.791d-3,2.046d-2] ; [4932,4960,5008]
+;;          einas[4,1:3] = [2.26d-1,1d-20,1.68d0]       ; [2321,2332,4364]
+;;          einas[5,1:3] = [1.45d2,4.26d2,1d-20]        ; [1660,1666,2496]
+
+;  jm07dec05nyu: Energy levels and Einstein A values from Froese
+;  Fischer et al. 2004  [Table 3, C-like, Z=8]
+
+          iontype = 'p2'
+          ee = invcm*[0.0, 113.03, 305.61, 20273.11, 43186.75, 60324.71]
+;                      ^      ^       ^         ^         ^         ^
+;                     3P0    3P1     3P2       1D2       1S0       5S2
+
+          einas = dblarr(6,6)
+          einas[1,0]   = [2.596d-5]                    ; [88 mu]
+          einas[2,0:1] = [3.032d-11,9.632d-5]          ; [32 mu,52 mu]
+          einas[3,0:2] = [2.322d-6,6.946d-3,2.025d-2]  ; [4932,4960,5008]
+          einas[4,1:3] = [2.255d-1,6.998d-4,1.685d0]   ; [2321,2332,4364]
+          einas[5,1:3] = [2.308d2,5.765d2,5.777d-3]    ; [1660,1666,2496]
 
 ;;;  Energy levels from Mendoza 1982; A values from Wiese et al. 1996,
 ;;;  except 5S2-3P{1,2} from Mendoza 1982.
@@ -580,42 +636,60 @@ function im_getmatrix, ionstr, tt, cloudy94=cloudy94
 ;;            einas[4,1:3] = [2.15d-1, 6.34d-4, 1.71d0]
 ;;            einas[5,1:3] = [2.12d2, 5.22d2, 6.36d-3]
 
-;  Collision strengths, interpolated for temperature 'logt'.  CS from
-;  Lennon and Burke 1994, except 1S0-1D2 from Burke et al. 1989.
-;
-          tgrid = 3.0d0 + findgen(11)/5.0d0
-          p1p0 = spline(tgrid, [4.975, 5.066, 5.115, 5.180, 5.296, $
-            5.454, 5.590, 5.678, 5.788, 5.918, 5.938], logt)*1d-1
-          p2p0 = spline(tgrid, [2.455, 2.493, 2.509, 2.541, 2.609, $
-            2.713, 2.832, 2.955, 3.101, 3.254, 3.314], logt)*1d-1
-          p2p1 = spline(tgrid, [1.173, 1.193, 1.203, 1.218, 1.248, $
-            1.291, 1.335, 1.373, 1.419, 1.468, 1.482], logt)*1d0
-          s2px = spline(tgrid, [9.760, 9.673, 9.712, 10.224, 11.196, $
-            12.074, 12.574, 12.720, 12.451, 11.704, 10.600], logt)*1d-1/9.
-          
-;          d2px = spline(tgrid, [2.2233, 2.1888, 2.1416, 2.1117, 2.1578, $
-;            2.2892, 2.4497, 2.5851, 2.6730, 2.7019, 2.6594], logt)*1d0/9.
-;          s0px = spline(tgrid, [2.754, 2.738, 2.713, 2.693, 2.747, 2.925, $
-;            3.174, 3.405, 3.563, 3.621, 3.571], logt)*1d-1/9.
-          
-;          tgrid = alog10([6000., 10000., 15000., 20000.])
-;          s0d2 = spline(tgrid, [6.17, 6.77, 6.80, 6.64], logt)*1d-1
-;
-;          d2px = (3.0211144d0 - 101.57536d0/sqrt(tt) + 817.57670d0*logt/tt)/9.
-;          s0px = (0.0784d0*tt^0.143 < 0.36d0)/9.
-;          s0d2 = 0.32412181d0 + 79.051672d0/sqrt(tt) - 4374.7816d0/tt
+;;;  Collision strengths, interpolated for temperature 'logt'.  CS from
+;;;  Lennon and Burke 1994, except 1S0-1D2 from Burke et al. 1989.
+;;;
+;;          tgrid = 3.0d0 + findgen(11)/5.0d0
+;;          p1p0 = spline(tgrid, [4.975, 5.066, 5.115, 5.180, 5.296, $
+;;            5.454, 5.590, 5.678, 5.788, 5.918, 5.938], logt)*1d-1
+;;          p2p0 = spline(tgrid, [2.455, 2.493, 2.509, 2.541, 2.609, $
+;;            2.713, 2.832, 2.955, 3.101, 3.254, 3.314], logt)*1d-1
+;;          p2p1 = spline(tgrid, [1.173, 1.193, 1.203, 1.218, 1.248, $
+;;            1.291, 1.335, 1.373, 1.419, 1.468, 1.482], logt)*1d0
+;;          s2px = spline(tgrid, [9.760, 9.673, 9.712, 10.224, 11.196, $
+;;            12.074, 12.574, 12.720, 12.451, 11.704, 10.600], logt)*1d-1/9.
+;;          
+;;          d2px = spline(tgrid, [2.2233, 2.1888, 2.1416, 2.1117, 2.1578, $
+;;            2.2892, 2.4497, 2.5851, 2.6730, 2.7019, 2.6594], logt)*1d0/9.
+;;          s0px = spline(tgrid, [2.754, 2.738, 2.713, 2.693, 2.747, 2.925, $
+;;            3.174, 3.405, 3.563, 3.621, 3.571], logt)*1d-1/9.
+;;          
+;;          tgrid = alog10([6000., 10000., 15000., 20000.])
+;;          s0d2 = spline(tgrid, [6.17, 6.77, 6.80, 6.64], logt)*1d-1
+;;;
+;;          d2px = (3.0211144d0 - 101.57536d0/sqrt(tt) + 817.57670d0*logt/tt)/9.
+;;          s0px = (0.0784d0*tt^0.143 < 0.36d0)/9.
+;;          s0d2 = 0.32412181d0 + 79.051672d0/sqrt(tt) - 4374.7816d0/tt
 
-;  Collision strengths Aggarwal & Keenan 1999, fit by Draine 2011.
-;  s2px not present in Draine 2011 
-; (KvC Jan 2014)
-          t4 = (tt)/1.0e4
-          p1p0 = 0.522 * t4^(0.033 - 0.009 * alog(t4))
-          p2p0 = 0.257 * t4^(0.081 + 0.017 * alog(t4))
-          p2p1 = 1.230 * t4^(0.053 + 0.007 * alog(t4))
- ;         s2px = 
-          d2px = 0.243 * t4^(0.120 + 0.031 * alog(t4))
-          s0px = 0.0321* t4^(0.118 + 0.057 * alog(t4))
-          s0d2 = 0.523 * t4^(0.210 - 0.099 * alog(t4))
+;;  KVCapril2014osu - Collision strengths from Aggarwal & Keenan 1999 fit by Draine 2012
+;;  except s2px from Lennon and Burker 1994 as not in Draine 2012
+;          t4 = (10^logt)/1.0e4
+;          p1p0 = 0.522 * t4^(0.033 - 0.009 * alog(t4))
+;          p2p0 = 0.257 * t4^(0.081 + 0.017 * alog(t4))
+;          p2p1 = 1.230 * t4^(0.053 + 0.007 * alog(t4))
+;          s0d2 = 0.523 * t4^(0.210 - 0.099 * alog(t4))
+;          s0px = 0.0321 * t4^(0.118 + 0.057 * alog(t4))
+;          d2px = 0.243 * t4^(0.120 + 0.031 * alog(t4))
+;
+;          tgrid = 3.0d0 + findgen(11)/5.0d0
+;          s2px = spline(tgrid, [9.760, 9.673, 9.712, 10.224, 11.196, $
+;            12.074, 12.574, 12.720, 12.451, 11.704, 10.600], logt)*1d-1/9.
+
+;  KVCjan2015osu - Collision strengths from Storey et al 2014 (MNRAS,441,3028)
+;  except s2px from Lennon and Burker 1994 as not in Storey et al 2014
+
+       tgrid = alog10([1000., 2500., 5000., 7500., 10000., 12500., 15000., 17500., 20000., 25000., 30000.])
+       p1p0 = spline(tgrid,[0.5199, 0.5132, 0.5199, 0.5317, 0.5421, 0.5494, 0.5540, 0.5569, 0.5587, 0.5609, 0.5623],logt)
+       p2p0 = spline(tgrid,[0.2313, 0.2367, 0.2424, 0.2497, 0.2568, 0.2629, 0.2682, 0.2727, 0.2766, 0.2833, 0.2890],logt)
+       p2p1 = spline(tgrid,[1.1218, 1.1557, 1.1873, 1.2221, 1.2526, 1.2763, 1.2943, 1.3082, 1.3194, 1.3374, 1.3518],logt)
+       s0d2 = spline(tgrid,[0.3897, 0.4196, 0.5208, 0.5882, 0.6174, 0.6266, 0.6265, 0.6223, 0.6163, 0.6026, 0.5886],logt)
+       s0px = spline(tgrid,[0.0296, 0.0290, 0.0295, 0.0312, 0.0327, 0.0339, 0.0349, 0.0357, 0.0363, 0.0371, 0.0375],logt)
+       d2px = spline(tgrid,[0.2370, 0.2249, 0.2265, 0.2381, 0.2492, 0.2579, 0.2646, 0.2698, 0.2739, 0.2797, 0.2832],logt)
+
+       tgrid = 3.0d0 + findgen(11)/5.0d0
+       s2px = spline(tgrid, [9.760, 9.673, 9.712, 10.224, 11.196, $
+            12.074, 12.574, 12.720, 12.451, 11.704, 10.600], logt)*1d-1/9.
+
        END
 ;
 ;
@@ -840,20 +914,36 @@ function im_getmatrix, ionstr, tt, cloudy94=cloudy94
 ;
 
           endif else begin
-             
-;  Set ion type, energy levels and Einstein A-values.  Experimental
-;  energy levels cited in Butler and Zeippen 1994.
-             
+
+; KVCapr14osu: Energy levels and Einstein A values from Froese
+;  Fischer et al. 2004 
+;  used by Bersolin et al. 2009, ApJ 700, 309
+
              iontype = 'p4'
-             ee = invcm*[0, 642.9, 920.4, 25840.8, 55750.6]
+             ee = invcm*[0, 643.1, 920.4, 25850.8, 55750.6]
 ;                        ^   ^      ^       ^        ^
 ;                       3P2 3P1    3P0     1D2      1S0
-             
+
              einas = dblarr(5,5)
-             einas[1,0] = 5.974d-3
-             einas[2,0:1] = [2.081d-8, 1.159d-3]
-             einas[3,0:2] = [1.730d-1, 5.344d-2, 8.269d-6]
-             einas[4,0:3] = [3.985d-3, 2.028d0, 0.00d0, 2.563d0]
+             einas[1,0]   =  5.846d-3
+             einas[2,0:1] = [2.055d-8, 1.101d-3]
+             einas[3,0:2] = [1.745d-1, 5.397d-2, 8.447d-6]
+             einas[4,0:3] = [4.308d-3, 2.064d0, 0.00d0, 2.647d0]
+
+             
+;;;  Set ion type, energy levels and Einstein A-values.  Experimental
+;;;  energy levels cited in Butler and Zeippen 1994.
+;;             
+;;             iontype = 'p4'
+;;             ee = invcm*[0, 642.9, 920.4, 25840.8, 55750.6]
+;;;                        ^   ^      ^       ^        ^
+;;;                       3P2 3P1    3P0     1D2      1S0
+;;             
+;;             einas = dblarr(5,5)
+;;             einas[1,0] = 5.974d-3
+;;             einas[2,0:1] = [2.081d-8, 1.159d-3]
+;;             einas[3,0:2] = [1.730d-1, 5.344d-2, 8.269d-6]
+;;             einas[4,0:3] = [3.985d-3, 2.028d0, 0.00d0, 2.563d0]
              
 ;  Collision strengths, interpolated for temperature 'logt'.  CS from
 ;  Butler and Zeippen 1994.
@@ -1435,21 +1525,51 @@ function im_getmatrix, ionstr, tt, cloudy94=cloudy94
 
           endif else begin
 
-;  jm07dec05nyu: Energy levels from NIST (http://physics.nist.gov) and
-;  Einstein A values from the Chianti project
-;  (http://www.arcetri.astro.it/science/chianti/chianti.html), as
-;  tabulated in Stasinska 2007 (astro-ph/0704.0348)
+; KVCjan2015osu - Energy levels and Einstein A values from Mendoza & Bautista 2014 (ApJ,785,19)
 
-           iontype = 'p3d'
-           ee = invcm*[0.0, 14852.94, 14884.73, 24524.83, 24571.54] ; NIST
+	iontype = 'p3d'
+	ee = invcm*[0.0, 14852.94, 14884.73, 24524.83, 24571.54] ; NIST
 ;                       ^        ^         ^         ^         ^
 ;                     4S3/2    2D3/2     2D5/2     2P1/2     2P3/2
 
-           einas = dblarr(5,5)
-           einas[1,0]   = [1.231d-3]                           ; [6732]
-           einas[2,0:1] = [3.338d-4,3.452d-7]                  ; [6718,314 mu]
-           einas[3,0:2] = [1.076d-1,1.812d-1,7.506d-2]         ; [4077,10339,10373]
-           einas[4,0:3] = [2.670d-1,1.644d-1,1.938d-1,9.16d-7] ; [4069,10289,10323,214 mu]
+	einas = dblarr(5,5)
+	einas[1,0]   = [8.95d-4]                           ; [6732]
+	einas[2,0:1] = [2.66d-4, 3.46d-7]                  ; [6718,314 mu]
+	einas[3,0:2] = [9.24d-2, 1.53d-1, 7.09d-2]         ; [4077,10339,10373]
+	einas[4,0:3] = [2.29d-1, 1.27d-1, 1.68d-1, 9.13d-7]; [4069,10289,10323,214 mu]
+
+
+;; KVCapr14osu: Energy levels and Einstein A values from Froese
+;;  Fischer et al. 2006 
+;;  used by Bersolin et al. 2009, ApJ 700, 309
+;
+;           iontype = 'p3d'
+;           ee = invcm*[0.0, 14852.94, 14884.73, 24524.83, 24571.54] ; NIST
+;;                       ^        ^         ^         ^         ^
+;;                     4S3/2    2D3/2     2D5/2     2P1/2     2P3/2
+;
+;           einas = dblarr(5,5)
+;           einas[1,0]   = [6.845d-4]                           ; [6732]
+;           einas[2,0:1] = [2.024d-4,2.340d-7]                  ; [6718,314 mu]
+;           einas[3,0:2] = [7.739d-2,1.431d-1,6.866d-2]         ; [4077,10339,10373]
+;           einas[4,0:3] = [1.925d-1,1.146d-1,1.563d-1,2.51d-7] ; [4069,10289,10323,214 mu]
+
+
+;;;  jm07dec05nyu: Energy levels from NIST (http://physics.nist.gov) and
+;;;  Einstein A values from the Chianti project
+;;;  (http://www.arcetri.astro.it/science/chianti/chianti.html), as
+;;;  tabulated in Stasinska 2007 (astro-ph/0704.0348)
+;;
+;;           iontype = 'p3d'
+;;           ee = invcm*[0.0, 14852.94, 14884.73, 24524.83, 24571.54] ; NIST
+;;;                       ^        ^         ^         ^         ^
+;;;                     4S3/2    2D3/2     2D5/2     2P1/2     2P3/2
+;;
+;;           einas = dblarr(5,5)
+;;           einas[1,0]   = [1.231d-3]                           ; [6732]
+;;           einas[2,0:1] = [3.338d-4,3.452d-7]                  ; [6718,314 mu]
+;;           einas[3,0:2] = [1.076d-1,1.812d-1,7.506d-2]         ; [4077,10339,10373]
+;;           einas[4,0:3] = [2.670d-1,1.644d-1,1.938d-1,9.16d-7] ; [4069,10289,10323,214 mu]
 
 ;;;  Experimental energy levels cited in Mendoza and Zeippen 1982;
 ;;;  A-values from Mendoza and Zeippen 1982 (assuming A = A(E2) +
@@ -1466,29 +1586,53 @@ function im_getmatrix, ionstr, tt, cloudy94=cloudy94
 ;;           einas[3,0:2] = [9.06d-2, 1.63d-1, 7.80d-2]
 ;;           einas[4,0:3] = [2.25d-1, 1.33d-1, 1.79d-1, 1.03d-6]
            
-;  Collision strengths, interpolated for temperature 'logt'.  CS from
-;  Ramsbottom et al. 1996.
+;;;  Collision strengths, interpolated for temperature 'logt'.  CS from
+;;;  Ramsbottom et al. 1996.
+;;
+;;           tgrid = 1.0d0*[3.5, 3.6, 3.7, 3.8, 3.9, 4.0, $
+;;                          4.1, 4.2, 4.4, 4.6, 4.8, 5.0]
+;;           dxs3 = spline(tgrid, [7.95, 7.82, 7.64, 7.42, 7.17, 6.90, $
+;;                   6.63, 6.37, 5.90, 5.45, 4.90, 4.23], logt)*1d0/10.
+;;           pxs3 = spline(tgrid, [3.69, 3.70, 3.69, 3.66, 3.60, 3.52, $
+;;                   3.43, 3.33, 3.13, 2.895, 2.579, 2.17], logt)*1d0/6.
+;;           d5d3 = spline(tgrid, [7.99, 8.01, 7.98, 7.87, 7.69, 7.47, $
+;;                   7.22, 6.95, 6.42, 5.92, 5.39, 4.79], logt)*1d0
+;;           p1d3 = spline(tgrid, [2.14, 2.08, 2.01, 1.94, 1.87, 1.79, $
+;;                   1.72, 1.66, 1.57, 1.51, 1.46, 1.42], logt)*1d0
+;;           p3d3 = spline(tgrid, [3.38, 3.32, 3.25, 3.17, 3.08, 3.00, $
+;;                   2.91, 2.82, 2.68, 2.55, 2.40, 2.24], logt)*1d0
+;;           p1d5 = spline(tgrid, [2.46, 2.42, 2.37, 2.32, 2.26, 2.20, $
+;;                   2.14, 2.08, 1.97, 1.88, 1.76, 1.64], logt)*1d0
+;;           p3d5 = spline(tgrid, [5.82, 5.68, 5.52, 5.35, 5.17, 4.99, $
+;;                   4.81, 4.65, 4.40, 4.21, 4.03, 3.87], logt)*1d0
+;;           p3p1 = spline(tgrid, [3.07, 3.03, 2.98, 2.90, 2.81, 2.71, $
+;;                   2.61, 2.50, 2.31, 2.16, 2.01, 1.85], logt)*1d0
 
-           tgrid = 1.0d0*[3.5, 3.6, 3.7, 3.8, 3.9, 4.0, $
-                          4.1, 4.2, 4.4, 4.6, 4.8, 5.0]
-           dxs3 = spline(tgrid, [7.95, 7.82, 7.64, 7.42, 7.17, 6.90, $
-                   6.63, 6.37, 5.90, 5.45, 4.90, 4.23], logt)*1d0/10.
-           pxs3 = spline(tgrid, [3.69, 3.70, 3.69, 3.66, 3.60, 3.52, $
-                   3.43, 3.33, 3.13, 2.895, 2.579, 2.17], logt)*1d0/6.
-           d5d3 = spline(tgrid, [7.99, 8.01, 7.98, 7.87, 7.69, 7.47, $
-                   7.22, 6.95, 6.42, 5.92, 5.39, 4.79], logt)*1d0
-           p1d3 = spline(tgrid, [2.14, 2.08, 2.01, 1.94, 1.87, 1.79, $
-                   1.72, 1.66, 1.57, 1.51, 1.46, 1.42], logt)*1d0
-           p3d3 = spline(tgrid, [3.38, 3.32, 3.25, 3.17, 3.08, 3.00, $
-                   2.91, 2.82, 2.68, 2.55, 2.40, 2.24], logt)*1d0
-           p1d5 = spline(tgrid, [2.46, 2.42, 2.37, 2.32, 2.26, 2.20, $
-                   2.14, 2.08, 1.97, 1.88, 1.76, 1.64], logt)*1d0
-           p3d5 = spline(tgrid, [5.82, 5.68, 5.52, 5.35, 5.17, 4.99, $
-                   4.81, 4.65, 4.40, 4.21, 4.03, 3.87], logt)*1d0
-           p3p1 = spline(tgrid, [3.07, 3.03, 2.98, 2.90, 2.81, 2.71, $
-                   2.61, 2.50, 2.31, 2.16, 2.01, 1.85], logt)*1d0
-
+;  KVCapril2014osu - Collision strengths from Tayal 2010 fit by Draine 2012
+           iontype = 'p3d'
+           t4 = (10^logt)/1.0e4
+           d5d3 = 6.89 * t4^(-0.103 - 0.022 * alog(t4))
+           p1d3 = 1.47 * t4^(0.014 * alog(t4))
+           p3d3 = 2.39 * t4^(-0.006)
+           p1d5 = 1.78 * t4^(-0.012 - 0.006 * alog(t4))
+           p3d5 = 4.06 * t4^(0.005 * alog(t4))
+           p3p1 = 1.80 * t4^(0.032 - 0.001 * alog(t4))
+	       dxs3 = (2.56 * t4^(-0.071 - 0.023 * alog(t4)))/4.D
+           pxs3 = (0.704 * t4^(0.042 + 0.006 * alog(t4)))/2.D
         endelse 
+
+;;  KVCjan2015osu - Collision strengths from Tayal & Zatsarinny 2010 (ApJS,188,32)
+;;  CONFIRMED TO MATCH DRAIN FITS!
+;	iontype = 'p3d'
+;	tgrid = alog10(1e4*[0.5,0.7,1.0,1.5,2.0,2.5,3.0,4.0,5.0,7.0,10.0])	
+;	dxs3 = spline(tgrid,[2.66e+0, 2.62e+0, 2.56e+0, 2.48e+0, 2.41e+0, 2.35e+0, 2.30e+0, 2.20e+0, 2.10e+0, 1.93e+0, 1.71e+0]/4.D,logt) ;1->2,3
+;	pxs3 = spline(tgrid,[6.86e-1, 6.94e-1, 7.04e-1, 7.17e-1, 7.27e-1, 7.33e-1, 7.36e-1, 7.30e-1, 7.15e-1, 6.70e-1, 5.97e-1]/2.D,logt) ;1->4,5
+;	d5d3 = spline(tgrid,[7.32e+0, 7.13e+0, 6.89e+0, 6.58e+0, 6.35e+0, 6.17e+0, 6.02e+0, 5.76e+0, 5.51e+0, 5.06e+0, 4.48e+0],logt) ;2->3
+;	p1d3 = spline(tgrid,[1.48e+0, 1.48e+0, 1.47e+0, 1.48e+0, 1.48e+0, 1.49e+0, 1.50e+0, 1.50e+0, 1.50e+0, 1.49e+0, 1.45e+0],logt) ;2->4
+;	p3d3 = spline(tgrid,[2.40e+0, 2.40e+0, 2.39e+0, 2.39e+0, 2.38e+0, 2.38e+0, 2.38e+0, 2.36e+0, 2.33e+0, 2.25e+0, 2.13e+0],logt) ;2->5
+;	p1d5 = spline(tgrid,[1.79e+0, 1.78e+0, 1.78e+0, 1.77e+0, 1.76e+0, 1.76e+0, 1.75e+0, 1.73e+0, 1.70e+0, 1.63e+0, 1.53e+0],logt) ;3->4
+;	p3d5 = spline(tgrid,[4.07e+0, 4.07e+0, 4.06e+0, 4.06e+0, 4.07e+0, 4.08e+0, 4.08e+0, 4.08e+0, 4.06e+0, 3.97e+0, 3.83e+0],logt) ;3->5
+;	p3p1 = spline(tgrid,[1.76e+0, 1.78e+0, 1.80e+0, 1.82e+0, 1.84e+0, 1.85e+0, 1.86e+0, 1.84e+0, 1.80e+0, 1.70e+0, 1.54e+0],logt) ;4->5
 
        END
 
@@ -1511,10 +1655,55 @@ function im_getmatrix, ionstr, tt, cloudy94=cloudy94
 
           endif else begin
 
+; KVCoct14osu: Energy levels and Einstein A values from Podobedova, Kelleher, & Wiese 2009
+
+             iontype = 'p2'
+             ee = invcm*[0.0, 297.3, 832.7, 11322.70, 27170.00, 58671.92]
+;                         ^      ^       ^         ^         ^         ^
+;                        3P0    3P1     3P2       1D2       1S0       5S2
+
+	      einas = dblarr(6,6) ; Podobedova 2009
+              einas[1,0]   = [4.79d-4]                   ; [33 mu]
+              einas[2,0:1] = [4.11d-8,2.06d-3]           ; [12 mu,18 mu]
+              einas[3,0:2] = [5.25d-6,1.85d-2,4.80d-2]   ; [8831,9071,9533]
+              einas[4,1:3] = [6.61d-1,8.82d-3,2.08d0]    ; [3722,3798,6313]
+              einas[5,1:3] = [4.493d3,1.232d4,3.450d0]    ; [1713,1728,2111]
+
+
+; KVCapr14osu: Energy levels and Einstein A values from Froese
+;  Fischer et al. 2006 
+;  used by Bersolin et al. 2009, ApJ 700, 309
+
+;             iontype = 'p2'
+;             ee = invcm*[0.0, 297.3, 832.7, 11322.70, 27170.00, 58671.92]
+;                         ^      ^       ^         ^         ^         ^
+;                        3P0    3P1     3P2       1D2       1S0       5S2
+
+;             einas = dblarr(6,6)
+;             einas[1,0]   = [3.418d-4]                   ; [33 mu]
+;             einas[2,0:1] = [2.277d-8,1.43d-3]           ; [12 mu,18 mu]
+;             einas[3,0:2] = [5.638d-6,1.949d-2,5.133d-2] ; [8831,9071,9533]
+;             einas[4,1:3] = [6.876d-1,9.532d-3,2.188d0]  ; [3722,3798,6313]
+;             einas[5,1:3] = [4.493d3,1.232d4,3.450d0]    ; [1713,1728,2111]
+
+
+; KVCoct14osu: Energy levels and Einstein A values from IRAF table
+;             iontype = 'p2'
+;             ee = invcm*[0.0, 297.3, 832.7, 11322.70, 27170.00, 58671.92]
+;                         ^      ^       ^         ^         ^         ^
+;                        3P0    3P1     3P2       1D2       1S0       5S2
+;
+;              einas = dblarr(6,6) 
+;              einas[1,0]   = [4.78d-4]                   ; [33 mu]
+;              einas[2,0:1] = [4.61d-8,2.06d-3]           ; [12 mu,18 mu]
+;              einas[3,0:2] = [5.82d-6,1.62d-2,9.40d-2]   ; [8831,9071,9533]
+;              einas[4,1:3] = [6.83d-1,1.05d-2,3.22d0]    ; [3722,3798,6313]
+;              einas[5,1:3] = [5.400d3,1.540d4,3.42d0]    ; [1713,1728,2111]
+
+
 ; jm07dec09nyu: these A-values seem to be wrong, as observationally
 ; the 9532/9069 ratio is 2.5-3, but the Chianti project give a ratio
 ; of 5.98!  so use the Mendoza & Zeippen (1982) values for now
-             
 ;  jm07dec05nyu: Energy levels from NIST (http://physics.nist.gov) and
 ;  Einstein A values from the Chianti project
 ;  (http://www.arcetri.astro.it/science/chianti/chianti.html), as
@@ -1534,42 +1723,54 @@ function im_getmatrix, ionstr, tt, cloudy94=cloudy94
 ;;             einas[4,1:3] = [1.016,1.05d-2,3.045]        ; [3722,3798,6313]
 ;;             einas[5,1:3] = [5.01d3,1.38d4,4.43d0]       ; [1713,1728,2111]
              
-;  Experimental energy levels from NIST cited in Kohstall et
-;  al. 1998 (5S2 energy level calculated); A-values from Mendoza and
-;  Zeippen 1982, except 5S2-?? from Kohstall et al. 1998.
+;;;  Experimental energy levels from NIST cited in Kohstall et
+;;;  al. 1998 (5S2 energy level calculated); A-values from Mendoza and
+;;;  Zeippen 1982, except 5S2-?? from Kohstall et al. 1998.
+;;             
+;             iontype = 'p2'
+;;;            ee = ryd*[0, 0.002708, 0.007586, 0.103157, 0.247532, 0.543985]
+;             ee = invcm*[0.0, 298.68, 833.06, 11322.70, 27161.00, 58671.92]
+;;;                         ^      ^       ^         ^         ^         ^
+;;;                        3P0    3P1     3P2       1D2       1S0       5S2
+;             
+;             einas = dblarr(6,6)
+;             einas[1,0]   = [4.72d-4]                 ; [33 mu]
+;             einas[2,0:1] = [4.61d-8,2.07d-3]         ; [12 mu,18 mu]
+;             einas[3,0:2] = [5.82d-6,2.21d-2,5.76d-2] ; [8831,9071,9533]
+;             einas[4,1:3] = [7.96d-1,1.05d-2,2.22d0]  ; [3722,3798,6313]
+;             einas[5,1:3] = [5.01d3,1.38d4,4.43d0]    ; [1713,1728,2111]
              
-             iontype = 'p2'
-;            ee = ryd*[0, 0.002708, 0.007586, 0.103157, 0.247532, 0.543985]
-             ee = invcm*[0.0, 298.68, 833.06, 11322.70, 27161.00, 58671.92]
-;                         ^      ^       ^         ^         ^         ^
-;                        3P0    3P1     3P2       1D2       1S0       5S2
-             
-             einas = dblarr(6,6)
-             einas[1,0]   = [4.72d-4]                 ; [33 mu]
-             einas[2,0:1] = [4.61d-8,2.07d-3]         ; [12 mu,18 mu]
-             einas[3,0:2] = [5.82d-6,2.21d-2,5.76d-2] ; [8831,9071,9533]
-             einas[4,1:3] = [7.96d-1,1.05d-2,2.22d0]  ; [3722,3798,6313]
-             einas[5,1:3] = [5.01d3,1.38d4,4.43d0]    ; [1713,1728,2111]
-             
-;  Collision strengths, interpolated for temperature 'logt'.  CS for
-;  3P?-3P? and S2-P? from Tayal and Gupta 1999.  CS for 1D2-?? and 1S0-??
-;  from Galavis et al. 1995.  CS for 5S2-3P? from Tayal 1997.
-             
-             tgrid = alog10([5.0d3, 8.0d3, 1.0d4, 2.0d4])
-             p1p0 = spline(tgrid, [4.44, 4.17, 3.98, 3.24], logt)*1d0
-             p2p0 = spline(tgrid, [1.41, 1.35, 1.31, 1.28], logt)*1d0
-             p2p1 = spline(tgrid, [8.72, 8.20, 7.87, 6.88], logt)*1d0
-             
-             s2px = spline(tgrid, [2.45, 2.74, 2.84, 3.12], logt)*1d0/9.
-             
-             tgrid = 3.0d0 + findgen(11)/5.0d0
-             d2px = spline(tgrid, [6.023, 6.932, 7.689, 8.038, 8.023, $
-               7.951, 7.989, 8.006, 7.829, 7.332, 6.478], logt)*1d0/9.
-             s0px = spline(tgrid, [1.372, 1.297, 1.214, 1.150, 1.117, $
-               1.110, 1.131, 1.193, 1.261, 1.257, 1.146], logt)*1d0/9.
-             s0d2 = spline(tgrid, [1.094, 1.037, 0.984, 0.982, 1.093, $
-               1.301, 1.540, 1.772, 1.962, 2.054, 2.016], logt)*1d0
-             
+;;  Collision strengths, interpolated for temperature 'logt'.  CS for
+;;  3P?-3P? and S2-P? from Tayal and Gupta 1999.  CS for 1D2-?? and 1S0-??
+;;  from Galavis et al. 1995.  CS for 5S2-3P? from Tayal 1997.
+;             
+;             tgrid = alog10([5.0d3, 8.0d3, 1.0d4, 2.0d4])
+;             p1p0 = spline(tgrid, [4.44, 4.17, 3.98, 3.24], logt)*1d0
+;             p2p0 = spline(tgrid, [1.41, 1.35, 1.31, 1.28], logt)*1d0
+;             p2p1 = spline(tgrid, [8.72, 8.20, 7.87, 6.88], logt)*1d0
+;             
+;             s2px = spline(tgrid, [2.45, 2.74, 2.84, 3.12], logt)*1d0/9.
+;             
+;             tgrid = 3.0d0 + findgen(11)/5.0d0
+;             d2px = spline(tgrid, [6.023, 6.932, 7.689, 8.038, 8.023, $
+;               7.951, 7.989, 8.006, 7.829, 7.332, 6.478], logt)*1d0/9.
+;             s0px = spline(tgrid, [1.372, 1.297, 1.214, 1.150, 1.117, $
+;               1.110, 1.131, 1.193, 1.261, 1.257, 1.146], logt)*1d0/9.
+;             s0d2 = spline(tgrid, [1.094, 1.037, 0.984, 0.982, 1.093, $
+;               1.301, 1.540, 1.772, 1.962, 2.054, 2.016], logt)*1d0
+
+;;  KVCjan2015osu - Collision strengths from Hudson et al 2012 (ApJ,750,65)
+;;    CS for S2-P? from Tayal and Gupta 1999.
+       tgrid = 0.2*indgen(16)+3
+       p1p0 = spline(tgrid,[2.08,2.1,2.13,2.2,2.27,2.26,2.17,2.07,1.97,1.84,1.63,1.36,1.07,0.81,0.59,0.41],logt) ;1->2
+       p2p0 = spline(tgrid,[9.74E-01,9.49E-01,9.36E-01,9.50E-01,9.73E-01,1.02,1.11,1.23,1.31,1.31,1.22,1.06,8.74E-01,6.96E-01,5.45E-01,4.23E-01],logt) ;1->3
+       p2p1 = spline(tgrid,[4.82,4.8,4.79,4.9,5.03,5.1,5.19,5.31,5.36,5.19,4.73,4.03,3.25,2.52,1.92,1.44],logt) ;2->3
+       s0d2 = spline(tgrid,[8.63E-01,8.66E-01,8.72E-01,9.50E-01,1.14,1.38,1.6,1.79,1.94,1.98,1.9,1.73,1.54,1.35,1.18,1.02],logt) ;4->5
+       d2px = spline(tgrid,[6.98E-01,7.33E-01,7.38E-01,7.20E-01,7.10E-01,7.29E-01,7.65E-01,7.91E-01,7.86E-01,7.44E-01,6.60E-01,5.48E-01,4.30E-01,3.23E-01,2.34E-01,1.64E-01],logt) ;1,2,3->4
+       s0px = spline(tgrid,[8.27E-02,8.89E-02,9.58E-02,1.04E-01,1.14E-01,1.25E-01,1.38E-01,1.54E-01,1.71E-01,1.78E-01,1.72E-01,1.55E-01,1.32E-01,1.09E-01,8.72E-02,6.84E-02],logt) ;1,2,3->5
+
+       tgrid = alog10([5.0d3, 8.0d3, 1.0d4, 2.0d4])
+       s2px = spline(tgrid, [2.45, 2.74, 2.84, 3.12], logt)*1d0/9.
 
           endelse
           
@@ -1713,36 +1914,57 @@ function im_getmatrix, ionstr, tt, cloudy94=cloudy94
              
              iontype = 'p4'
              ee = invcm*[0, 1112.17, 1570.23, 14010.0, 33265.7]
-;                        ^    ^      ^       ^        ^
-;                       3P2  3P1    3P0     1D2      1S0
+;                        ^      ^       ^        ^        ^
+;                       3P2    3P1     3P0      1D2      1S0
              
-;  A-values from Mendoza 1982.  
+;  A-values from Mendoza 1983. & Kaufman 1986 
+;  KVCapr14osu:updated to match those used by Bersolin et al. 2009, ApJ 700, 309
              
              einas = dblarr(5,5)
-             einas[1,0]   = 3.06d-2
+             einas[1,0] = 3.06d-2
              einas[2,0:1] = [2.37d-6, 5.31d-3]
-             einas[3,0:2] = [3.14d-1, 8.23d-2, 2.21d-5]
-             einas[4,0:3] = [4.17d-2, 3.952d0, 0.00d0, 2.59d0]
+             einas[3,0:2] = [3.24d-1, 8.44d-2, 2.210d-5]
+             einas[4,0:3] = [4.17d-2, 4.090d0, 0.00d0, 2.590d0]
+
+;;;  A-values from Mendoza 1982.  
+;;
+;;             einas = dblarr(5,5)
+;;             einas[1,0] = 3.06d-2
+;;             einas[2,0:1] = [2.37d-6, 5.31d-3]
+;;             einas[3,0:2] = [3.224d-1, 8.313d-2, 2.9d-5]
+;;             einas[4,0:3] = [4.17d-2, 3.952d0, 0.00d0, 2.59d0]
              
 ;  Collision strengths, interpolated for temperature 'logt'.  CS from
 ;  Galavis et al. 1995.
              
-             tgrid = 3.0d0 + findgen(11)/5.0d0
-             p1p2 = spline(tgrid, [3.726, 3.507, 3.342, 3.226, 3.137, $
-               3.087, 3.117, 3.209, 3.315, 3.343, 3.164],logt)*1d0
-             p0p2 = spline(tgrid, [7.25, 6.96, 6.77, 6.65, 6.60, 6.71, $
-               7.15, 7.81, 8.54, 9.06, 8.97],logt)*1d-1
-             p0p1 = spline(tgrid, [1.676, 1.552, 1.456, 1.384, 1.322, $
-               1.261, 1.207, 1.162, 1.128, 1.089, 1.006],logt)*1d0
-             d2px = spline(tgrid, [5.092, 5.055, 5.030, 4.988, 4.916, $
-               4.825, 4.738, 4.687, 4.663, 4.534, 4.153],logt)*1d0/9.
-             s0px = spline(tgrid, [9.12, 9.27, 9.13, 8.84, 8.58, 8.41, $
-               8.28, 8.15, 7.97, 7.57, 6.77],logt)*1d-1/9.
-             s0d2 = spline(tgrid, [1.587, 1.506, 1.395, 1.302, 1.248, $
-               1.219, 1.188, 1.145, 1.096, 1.038, 0.951],logt)*1d0
+;;             tgrid = 3.0d0 + findgen(11)/5.0d0
+;;             p1p2 = spline(tgrid, [3.726, 3.507, 3.342, 3.226, 3.137, $
+;;               3.087, 3.117, 3.209, 3.315, 3.343, 3.164],logt)*1d0
+;;             p0p2 = spline(tgrid, [7.25, 6.96, 6.77, 6.65, 6.60, 6.71, $
+;;               7.15, 7.81, 8.54, 9.06, 8.97],logt)*1d-1
+;;             p0p1 = spline(tgrid, [1.676, 1.552, 1.456, 1.384, 1.322, $
+;;               1.261, 1.207, 1.162, 1.128, 1.089, 1.006],logt)*1d0
+;;             d2px = spline(tgrid, [5.092, 5.055, 5.030, 4.988, 4.916, $
+;;               4.825, 4.738, 4.687, 4.663, 4.534, 4.153],logt)*1d0/9.
+;;             s0px = spline(tgrid, [9.12, 9.27, 9.13, 8.84, 8.58, 8.41, $
+;;               8.28, 8.15, 7.97, 7.57, 6.77],logt)*1d-1/9.
+;;             s0d2 = spline(tgrid, [1.587, 1.506, 1.395, 1.302, 1.248, $
+;;               1.219, 1.188, 1.145, 1.096, 1.038, 0.951],logt)*1d0
 
+;  KVCapril2014osu - Collision strengths from Munoz Burgos 2009 fit by Draine 2012
+          iontype = 'p4c'
+          t4 = (10^logt)/1.0e4
+          p1p2 = 4.04 * t4^(0.031 + 0.002 * alog(t4)) 
+          p0p2 = 1.00 * t4^(0.111 - 0.009 * alog(t4)) 
+          p0p1 = 1.42 * t4^(-0.024 - 0.016 * alog(t4)) 
+          s0d2 = 0.175 * t4^(0.105 - 0.033 * alog(t4))
+          s0p2 = 0.101 * t4^(0.029 - 0.045 * alog(t4)) 
+          s0p1 = 0.0664 * t4^(0.032 - 0.033 * alog(t4)) 
+          s0p0 = 0.0252 * t4^(0.022 - 0.024 * alog(t4))
+          d2p2 = 2.94 * t4^(0.011 + 0.014 * alog(t4)) 
+          d2p1 = 1.80 * t4^(0.006 + 0.013 * alog(t4))
+          d2p0 = 0.602 * t4^(0.004 + 0.014 * alog(t4))
           endelse
-          
        END
 ;
 ;
@@ -1994,11 +2216,28 @@ function im_getmatrix, ionstr, tt, cloudy94=cloudy94
             [4*dxs3,  d3d5 ,  0.00 ,  p3d3 ,  p1d3 ]/4. ,$
             [4*pxs3,  p3d5 ,  p3d3 ,  0.00 ,  p1p3 ]/4. ,$
             [2*pxs3,  p1d5 ,  p1d3 ,  p1p3 ,  0.00 ]/2.], 5, 5)
-;                    ^       ^       ^       ^       ^     ^
-;                  4S3/2   2D5/2   2D3/2   2P3/2   2P1/2   wi
+;                 ^      ^       ^       ^       ^     ^
+;              4S3/2  2D5/2  2D3/2   2P3/2   2P1/2   wi
+
           en = reform([ (ee-ee(0) > 0), (ee-ee(1) > 0), (ee-ee(2) > 0), $
             (ee-ee(3) > 0), (ee-ee(4) > 0)], 5, 5)
        END
+
+; KVCapril2014osu: added in for the draine fits 
+       'P3A2':    BEGIN          ;     Order of energy levels is OII-like 
+          ombyw = reform($
+            [[ 0.00 , d5s3 ,  d3s3 ,  p3s3,   p1s3]/4. ,$
+            [ d5s3 ,  0.00 ,  d3d5 ,  p3d5 ,  p1d5 ]/6. ,$
+            [ d3s3 ,  d3d5 ,  0.00 ,  p3d3 ,  p1d3 ]/4. ,$
+            [ p3s3 ,  p3d5 ,  p3d3 ,  0.00 ,  p1p3 ]/4. ,$
+            [ p1s3 ,  p1d5 ,  p1d3 ,  p1p3 ,  0.00 ]/2.], 5, 5)
+;                 ^      ^       ^       ^       ^     ^
+;              4S3/2  2D5/2  2D3/2   2P3/2   2P1/2   wi
+
+          en = reform([ (ee-ee(0) > 0), (ee-ee(1) > 0), (ee-ee(2) > 0), $
+            (ee-ee(3) > 0), (ee-ee(4) > 0)], 5, 5)
+       END
+
 ;
        'P3B':    BEGIN          ;     Order of energy levels is
           ombyw = reform($
@@ -2033,12 +2272,12 @@ function im_getmatrix, ionstr, tt, cloudy94=cloudy94
             [6*dxs3,  d5d3 ,  0.00 ,  p1d5 ,  p3d5 ]/6. ,$
             [2*pxs3,  p1d3 ,  p1d5 ,  0.00 ,  p3p1 ]/2. ,$
             [4*pxs3,  p3d3 ,  p3d5 ,  p3p1 ,  0.00 ]/4.], 5, 5)
-;                    ^       ^       ^       ^       ^     ^
-;                  4S3/2   2D3/2   2D5/2   2P1/2   2P3/2   wi
+;                 ^      ^       ^       ^       ^     ^
+;             4S3/2   2D3/2   2D5/2   2P1/2   2P3/2   wi
           en = reform([ (ee-ee[0] > 0), (ee-ee[1] > 0), (ee-ee[2] > 0), $
             (ee-ee[3] > 0), (ee-ee[4] > 0)], 5, 5)
-
        END
+       
 ;
        'P4':     BEGIN
           ombyw = reform($
@@ -2053,6 +2292,27 @@ function im_getmatrix, ionstr, tt, cloudy94=cloudy94
           en = reform([ (ee-ee(0) > 0), (ee-ee(1) > 0), (ee-ee(2) > 0), $
             (ee-ee(3) > 0), (ee-ee(4) > 0)], 5, 5)
        END
+
+;
+; KVCapril2014osu: added in for the draine fits 
+; KvC suspects P4 may have a bug in its matrix as s0p2 < s0p1 < s0p2
+; not the inverse of this relation. ArIII uses this matrix, other P4 
+; ions do not.
+       'P4C':     BEGIN
+          ombyw = reform($
+            [[0.00,  p0p1, p0p2, d2p2,  s0p2]/5. , $
+            [ p0p1,  0.00, p1p2, d2p1,  s0p1]/3. , $
+            [ p0p2,  p1p2, 0.00, d2p0,  s0p0]/1. , $
+            [ d2p0,  d2p1, d2p2, 0.00,  s0d2 ]/5. , $
+            [ s0p0,  s0p1, s0p2, s0d2,  0.00 ]/1.], 5, 5)
+;                 ^       ^       ^       ^       ^     ^
+;                3P0     3P1     3P2     1D2     1S0    wi
+;
+          en = reform([ (ee-ee(0) > 0), (ee-ee(1) > 0), (ee-ee(2) > 0), $
+            (ee-ee(3) > 0), (ee-ee(4) > 0)], 5, 5)
+       END
+
+
 ;
        '3LEV':   BEGIN
           ombyw = reform($
