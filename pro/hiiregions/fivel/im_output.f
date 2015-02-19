@@ -101,8 +101,8 @@ c  Accurate for DEN <= 1.e4/cm**3
 
       t4=tem/1.e4
       e42=1.387/t4**0.983/10.**(0.0424/t4)
-      jhb=e42*10.**-25
-      jhb2=1.24e-25*(t4**-0.87)
+      jhb=e42*10.**(-25)
+      jhb2=1.24e-25*(t4**(-0.87))
       write(filout,15) jhb
       write(filout,16) jhb2
 c
