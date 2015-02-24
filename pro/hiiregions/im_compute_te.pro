@@ -74,6 +74,8 @@ function im_compute_te, data, nmonte=nmonte, snrcut=snrcut
       zt_oii_dens:           -999.0, $ ; [O II] density [cm-3]
       zt_oii_dens_err:       -999.0, $
 
+;     zt_t1666:              -999.0, $ ; T[1666] [K]
+;     zt_t1666_err:          -999.0, $
       zt_t7325:              -999.0, $ ; T[7325] [K]
       zt_t7325_err:          -999.0, $
       zt_t5755:              -999.0, $ ; T[5755] [K]
@@ -129,7 +131,6 @@ function im_compute_te, data, nmonte=nmonte, snrcut=snrcut
        endif else oii_dens_ratio_err = -2.0
        
 ; compute the (temperature-dependent) [O II] line ratio
-       
        if tag_exist(data,'OII_3727') and tag_exist(data,'OII_7325') then begin
 
           if (data[iobj].oii_3727[0]/data[iobj].oii_3727[1] gt snrcut) and $
@@ -147,7 +148,6 @@ function im_compute_te, data, nmonte=nmonte, snrcut=snrcut
        endif else oii_temp_ratio_err = -2.0
        
 ; compute the [N II] line ratio
-
        if tag_exist(data,'NII_5755') and tag_exist(data,'NII_6548') and tag_exist(data,'NII_6584') then begin
 
           if (data[iobj].nii_6584[0]/data[iobj].nii_6584[1] gt snrcut) and $
@@ -169,7 +169,6 @@ function im_compute_te, data, nmonte=nmonte, snrcut=snrcut
        endif else nii_ratio_err = -2.0
        
 ; compute the [S III] line ratio
-
        if tag_exist(data,'SIII_6312') and tag_exist(data,'SIII_9069') and tag_exist(data,'SIII_9532') then begin
 
           if (data[iobj].siii_9532[0]/data[iobj].siii_9532[1] gt snrcut) and $
@@ -191,7 +190,6 @@ function im_compute_te, data, nmonte=nmonte, snrcut=snrcut
        endif else siii_ratio_err = -2.0
        
 ; compute the [O III] line ratio
-
        if tag_exist(data,'OIII_4363') and tag_exist(data,'OIII_4959') and tag_exist(data,'OIII_5007') then begin
 
           if (data[iobj].oiii_5007[0]/data[iobj].oiii_5007[1] gt snrcut) and $
