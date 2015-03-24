@@ -89,7 +89,7 @@ pro im_plotconfig, plotnum, position, psfile=psfile, psclose=psclose, $
                 endif
                 if keyword_set(png) then begin
                    pngfile = repstr(repstr(psfile,'.eps','.png'),'.ps','.png')
-                   spawn, 'convert '+psfile+' '+pngfile, /sh
+                   spawn, 'convert -background white -alpha remove '+psfile+' '+pngfile, /sh
                 endif
                 if (keyword_set(pskeep) eq 0) then rmfile, psfile
              endelse

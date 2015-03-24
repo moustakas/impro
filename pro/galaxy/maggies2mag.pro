@@ -54,7 +54,7 @@ function maggies2mag, maggies, ivarmaggies=ivarmaggies, magerr=magerr, $
        himagerr = ivarmaggies*0.0-99.0
        magnsigma = ivarmaggies*0.0-99.0
 
-       snr = maggies*sqrt(ivarmaggies) ; fractional error
+       snr = maggies*sqrt(ivarmaggies*1D) ; fractional error
        good = where(snr ge nsigma,ngood)
        upper = where((ivarmaggies ne 0.0) and snr lt nsigma,nupper)
        nodata = where((ivarmaggies eq 0.0),nnodata)
