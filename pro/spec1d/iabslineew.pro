@@ -125,7 +125,7 @@ pro qaplot_abslineew, wave, flux, mask=mask, absline=absline, $
     djs_plot, [0], [0], /nodata, xsty=3, ysty=3, charsize=1.8, $
       xtitle='Rest Wavelength (\AA)', ytitle=ytitle, $
       xrange=xrange, yrange=yrange*scale, _extra=extra
-    legend, textoidl(absplot.label), /right, /top, box=0, charsize=2.0
+    im_legend, textoidl(absplot.label), /right, /top, box=0, charsize=2.0
 
 ; overplot the lower continuum window
     bb = [absplot.lloindx,absplot.lhiindx]

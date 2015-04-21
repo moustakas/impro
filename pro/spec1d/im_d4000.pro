@@ -6,29 +6,34 @@
 ;   Compute the Balogh+99 definition of the 4000-A break. 
 ;
 ; INPUTS: 
-;   wave - input wavelength vector [NPIX, Angstroms]
+;   wave - input *rest-frame* wavelength vector [NPIX, Angstroms]
 ;   flux - corresponding flux density [NPIX, erg/s/cm/A]
 ;
 ; OPTIONAL INPUTS: 
-;   ferr - 1-sigma error array for FLUX [NPIX, erg/s/cm/A]
+;   ivar - inverse variance spectrum [NPIX, 1/(erg/s/cm/A)^2] (set
+;     IVAR=0 for crummy pixels) 
 ;
 ; KEYWORD PARAMETERS: 
 ;   bruzual83 - compute the Bruzual (1983) definition of the 4000-A
 ;     break
+;   debug - make a debugging plot and wait for a keystroke
 ;
 ; OUTPUTS: 
 ;   d4000 - the 4000-A break strength (dimensionless)
 ;
 ; OPTIONAL OUTPUTS:
-;   d4000_err - uncertainty on D4000 (if FERR is given)
+;   d4000_err - uncertainty on D4000 (if IVAR is given, otherwise
+;     -2.0) 
 ;
 ; COMMENTS:
 ;   Basically wraps on IABSLINEEW()
 ;
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2009 Feb 27, NYU
+;   jm15apr20siena - changed FERR optional input to IVAR to conform to
+;     the corresponding change in IABSLINEEW()
 ;
-; Copyright (C) 2009, John Moustakas
+; Copyright (C) 2009, 2012, John Moustakas
 ; 
 ; This program is free software; you can redistribute it and/or modify 
 ; it under the terms of the GNU General Public License as published by 
@@ -41,8 +46,8 @@
 ; General Public License for more details. 
 ;-
 
-function im_d4000, wave, flux, ferr=ferr, d4000_err=d4000_err, $
-  bruzual83=bruzual83
+function im_d4000, wave, flux, ivar=ivar, d4000_err=d4000_err, $
+  bruzual83=bruzual83, debug=debug
 
     npix = n_elements(wave)
     if (npix eq 0) then begin
@@ -55,11 +60,6 @@ function im_d4000, wave, flux, ferr=ferr, d4000_err=d4000_err, $
        return, -1
     endif
     
-    if (n_elements(ferr) eq 0L) then ferr = flux*0.05
-    light = 2.99792458D18
-    fnu = wave*wave*flux/light
-    fnu_err = wave*wave*ferr/light
-
     if keyword_set(bruzual83) then begin
        wbvec = [3750.0,3950.0]
        wrvec = [4050.0,4250.0]
@@ -74,9 +74,9 @@ function im_d4000, wave, flux, ferr=ferr, d4000_err=d4000_err, $
     uwidth = wrvec[1]-wrvec[0]
     midwave = total([llimit,ulimit])/2.0 ; central wavelength
 
-    cbreak = iabslineew(wave,fnu,midwave,ferr=fnu_err,llimit=llimit,$
+    cbreak = iabslineew(wave,flux,midwave,ivar=ivar,llimit=llimit,$
       lwidth=lwidth,ulimit=ulimit,uwidth=uwidth,label=blabel,/noline,$
-      absplot=cbreakplot,debug=0,/fnu,silent=silent,_extra=extra)
+      absplot=cbreakplot,debug=debug,silent=silent,_extra=extra)
 
     if (cbreak.cratio gt 0.0) then begin
        d4000 = cbreak.cratio
@@ -86,7 +86,7 @@ function im_d4000, wave, flux, ferr=ferr, d4000_err=d4000_err, $
        d4000_err = -1.0
     endelse
 
-    if (n_elements(ferr) eq 0) then d4000_err = -2.0    
+    if (n_elements(ivar) eq 0) then d4000_err = -2.0    
     
 return, d4000
 end
