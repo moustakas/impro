@@ -51,7 +51,7 @@ function mag2maggies, mag, magerr=magerr, vega2ab=vega2ab, $
        good = where((mag[ii,*] gt 0.0) and (mag[ii,*] lt 90.0),ngood)
        if (ngood ne 0L) then begin
           mag1 = mag[ii,good] + vega2ab[ii]
-          maggies[ii,good] = 10.0^(-0.4*mag1)
+          maggies[ii,good] = 10.0^(-0.4D*mag1)
        endif
        if doivar then begin
           good = where((mag[ii,*] gt 0.0) and (mag[ii,*] lt 90.0) and $
