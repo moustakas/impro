@@ -41,16 +41,21 @@
 ;     analyzed 
 ;
 ; COMMENTS:
-;   Temperature-sensitive line-ratios:
+;   Known temperature-sensitive line-ratios:
+;      N_II = (6548+6584)/5755
+;      S_III = (9069+9532)/6312
 ;      O_III = (4959+5007)/4363
+;      O_II_TEMP = (3726+3729)/7325
 ; 
 ;   Density-sensitive line-ratios:
 ;      S_II = 6716/6731
+;      O_II_DENS = 3726/3729
 ;
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2007 Nov 25, NYU - written
+;   jm15may13siena - minor documentation update
 ;
-; Copyright (C) 2007, John Moustakas
+; Copyright (C) 2007, 2013 John Moustakas
 ; 
 ; This program is free software; you can redistribute it and/or modify 
 ; it under the terms of the GNU General Public License as published by 
