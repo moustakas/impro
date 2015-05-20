@@ -75,13 +75,13 @@ function match_string, instring, allstrings, index=index, $
     endif
     
     name = strlowcase(strcompress(instring,/remove))
-    name = repstr(repstr(name,'[',''),']')
+    name = repstr(repstr(name,'[',''),']','')
     len = strlen(name)
     newname = strarr(len>1)
     for i = 0L, len-1L do newname[i] = strmid(name,i,1)
 
     std = strlowcase(strcompress(allstrings,/remove))
-    std = repstr(repstr(std,'[',''),']')
+    std = repstr(repstr(std,'[',''),']','')
 
     if keyword_set(exact) then begin
 
