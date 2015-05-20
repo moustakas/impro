@@ -131,16 +131,16 @@ function im_getposition, nx=nx, ny=ny, xpage=xpage, ypage=ypage, $
         if (n_elements(width) eq 1) then ww = replicate(width,nx) else $
           if (n_elements(width) ne nx) then $
             message, 'WIDTH must have 1 or NX elements' else ww = width
-    if (abs(total(ww)+total(xsp)+total(xm)-xp) gt 1D-3) then $
-      message, 'WIDTH and XSPACE values exceed usable area'
+;   if (abs(total(ww)+total(xsp)+total(xm)-xp) gt 1D-3) then $
+;     message, 'WIDTH and XSPACE values exceed usable area'
 
     if (n_elements(height) eq 0) then hh = $
       replicate((yp-total(ym)-total(ysp))/float(ny),ny) else $
         if (n_elements(height) eq 1) then hh = replicate(height,ny) else $
           if (n_elements(height) ne ny) then $
             message, 'HEIGHT must have 1 or NY elements' else hh = height
-    if (abs(total(hh)+total(ysp)+total(ym)-yp) gt 1D-3) then $
-      message, 'HEIGHT and YSPACE values exceed usable area'
+;   if (abs(total(hh)+total(ysp)+total(ym)-yp) gt 1D-3) then $
+;     message, 'HEIGHT and YSPACE values exceed usable area'
 
 ; calculate corner coordinates for each plot box 
     position = fltarr(4,nx*ny)

@@ -286,10 +286,17 @@ pro isedfit, isedfit_paramfile, maggies, ivarmaggies, z, params=params, $
        return
     endif
     if keyword_set(photoz) eq 0 then begin
-       if (total(z le 0.0) ne 0.0) then begin
-          splog, 'Z should all be positive'
-          return
-       endif
+       if n_elements(index) eq 0L then begin
+          if (total(z le 0.0) ne 0.0) then begin
+             splog, 'Z should all be positive'
+             return
+          endif
+       endif else begin
+          if (total(z[index] le 0.0) ne 0.0) then begin
+             splog, 'Z should all be positive'
+             return
+          endif
+       endelse
     endif
 
 ; check for RA,DEC    
