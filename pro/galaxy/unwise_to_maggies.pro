@@ -34,7 +34,7 @@
 ;-
 
 pro unwise_to_maggies, cat, maggies, ivarmaggies, filterlist=filterlist, $
-  ratag=ratag, dectag=dectag, nodust=nodust, ebv=ebv
+  prefix=prefix, ratag=ratag, dectag=dectag, nodust=nodust, ebv=ebv
 
     ngal = n_elements(cat)
     if (ngal eq 0L) then begin
@@ -46,8 +46,9 @@ pro unwise_to_maggies, cat, maggies, ivarmaggies, filterlist=filterlist, $
     weff = k_lambda_eff(filterlist=filterlist)
     nbands = n_elements(filterlist)
 
-    tags = ['w1','w2']+'_nanomaggies'
-    ivartags = ['w1','w2']+'_nanomaggies_ivar'
+    if n_elements(prefix) eq 0 then prefix2 = '' else prefix2 = prefix+'_'
+    tags = prefix2+['w1','w2']+'_nanomaggies'
+    ivartags = prefix2+['w1','w2']+'_nanomaggies_ivar'
 
 ; http://wise2.ipac.caltech.edu/docs/release/allsky/expsup/sec4_4h.html#conv2ab
     v2ab = [2.699,3.339]
