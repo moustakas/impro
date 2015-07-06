@@ -264,6 +264,7 @@ pro write_isedfit_paramfile, params=params, isedfit_dir=isedfit_dir, $
              if n_elements(nzz) eq 0 then message, 'NZZ must be specified in tandem with /ZLOG'
              if nzz le 0 then message, 'NZZ must be greater than zero!'
              redshift = range(zminmax[0],zminmax[1],nzz,/log)
+             zbin = -1
           endif else begin
              if n_elements(zbin) eq 0 then begin ; use NZZ
                 if nzz gt 1 then zbin = (zminmax[1]-zminmax[0])/(nzz-1.0) else zbin = 0.0
