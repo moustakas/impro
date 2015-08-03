@@ -42,18 +42,19 @@ pro unwise_to_maggies, cat, maggies, ivarmaggies, filterlist=filterlist, $
        return
     endif
 
-    filterlist = wise_filterlist(/short)
+    filterlist = wise_filterlist();/short)
     weff = k_lambda_eff(filterlist=filterlist)
     nbands = n_elements(filterlist)
 
     if n_elements(prefix) eq 0 then prefix2 = '' else prefix2 = prefix+'_'
-    tags = prefix2+['w1','w2']+'_nanomaggies'
-    ivartags = prefix2+['w1','w2']+'_nanomaggies_ivar'
+    tags = prefix2+['w1','w2','w3','w4']+'_nanomaggies'
+    ivartags = prefix2+['w1','w2','w3','w4']+'_nanomaggies_ivar'
 
 ; http://wise2.ipac.caltech.edu/docs/release/allsky/expsup/sec4_4h.html#conv2ab
-    v2ab = [2.699,3.339]
-    kl = ext_ccm(weff)*3.1
+    v2ab = [2.699,3.339,5.174,6.620]
+;   kl = ext_ccm(weff)*3.1
 ;   kl = k_lambda(weff,/ccm,/silent)
+    kl = [0.184,0.113,0.0241,0.00910]
     
 ; correct for dust
     if keyword_set(nodust) eq 0 then begin
