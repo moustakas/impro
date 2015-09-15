@@ -96,14 +96,14 @@ function spectral_indices, wave, flux, ivar=ivar1, indexfile=indexfile, $
       strmatch(licknames,'Lick_Fe5335',/fold)) eq 2) then $
         names = [names,'Lick_Fe']
     
-    if (total(strmatch(licknames,'Lick_Fe5270',/fold) and $
-      strmatch(licknames,'Lick_Fe5335',/fold) and $
-      strmatch(licknames,'Lick_Mgb',/fold)) eq 3) then $
+    if total(strmatch(licknames,'Lick_Fe5270',/fold)+$
+      strmatch(licknames,'Lick_Fe5335',/fold)+$
+      strmatch(licknames,'Lick_Mgb',/fold)) eq 3 then $
         names = [names,'Lick_MgFe']
-    if (total(strmatch(licknames,'Lick_Fe4531',/fold) and $
-      strmatch(licknames,'Lick_Fe5015',/fold) and $
-      strmatch(licknames,'Lick_Mg1',/fold) and $
-      strmatch(licknames,'Lick_Mg2',/fold)) eq 4) then $
+    if total(strmatch(licknames,'Lick_Fe4531',/fold)+$
+      strmatch(licknames,'Lick_Fe5015',/fold)+$
+      strmatch(licknames,'Lick_Mg1',/fold)+$
+      strmatch(licknames,'Lick_Mg2',/fold)) eq 4 then $
        names = [names,'Lick_Mg1Fe','Lick_Mg2Fe']
     indices = create_struct('indices', names)
     for j = 0L, n_elements(names)-1L do indices = create_struct($
