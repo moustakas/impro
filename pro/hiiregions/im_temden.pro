@@ -45,17 +45,20 @@
 ;      N_II = (6548+6584)/5755
 ;      S_III = (9069+9532)/6312
 ;      O_III = (4959+5007)/4363
+;      O_III_1666 = (4959+5007)/1666
 ;      O_II_TEMP = (3726+3729)/7325
 ; 
 ;   Density-sensitive line-ratios:
 ;      S_II = 6716/6731
+;      C_III = 1907/1909
 ;      O_II_DENS = 3726/3729
 ;
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2007 Nov 25, NYU - written
 ;   jm15may13siena - minor documentation update
+;   jm15oct15siena - added O_III_1666 (temperature) and C_III (density) ratios
 ;
-; Copyright (C) 2007, 2013 John Moustakas
+; Copyright (C) 2007, 2013, 2015 John Moustakas
 ; 
 ; This program is free software; you can redistribute it and/or modify 
 ; it under the terms of the GNU General Public License as published by 
@@ -160,8 +163,8 @@ function im_temden, ionlist, ratio, ratio_err=ratio_err, $
     result.ratio = ratio
     if (n_elements(ratio_err) ne 0L) then result.ratio_err = ratio_err
     
-    dens_ions = ['S_II','O_II_DENS']
-    temp_ions = ['O_II_TEMP','N_II','S_III','O_III'] 
+    dens_ions = ['S_II','O_II_DENS','C_III']
+    temp_ions = ['O_II_TEMP','N_II','S_III','O_III','O_III_1666'] 
 
     ndens = n_elements(dens_ions)
     ntemp = n_elements(temp_ions)
@@ -185,6 +188,7 @@ function im_temden, ionlist, ratio, ratio_err=ratio_err, $
              result[ii].dens_ion = 1B
              case dens_ions[idens] of
                 'S_II': ion_ratio = transpose(temden_table.sii_ratio)
+                'C_III': ion_ratio = transpose(temden_table.ciii_ratio)
                 'O_II_DENS': ion_ratio = transpose(temden_table.oii_dens_ratio)
              endcase
              dens_model_ratio = interpolate(ion_ratio,findex(temden_table.grid_temp,temp_guess))
@@ -209,6 +213,8 @@ function im_temden, ionlist, ratio, ratio_err=ratio_err, $
                 'S_III': temp_model_ratio = interpolate(temden_table.siii_ratio,$
                   findex(temden_table.grid_dens,dens_guess))
                 'O_III': temp_model_ratio = interpolate(temden_table.oiii_ratio,$
+                  findex(temden_table.grid_dens,dens_guess))
+                'O_III_1666': temp_model_ratio = interpolate(temden_table.oiii_1666_ratio,$
                   findex(temden_table.grid_dens,dens_guess))
              endcase
              temp = interpolate(temden_table.grid_temp,findex(temp_model_ratio,ratio[ii]))
@@ -246,9 +252,7 @@ function im_temden, ionlist, ratio, ratio_err=ratio_err, $
 ; Monte Carlo method
 
     if (nmonte gt 0L) and (n_elements(ratio_err) ne 0L) then begin
-
        for ii = 0L, nion-1L do begin
-          
           ratio_monte = result[ii].ratio + randomn(seed,nmonte)*result[ii].ratio_err
 
           for imonte = 0L, nmonte-1L do begin

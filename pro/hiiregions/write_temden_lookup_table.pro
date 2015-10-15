@@ -1,43 +1,46 @@
 ;+
 ; NAME:
-;       WRITE_TEMDEN_LOOKUP_TABLE
+;   WRITE_TEMDEN_LOOKUP_TABLE
 ;
 ; PURPOSE:
-;       Write a look-up table for use with IM_TEMDEN().
+;   Write a look-up table for use with IM_TEMDEN().
 ;
 ; INPUTS:
 ;
 ; OPTIONAL INPUTS:
-;       max_temp   - maximum temperature to consider (default 25,000 K)
-;       min_temp   - minimum temperature to consider (default 5,000 K)
-;       step_temp  - temperature step size
-;       max_dens   - maximum density to consider (default 10,000 cm^-3)
-;       min_dens   - minimum density to consider (default 1 cm^-3)
-;       step_dens  - density step size
+;   max_temp   - maximum temperature to consider (default 25,000 K)
+;   min_temp   - minimum temperature to consider (default 5,000 K)
+;   step_temp  - temperature step size
+;   max_dens   - maximum density to consider (default 10,000 cm^-3)
+;   min_dens   - minimum density to consider (default 1 cm^-3)
+;   step_dens  - density step size
 ;
 ; KEYWORD PARAMETERS:
 ;
 ; OUTPUTS:
-;       Binary FITS lookup table.
+;   Binary FITS lookup table.
 ;
 ; COMMENTS:
-;       Currently only the following ratios are written out.
+;   Currently only the following ratios are written out.
 ;
-;       Temperature-sensitive line-ratios:
-;          O_III = (4959+5007)/4363
-;          S_III = (9069+9532)/6312
-;          O_II  = (3726+3729)/7325
-;          N_II  = (6548+6584)/5755
+;   Temperature-sensitive line-ratios:
+;      O_III = (4959+5007)/4363
+;      S_III = (9069+9532)/6312
+;      O_II  = (3726+3729)/7325
+;      N_II  = (6548+6584)/5755
+;      O_III_1666 = (4959+5007)/1666
 ; 
-;       Density-sensitive line-ratios:
-;          O_II = 3726/3729
-;          S_II = 6716/6731
+;   Density-sensitive line-ratios:
+;      O_II = 3726/3729
+;      S_II = 6716/6731
+;      C_III = 1907/1909
 ;
 ; MODIFICATION HISTORY:
-;       J. Moustakas, 2007 Nov 27, NYU - written
-;       jm14dec06siena - updated to use the latest atomic data
+;   J. Moustakas, 2007 Nov 27, NYU - written
+;   jm14dec06siena - updated to use the latest atomic data
+;   jm15oct15siena - added O_III_1666 (temperature) and C_III (density) ratios
 ;
-; Copyright (C) 2007, 2013 John Moustakas
+; Copyright (C) 2007, 2013, 2015 John Moustakas
 ; 
 ; This program is free software; you can redistribute it and/or modify 
 ; it under the terms of the GNU General Public License as published by 
@@ -58,13 +61,11 @@ pro write_temden_lookup_table, table, max_temp=max_temp, min_temp=min_temp, $
 ; ions; also note that the temp grid, below, is optimized for the
 ; [OIII] 4959+5007/4363, which varies rapidly with decreasing temp;
 ; other ions might behave differently
-
-    ionlist = ['s_ii','o_ii','n_ii','s_iii','o_iii']
+    ionlist = ['s_ii','o_ii','n_ii','s_iii','o_iii','c_iii']
     nion = n_elements(ionlist)
     
 ; set up the temp and dens grid, where the current limits correspond
 ; to reasonable limits for the atomic data
-
     if (n_elements(min_temp) eq 0L) then min_temp = 3D3 else min_temp = min_temp>3D3 ; [K]
     if (n_elements(max_temp) eq 0L) then max_temp = 2.5D4 else max_temp = max_temp<2.5D4 ; [K]
     if (n_elements(step_temp) eq 0L) then step_temp = 0.005D ; 0.002D
@@ -82,25 +83,24 @@ pro write_temden_lookup_table, table, max_temp=max_temp, min_temp=min_temp, $
     splog, 'NDENS = '+string(ndens,format='(I0.0)')
     
 ; initialize the lookup table
-
     table = {$
       date:                        '', $
       grid_temp:            grid_temp, $
       grid_dens:            grid_dens, $
-      sii_ratio:      fltarr(ntemp,ndens), $ ; 6716/6731
-      oii_dens_ratio: fltarr(ntemp,ndens), $ ; 3726/3729
-      oii_temp_ratio: fltarr(ntemp,ndens), $ ; (3726+3729)/7325
-      nii_ratio:      fltarr(ntemp,ndens), $ ; (6548+6584)/5755
-      siii_ratio:     fltarr(ntemp,ndens), $ ; (9069+9532)/6312
-      oiii_ratio:     fltarr(ntemp,ndens)}   ; (4959+5007)/4363
+      sii_ratio:      fltarr(ntemp,ndens), $ ; density - 6716/6731
+      ciii_ratio:     fltarr(ntemp,ndens), $ ; density - 1909/1907
+      oii_dens_ratio: fltarr(ntemp,ndens), $ ; density - 3726/3729
+      oii_temp_ratio: fltarr(ntemp,ndens), $ ; temperature - (3726+3729)/7325
+      nii_ratio:      fltarr(ntemp,ndens), $ ; temperature - (6548+6584)/5755
+      siii_ratio:     fltarr(ntemp,ndens), $ ; temperature - (9069+9532)/6312
+      oiii_ratio:     fltarr(ntemp,ndens), $ ; temperature - (4959+5007)/4363
+      oiii_1666_ratio: fltarr(ntemp,ndens)}  ; temperature - 1666/5007
     
-; loop on each ION/RATIO; note that I'm using INTERPOLATE in
-; combination with FINDEX because when the ratio hits against the
-; limits of GRID_TEMP and/or GRID_DENS the last physically meaningful
-; temperature and/or density is returned, rather than INTERPOL's
-; crappy extrapolation ; when adding more ions, see B. Moore's
-; DIAGINIT for the appropriate emissivity indices
-    
+; loop on each ION/RATIO; note that I'm using INTERPOLATE in combination with
+; FINDEX because when the ratio hits against the limits of GRID_TEMP and/or
+; GRID_DENS the last physically meaningful temperature and/or density is
+; returned, rather than INTERPOL's crappy extrapolation; when adding more ions,
+; see B. Moore's DIAGINIT for the appropriate emissivity indices
     t0 = systime(1)
     for ii = 0L, nion-1L do begin
        splog, 'Computing line-ratios for ion '+strupcase(ionlist[ii])
@@ -114,7 +114,11 @@ pro write_temden_lookup_table, table, max_temp=max_temp, min_temp=min_temp, $
           end
           'n_ii' : table.nii_ratio  = (level.emissivity[3,1]+level.emissivity[3,2])/level.emissivity[4,3]  ; (6548+6584)/5755
           's_iii': table.siii_ratio = (level.emissivity[3,1]+level.emissivity[3,2])/level.emissivity[4,3]  ; (9069+9532)/6312
-          'o_iii': table.oiii_ratio = (level.emissivity[3,1]+level.emissivity[3,2])/level.emissivity[4,3]  ; (4959+5007)/4363
+          'o_iii': begin
+             table.oiii_ratio = (level.emissivity[3,1]+level.emissivity[3,2])/level.emissivity[4,3] ; (4959+5007)/4363
+             table.oiii_1666_ratio = (level.emissivity[3,1]+level.emissivity[3,2])/level.emissivity[5,2] ; (4959+5007)/1666
+          end
+          'c_iii': table.ciii_ratio = level.emissivity[3,0]/level.emissivity[2,0] ; 1907/1909
           else: splog, 'No entry for ion '+ionlist[ii]
        endcase
 ;      plot, table.grid_temp, table.oiii_ratio[*,2], charsize=2                                 
