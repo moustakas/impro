@@ -77,9 +77,11 @@ pro unwise_to_maggies, cat, maggies, ivarmaggies, filterlist=filterlist, $
     ivarmaggies = dblarr(nbands,ngal)
     for ib = 0, nbands-1 do begin
        ftag = tag_indx(cat[0],tags[ib])
-       itag = tag_indx(cat[0],ivartags[ib])
-       maggies[ib,*] = cat[*].(ftag)*fact*10D^(0.4*(kl[ib]*ebv-v2ab[ib]))
-       ivarmaggies[ib,*] = cat[*].(itag)/(fact*10D^(0.4*(kl[ib]*ebv-v2ab[ib])))^2D
+       if ftag[0] ne -1 then begin
+          itag = tag_indx(cat[0],ivartags[ib])
+          maggies[ib,*] = cat[*].(ftag)*fact*10D^(0.4*(kl[ib]*ebv-v2ab[ib]))
+          ivarmaggies[ib,*] = cat[*].(itag)/(fact*10D^(0.4*(kl[ib]*ebv-v2ab[ib])))^2D
+       endif
     endfor
 
 return   

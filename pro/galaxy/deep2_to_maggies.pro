@@ -64,8 +64,8 @@ pro deep2_to_maggies, cat, maggies, ivarmaggies, unwise=unwise, $
     vega2ab = vega2ab*0 ; already in AB
 
     if keyword_set(unwise) then begin
-       maggies = fltarr(nband+2,nobj)
-       ivarmaggies = fltarr(nband+2,nobj)
+       maggies = fltarr(nband+4,nobj)
+       ivarmaggies = fltarr(nband+4,nobj)
     endif else begin
        maggies = fltarr(nband,nobj)
        ivarmaggies = fltarr(nband,nobj)
@@ -90,8 +90,8 @@ pro deep2_to_maggies, cat, maggies, ivarmaggies, unwise=unwise, $
 ; add unWISE photometry
     if keyword_set(unwise) then begin
        unwise_to_maggies, cat, mm, ii, filterlist=ff, ebv=ebv
-       maggies[nband:nband+1,*] = mm
-       ivarmaggies[nband:nband+1,*] = ii
+       maggies[nband:nband+3,*] = mm
+       ivarmaggies[nband:nband+3,*] = ii
        filterlist = [filterlist,ff]
     endif
     
