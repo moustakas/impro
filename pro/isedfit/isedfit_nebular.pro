@@ -64,7 +64,7 @@
 ; General Public License for more details. 
 ;-
 
-Function isedfit_nebular, nlyc, wave=wave, inst_vsigma=inst_vsigma, $
+function isedfit_nebular, nlyc, wave=wave, inst_vsigma=inst_vsigma, $
   vsigma=vsigma, oiiihb=oiiihb1, oiidoubletratio=oiidoubletratio, $
   line=line, flam_line=flam_line, flam_cont=flam_cont, $
   vacuum=vacuum, nospectrum=nospectrum
