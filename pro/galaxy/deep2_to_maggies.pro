@@ -16,10 +16,15 @@
 ;   ivarmaggies - corresponding inverse variance array [8,NGAL]  
 ;
 ; COMMENTS:
-;   A minimum error of 0.02 mag is applied to every bandpass. 
+;   A minimum error of 0.02 mag is applied to every bandpass.
+;
+;   Note that the Field 1 photometry from Matthews+13 is from CFHTLS while the
+;   Field 3-4 photometry is calibrated on the SDSS photometric system.  However,
+;   we only return the CFHTLS filters, so beware!
 ;
 ; MODIFICATION HISTORY:
 ;   J. Moustakas, 2013 Jul 14, Siena
+;   jm16feb02siena - added comment about the CFHTLS vs SDSS bands
 ;
 ; Copyright (C) 2013, John Moustakas
 ; 
