@@ -60,7 +60,7 @@ pro build_ckc_ssp
     inst_vsigma = 50D                    ; [km/s]
     pixsize = inst_vsigma/light/alog(10) ; [pixel size in log-10 A]
     minwave = alog10(950D)               ; minimum wavelength [log10-A]
-    maxwave = alog10(40000D)             ; maximum wavelength [log10-A]
+    maxwave = alog10(55000D)             ; maximum wavelength [log10-A]
     npix = round((maxwave-minwave)/pixsize+1L)
     restwave = minwave+dindgen(npix)*pixsize ; constant log-10 spacing
 

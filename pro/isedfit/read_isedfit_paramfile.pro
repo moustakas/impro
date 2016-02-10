@@ -70,10 +70,10 @@ function read_isedfit_paramfile, isedfit_paramfile, thissfhgrid=thissfhgrid
     
 ; choose one particular SFHGRID
     if (n_elements(thissfhgrid) ne 0) then begin
-       match = where(params.sfhgrid eq thissfhgrid)
-       if (match[0] eq -1) then message, 'No matching SFHgrid '+$
+       match, params.sfhgrid, thissfhgrid, m1, m2
+       if (m1[0] eq -1) then message, 'No matching SFHgrid '+$
          strtrim(thissfhgrid,2)+'; please update '+isedfit_paramfile
-       params = params[match]
+       params = params[m1]
        return, params
     endif
 
