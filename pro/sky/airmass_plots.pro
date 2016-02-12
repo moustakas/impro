@@ -174,9 +174,9 @@ pro airmass_plots, date, ra, dec, object=object, obsname=obsname, $
           axis, xaxis=1, xsty=1, xtickformat='LABEL_DATE', xtickunits='TIME', $
             xrange=[jd[0],jd[n_elements(jd)-1]], charsize=1.7, charthick=postthick, $
             xthick=postthick, xtitle='Local Time'
-          legend, [galaxy,rastr,decstr], /right, /top, box=0, $
+          im_legend, [galaxy,rastr,decstr], /right, /top, box=0, $
             charsize=1.7, charthick=postthick, margin=0
-          legend, ['Minimum airmass '+strn(minair,length=4)+' at '+best_time+' Local Time',$
+          im_legend, ['Minimum airmass '+strn(minair,length=4)+' at '+best_time+' Local Time',$
             thedate+' at '+strupcase(obsname)], $
             /left, /bottom, box=0, charsize=1.7, charthick=postthick, margin=0
           
