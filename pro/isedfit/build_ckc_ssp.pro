@@ -55,8 +55,8 @@ pro build_ckc_ssp
 ;  print, 0.7D/5500/2.35*3E5
     ckc_velpixsize = 15D        ; [km/s]
 
-; resample the models to constant log10-lambda rest-frame *vacuum*
-; wavelengths; this also specifies the instrumental velocity dispersion 
+; resample the models to constant log10-lambda rest-frame wavelengths (in
+; *air*); this also specifies the instrumental velocity dispersion
     inst_vsigma = 50D                    ; [km/s]
     pixsize = inst_vsigma/light/alog(10) ; [pixel size in log-10 A]
     minwave = alog10(950D)               ; minimum wavelength [log10-A]
@@ -83,9 +83,9 @@ pro build_ckc_ssp
        ssp.Zmetal = fsps.Z
 
 ; not sure why, but we need to sort in wavelength
-       srt = sort(fsps.wave)
-       wave = fsps.wave[srt]
-       flux = fsps.flux[srt,*]
+;      srt = sort(fsps.wave)
+;      wave = fsps.wave[srt]
+;      flux = fsps.flux[srt,*]
 
 ; compute the number of hydrogen-ionizing photons
        for jj = 0, nage-1 do ssp.nlyc[jj] = alog10(const*im_integral(wave,$

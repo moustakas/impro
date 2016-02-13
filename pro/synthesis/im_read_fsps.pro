@@ -172,6 +172,11 @@ function im_read_fsps, metallicity=metallicity, basti=basti, $
     endfor
     free_lun,lun
 
+; make sure the wavelengths are sorted
+    srt = sort(fsps.wave)
+    fsps.wave = fsps.wave[srt]
+    fsps.flux = fsps.flux[srt,*]
+    
 ; convert the units of the spectra as desired
     pc10 = 10.0*3.085678D18     ; =10 pc
     light = 2.99792458D18       ; [Angstrom/s]

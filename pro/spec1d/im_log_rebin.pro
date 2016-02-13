@@ -160,7 +160,7 @@ function im_log_rebin, wave, flux, vsc=vsc, var=var, outwave=outwave, $
     outflux = xrebin(borders,flux,newborders,/cubic,missing=missing)
 ; determine the conversion factor/vector accounting for pixel size change
     if (keyword_set(conserve_flux) eq 0) then begin
-       flat = fltarr(dim[0], /nozero) ; faster to create an array and
+       flat = dblarr(dim[0], /nozero) ; faster to create an array and
        replicate_inplace, flat, 1B    ; populate with 1s 
        flat = xrebin(borders,flat,newBorders,/cubic,missing=missing) 
 ;      flat = xrebin(borders, flat, newBorders, /SPLINF)  

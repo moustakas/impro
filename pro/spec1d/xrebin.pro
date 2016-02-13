@@ -74,7 +74,7 @@ if s[0] eq 1 then begin    ; case of a 1D array
         end
 
         keyword_set(cubic): begin
-            iout = interpol( indgen(n_elements(xin)), xin, xout)
+            iout = interpol( lindgen(n_elements(xin)), xin, xout)
             integr_interp = interpolate(integr, iout, /GRID, CUBIC=-0.5, missing=missing)
         end
 
@@ -84,6 +84,7 @@ if s[0] eq 1 then begin    ; case of a 1D array
                    SPLINE=spline, LSQUADRATIC=lsquadratic, QUADRATIC=quadratic)
         
     endcase
+
     ;differentiate
     return, (shift(integr_interp,-1)-integr_interp)[0:n_elements(integr_interp)-2]
     
@@ -105,8 +106,8 @@ endif else begin   ; case of a nD array
         end
 
         keyword_set(cubic): begin
-            iout = interpol( indgen(n_elements(xin)), xin, xout)
-            yout = indgen(sr[2])
+            iout = interpol( lindgen(n_elements(xin)), xin, xout)
+            yout = lindgen(sr[2])
             integr_interp = interpolate(integr, iout, yout, /GR, CUB=-0.5, missing=missing)
         end
 
@@ -167,7 +168,6 @@ a = where(yout - [1,2,1],n)
 if n eq 0 then $
 print, 'OK' else $
 print, 'FAILED'
-
 
 end
 
