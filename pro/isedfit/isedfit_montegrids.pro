@@ -582,7 +582,7 @@ function build_modelgrid, montegrid, params=params, debug=debug, $
                inst_vsigma=sspinfo.inst_vsigma)
 
              wave = [emwave,sspfits[0].wave]
-             wave = float(wave[sort(wave)])
+             wave = float(wave[uniq(wave,sort(wave))])
              if nsspindx eq 1L then begin
                 sspflux = interpolate(sspfits.flux,findex(sspfits[0].wave,wave),$
                   findgen(n_elements(sspfits[0].age)),/grid)
