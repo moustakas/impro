@@ -33,7 +33,7 @@
 ; General Public License for more details. 
 ;-
 
-pro cfhtls_to_maggies, cat, maggies, ivarmaggies, filterlist=filterlist
+pro cfhtls_to_maggies, cat, maggies, ivarmaggies, filterlist=filterlist, auto=auto
 
     nobj = n_elements(cat)
     if (nobj eq 0L) then begin
@@ -43,8 +43,13 @@ pro cfhtls_to_maggies, cat, maggies, ivarmaggies, filterlist=filterlist
 
     filterlist = cfhtls_filterlist()
 
-    names = ['u','g','r','i','z']
-    errnames = names+'err'
+    if keyword_set(auto) then begin
+       names = ['u','g','r','i','z']+'_mag_auto'
+       errnames = ['u','g','r','i','z']+'_magerr_auto'
+    endif else begin
+       names = ['u','g','r','i','z']
+       errnames = names+'err'
+    endelse
     nband = n_elements(names)
     minerrors = replicate(0.02,nband)
 

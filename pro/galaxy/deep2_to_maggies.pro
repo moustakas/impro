@@ -10,6 +10,8 @@
 ;   cat - input photometric catalog [NGAL] 
 ;
 ; KEYWORD PARAMETERS:
+;   field24 - Fields 2-4 are calibrated on the SDSS system whereas Field 1 is on
+;     the CFHTLS photometric system.
 ;
 ; OUTPUTS: 
 ;   maggies - output maggies [8,NGAL]
@@ -40,7 +42,7 @@
 ;-
 
 pro deep2_to_maggies, cat, maggies, ivarmaggies, unwise=unwise, $
-  filterlist=filterlist, _extra=extra
+  filterlist=filterlist, field24=field24, _extra=extra
 
     nobj = n_elements(cat)
     if (nobj eq 0L) then begin
@@ -48,20 +50,21 @@ pro deep2_to_maggies, cat, maggies, ivarmaggies, unwise=unwise, $
        return
     endif
 
-    filterlist = deep2_filterlist()
+    filterlist = deep2_filterlist(field24=field24)
     names = ['best'+['b','r','i'],['u','g','r','i','z']]
     errnames = ['best'+['b','r','i']+'err',['u','g','r','i','z']+'err']
     nband = n_elements(names)
     minerrors = replicate(0.02,nband)
 
-; the DEEP2 photometry has been corrected for reddening while the
-; CFHTLS/SDSS photometry has not; use the reddening value contained
-; within the catalog for consistency    
+; the DEEP2 photometry has been corrected for reddening while the CFHTLS/SDSS
+; photometry has not; use the reddening value contained within the catalog for
+; consistency
     weff = k_lambda_eff(filterlist=filterlist)
     kl = k_lambda(weff,/odonnell,/silent)
     kl[0:2] = 0.0 ; do not correct for reddening
 ;   glactc, cat.ra_deep, cat.dec_deep, 2000.0, gl, gb, 1, /deg
 ;   ebv = dust_getval(gl,gb,/interp,/noloop)
+;   niceprint, filterlist, weff, kl
     ebv = cat.sfd_ebv
     
 ; convert from Vega magnitudes 
