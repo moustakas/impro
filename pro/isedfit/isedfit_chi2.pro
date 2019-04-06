@@ -68,8 +68,13 @@ function isedfit_chi2, maggies, ivarmaggies, modelmaggies, $
           if nzz eq 1 then begin ; special case
              modelmaggies1 = interpolate(modelmaggies[*,these],findgen(nthese))
           endif else begin
-             modelmaggies1 = interpolate(modelmaggies[*,*,these],$
-               findgen(nfilt),zindx[igal],findgen(nthese),/grid)
+             if nthese eq 1 then begin
+                modelmaggies1 = interpolate(modelmaggies[*,*,these],$
+                  findgen(nfilt),zindx[igal],/grid)
+             endif else begin
+                modelmaggies1 = interpolate(modelmaggies[*,*,these],$
+                  findgen(nfilt),zindx[igal],findgen(nthese),/grid)
+             endelse
           endelse
 ; perform acrobatic dimensional juggling to get the maximum likelihood
 ; scale-factor (total mass) and corresponding chi2 as a function of
@@ -96,7 +101,7 @@ function isedfit_chi2, maggies, ivarmaggies, modelmaggies, $
           gridchunk[these,igal].totalmass_err = vscale_err    ; /vscale/alog(10)
           gridchunk[these,igal].bestmaggies = bestmaggies
        endif 
-;      splog, format='("All models = ",G0," minutes")', (systime(1)-t1)/60.0       
+;      splog, format='("All models = ",G0," minutes")', (systime(1)-t1)/60.0
     endfor                      ; galaxy loop
 ;   splog, format='("All galaxies = ",G0," minutes")', (systime(1)-t0)/60.0
 
